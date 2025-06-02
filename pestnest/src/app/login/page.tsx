@@ -3,25 +3,32 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { api } from '../../../utils/axios';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
     try {
-      // TODO: Implement login logic here
-      console.log('Login attempt with:', { email, password });
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      router.push('/dashboard');
-    } catch (error) {
+      const response = await api.post('/auth/login', { email, password });
+      const { token } = response.data;
+      
+      // Store the token in localStorage
+      localStorage.setItem('token', token);
+      
+      // Redirect to dashboard
+      router.push('/homepage');
+    } catch (error: any) {
       console.error('Login failed:', error);
+      setError(error.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
@@ -41,6 +48,11 @@ export default function LoginPage() {
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {error && (
+              <div className="text-red-500 text-sm text-center">
+                {error}
+              </div>
+            )}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
