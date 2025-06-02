@@ -3,10 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, User, ShoppingCart, Truck, Clock, Shield, Heart } from 'lucide-react';
+import { Truck, Clock, Shield, Heart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '../../../utils/axios';
-import { Box, Container, Typography, Button, IconButton, CircularProgress } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
