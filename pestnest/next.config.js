@@ -1,6 +1,7 @@
 const path = require('path');
 
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
 
   images: {
@@ -32,3 +33,5 @@ module.exports = {
 
   // basePath: '/myapp',
 };
+
+module.exports = nextConfig;
