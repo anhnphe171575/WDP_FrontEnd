@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../../utils/axios';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { AxiosError } from 'axios';
 
 interface Category {
   _id: string;
@@ -66,9 +67,15 @@ export default function HomePage() {
         setIsLoading(true);
         const response = await api.get('/categories/popular');
         setPopularCategories(response.data as Category[]);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching popular categories:', err);
-        setError(err.message || 'An error occurred while fetching categories');
+        if (err instanceof AxiosError) {
+          setError(err.response?.data?.message || err.message || 'An error occurred while fetching categories');
+        } else if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('An error occurred while fetching categories');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -83,9 +90,15 @@ export default function HomePage() {
         setIsLoadingParents(true);
         const response = await api.get('/categories/parent');
         setParentCategories(response.data as ParentCategory[]);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching parent categories:', err);
-        setParentError(err.message || 'An error occurred while fetching parent categories');
+        if (err instanceof AxiosError) {
+          setParentError(err.response?.data?.message || err.message || 'An error occurred while fetching parent categories');
+        } else if (err instanceof Error) {
+          setParentError(err.message);
+        } else {
+          setParentError('An error occurred while fetching parent categories');
+        }
       } finally {
         setIsLoadingParents(false);
       }
@@ -113,9 +126,15 @@ export default function HomePage() {
         console.log('Current banner title:', activeBanners[currentBannerIndex]?.title);
         console.log('Current banner description:', activeBanners[currentBannerIndex]?.description);
         setBanners(activeBanners);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching banners:', err);
-        setBannerError(err.message || 'An error occurred while fetching banners');
+        if (err instanceof AxiosError) {
+          setBannerError(err.response?.data?.message || err.message || 'An error occurred while fetching banners');
+        } else if (err instanceof Error) {
+          setBannerError(err.message);
+        } else {
+          setBannerError('An error occurred while fetching banners');
+        }
       } finally {
         setIsLoadingBanners(false);
       }
@@ -134,9 +153,15 @@ export default function HomePage() {
         } else {
           throw new Error('Failed to fetch top selling products');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching top selling products:', err);
-        setTopSellingError(err.message || 'An error occurred while fetching top selling products');
+        if (err instanceof AxiosError) {
+          setTopSellingError(err.response?.data?.message || err.message || 'An error occurred while fetching top selling products');
+        } else if (err instanceof Error) {
+          setTopSellingError(err.message);
+        } else {
+          setTopSellingError('An error occurred while fetching top selling products');
+        }
       } finally {
         setIsLoadingTopSelling(false);
       }
