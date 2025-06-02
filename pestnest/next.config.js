@@ -1,10 +1,17 @@
 const path = require('path');
 
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
 
   images: {
-    domains: ['res.cloudinary.com', 'example.com'],
+    domains: ['yourcdn.com', 'localhost', 'res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
 
   env: {
@@ -27,3 +34,5 @@ module.exports = {
 
   // basePath: '/myapp',
 };
+
+module.exports = nextConfig;
