@@ -167,7 +167,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
             <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => setFormData({ ...formData, status: value as 'active' | 'inactive' })}
+              onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
