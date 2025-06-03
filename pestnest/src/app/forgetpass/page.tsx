@@ -2,23 +2,46 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AxiosError } from 'axios';
+import axios from 'axios';
 
 export default function ForgetPassPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
+    if (!email.trim()) {
+      setError('Vui lòng nhập email của bạn');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+
     try {
-      // TODO: Implement forget password logic here
-      console.log('Forget password attempt with:', { email });
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // TODO: Show success message or redirect
-    } catch (error) {
-      console.error('Forget password failed:', error);
+      await axios.post('http://localhost:5000/api/auth/send-otp', { email });
+      setSuccess('Vui lòng kiểm tra email của bạn để lấy mã OTP');
+      localStorage.setItem('email', email);
+      setTimeout(() => {
+        router.push('/verifyOTP');
+      }, 3000);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 404) {
+          setError('Email không tồn tại trong hệ thống');
+        } else {
+          setError(error.response?.data?.message || 'Có lỗi xảy ra khi gửi yêu cầu');
+        }
+      } else {
+        setError('Có lỗi xảy ra khi gửi yêu cầu');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -32,11 +55,23 @@ export default function ForgetPassPage() {
             Quên mật khẩu
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Nhập email của bạn để nhận hướng dẫn đặt lại mật khẩu
+            Nhập email của bạn để nhận mã OTP
           </p>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative" role="alert">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded relative" role="alert">
+            {success}
+          </div>
+        )}
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSendOTP}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -49,7 +84,7 @@ export default function ForgetPassPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-400"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-400 text-gray-900"
                 placeholder="your@email.com"
               />
             </div>
@@ -64,20 +99,20 @@ export default function ForgetPassPage() {
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                'Gửi yêu cầu'
+                'Gửi mã OTP'
               )}
             </button>
           </div>
-
-          <div className="text-center">
-            <Link 
-              href="/login"
-              className="inline-block mt-4 text-sm text-indigo-600 hover:text-indigo-500 font-medium"
-            >
-              Quay lại trang đăng nhập
-            </Link>
-          </div>
         </form>
+
+        <div className="text-center">
+          <Link 
+            href="/login"
+            className="inline-block mt-4 text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+          >
+            Quay lại trang đăng nhập
+          </Link>
+        </div>
       </div>
     </div>
   );

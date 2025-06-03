@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react";
-import { useApi } from "../../../../utils/axios";
-import { api, apiUtils } from "../../../../utils/axios";
+import { useApi } from "../../../../../pestnest/utils/axios";
+import { api } from "../../../../../pestnest/utils/axios";
 import { AxiosProgressEvent } from "axios";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
