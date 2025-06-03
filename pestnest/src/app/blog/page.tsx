@@ -37,8 +37,9 @@ export default function BlogPage() {
       try {
         const response = await api.get('/blogs');
         setPosts(response.data.blogs);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Có lỗi xảy ra khi tải bài viết');
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải bài viết');
       } finally {
         setLoading(false);
       }
