@@ -4,7 +4,12 @@ module.exports = {
   reactStrictMode: true,
 
   images: {
-    domains: ['res.cloudinary.com', 'example.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
 
   env: {
