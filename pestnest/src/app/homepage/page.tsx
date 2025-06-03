@@ -9,6 +9,7 @@ import { api } from '../../../utils/axios';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { AxiosError } from 'axios';
+import Header from '@/components/layout/Header';
 
 interface Category {
   _id: string;
@@ -174,7 +175,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Banner Carousel */}
+      <Header />
+              {/* Banner Carousel */}
       <section className="relative w-full h-[600px] overflow-hidden bg-gradient-to-b from-gray-50 to-white">
         {isLoadingBanners ? (
           <div className="flex items-center justify-center h-full">
@@ -547,6 +549,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
     </div>
   );
 }
@@ -575,3 +578,4 @@ const benefits = [
     description: "Hỗ trợ 24/7 với đội ngũ tư vấn chuyên nghiệp"
   }
 ];
+
