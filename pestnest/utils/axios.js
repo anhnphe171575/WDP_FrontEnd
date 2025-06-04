@@ -1,15 +1,21 @@
 // lib/axios.js
 import axios from 'axios';
+import { useState } from 'react';
+
+// Debug log để kiểm tra env
+console.log('🔍 Checking environment variables:');
+console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-
+// Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -18,7 +24,7 @@ axiosInstance.interceptors.request.use(
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('Request:', config);
+      console.log('🚀 Request:', config.method?.toUpperCase(), config.url);
     }
     
     return config;
@@ -28,19 +34,21 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor - xử lý response
+// Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    // Log response trong development
     if (process.env.NODE_ENV === 'development') {
-      console.log('Response:', response);
+      console.log('✅ Response:', response.status, response.config.url);
     }
     return response;
   },
   (error) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('❌ Error:', error.response?.status, error.config?.url);
+    }
+    
     // Xử lý lỗi chung
     if (error.response?.status === 401) {
-      // Token hết hạn hoặc không hợp lệ
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         window.location.href = '/login';
@@ -65,7 +73,6 @@ export const api = {
   patch: (url, data, config) => axiosInstance.patch(url, data, config),
   delete: (url, config) => axiosInstance.delete(url, config),
 };
-
 // Utility functions cho các trường hợp đặc biệt
 export const apiUtils = {
   // Upload file

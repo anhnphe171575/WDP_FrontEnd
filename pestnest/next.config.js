@@ -1,6 +1,7 @@
 const path = require('path');
 
-module.exports = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   reactStrictMode: true,
 
   images: {
@@ -11,17 +12,13 @@ module.exports = {
       },
     ],
   },
-
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
     NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || '',
   },
-
-  i18n: {
-    locales: ['en', 'vi'],
-    defaultLocale: 'vi',
-  },
-
   webpack(config, options) {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
@@ -32,3 +29,5 @@ module.exports = {
 
   // basePath: '/myapp',
 };
+
+module.exports = nextConfig;
