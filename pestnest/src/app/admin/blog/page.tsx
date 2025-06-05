@@ -17,47 +17,44 @@ import { Textarea } from "@/components/ui/textarea"
 import { Edit, Eye, Image, Trash2 } from "lucide-react";
 import NextImage from "next/image";
 
-interface Banner {
+interface Blog {
   _id: string;
   title: string;
-  description?: string;
-  imageUrl: string;
-  image?: File;
-  status: 'active' | 'inactive';
-  startDate: string;
-  endDate?: string;
-  link?: string;
+  description: string;
+  tag: string;
+  images: { url: string }[];
+  author: {
+    name: string;
+    email: string;
+  };
+  createdAt: string;
 }
 
-interface BannerFormProps {
-  banner?: Banner;
-  onSubmit: (data: Omit<Banner, '_id'>) => void;
+interface BlogFormProps {
+  blog?: Blog;
+  onSubmit: (data: Omit<Blog, '_id' | 'author' | 'createdAt'>) => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
+function BlogForm({ blog, onSubmit, isOpen, onClose }: BlogFormProps) {
   const [formData, setFormData] = useState({
-    _id: banner?._id || '',
-    title: banner?.title || '',
-    description: banner?.description || '',
-    imageUrl: banner?.imageUrl || '',
-    status: banner?.status || 'active',
-    startDate: banner?.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-    endDate: banner?.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
-    link: banner?.link || ''
+    title: blog?.title || '',
+    description: blog?.description || '',
+    tag: blog?.tag || '',
   });
-  const [imagePreview, setImagePreview] = useState<string | null>(banner?.imageUrl || null);
+  const [imagePreview, setImagePreview] = useState<string[]>(blog?.images.map(img => img.url) || []);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { request } = useApi();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(files);
+      const previews = files.map(file => URL.createObjectURL(file));
+      setImagePreview([...imagePreview, ...previews]);
     }
   };
 
@@ -67,24 +64,17 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
     setUploadProgress(0);
 
     try {
-      if (!selectedFile && !banner) {
-        throw new Error('Please select an image');
-      }
-
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description || '');
-      formDataToSend.append('status', formData.status);
-      formDataToSend.append('startDate', formData.startDate);
-      if (formData.endDate) formDataToSend.append('endDate', formData.endDate);
-      if (formData.link) formDataToSend.append('link', formData.link);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('tag', formData.tag);
       
-      if (selectedFile) {
-        formDataToSend.append('image', selectedFile);
-      }
+      selectedFiles.forEach(file => {
+        formDataToSend.append('images', file);
+      });
 
       const response = await request(() => 
-        api.post('/banners', formDataToSend, {
+        api.post('/blogs', formDataToSend, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -99,8 +89,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
       onSubmit(response);
       onClose();
     } catch (error) {
-      console.error('Error saving banner:', error);
-      // You might want to show an error toast here
+      console.error('Error saving blog:', error);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -111,7 +100,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{banner ? 'Edit Banner' : 'Add New Banner'}</DialogTitle>
+          <DialogTitle>{blog ? 'Edit Blog' : 'Add New Blog'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -124,22 +113,32 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Banner Image <span className="text-red-500">*</span></Label>
+            <Label htmlFor="tag">Tag <span className="text-red-500">*</span></Label>
             <Input
-              id="image"
+              id="tag"
+              value={formData.tag}
+              onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="images">Blog Images</Label>
+            <Input
+              id="images"
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageChange}
               disabled={isUploading}
-              required={!banner}
             />
             {isUploading && (
               <div className="space-y-2">
@@ -152,68 +151,27 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
                 <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
               </div>
             )}
-            {imagePreview && (
-              <div className="mt-2 relative w-full h-48">
-                <NextImage
-                  src={imagePreview}
-                  alt="Preview"
-                  fill
-                  className="object-contain rounded-md"
-                />
+            {imagePreview.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {imagePreview.map((url, index) => (
+                  <div key={index} className="relative w-full h-32">
+                    <NextImage
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      fill
+                      className="object-cover rounded-md"
+                    />
+                  </div>
+                ))}
               </div>
             )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="link">Link</Label>
-            <Input
-              id="link"
-              type="url"
-              placeholder="https://example.com"
-              value={formData.link}
-              onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-            />
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isUploading}>
-              {isUploading ? `Uploading ${uploadProgress}%` : banner ? 'Save Changes' : 'Add Banner'}
+              {isUploading ? `Uploading ${uploadProgress}%` : blog ? 'Save Changes' : 'Add Blog'}
             </Button>
           </div>
         </form>
@@ -222,55 +180,56 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
   );
 }
 
-interface BannerDetailProps {
-  banner: Banner;
+interface BlogDetailProps {
+  blog: Blog;
   isOpen: boolean;
   onClose: () => void;
 }
 
-function BannerDetail({ banner, isOpen, onClose }: BannerDetailProps) {
+function BlogDetail({ blog, isOpen, onClose }: BlogDetailProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Banner Details</DialogTitle>
+          <DialogTitle>Blog Details</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Title</Label>
-            <p className="text-sm text-gray-700">{banner.title}</p>
+            <p className="text-sm text-gray-700">{blog.title}</p>
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{banner.description}</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{blog.description}</p>
           </div>
           <div className="space-y-2">
-            <Label>Image</Label>
-            <img src={banner.imageUrl} alt="Banner" width={600} height={600} />
+            <Label>Tag</Label>
+            <Badge variant="secondary">{blog.tag}</Badge>
           </div>
           <div className="space-y-2">
-            <Label>Status</Label>
-            <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
-              {banner.status}
-            </Badge>
+            <Label>Author</Label>
+            <p className="text-sm text-gray-700">{blog.author.name}</p>
           </div>
           <div className="space-y-2">
-            <Label>Start Date</Label>
+            <Label>Created At</Label>
             <p className="text-sm text-gray-700">
-              {new Date(banner.startDate).toLocaleDateString()}
+              {new Date(blog.createdAt).toLocaleDateString()}
             </p>
           </div>
           <div className="space-y-2">
-            <Label>End Date</Label>
-            <p className="text-sm text-gray-700">
-              {banner.endDate ? new Date(banner.endDate).toLocaleDateString() : 'N/A'}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label>Link</Label>
-            <p className="text-sm text-gray-700">
-              {banner.link || 'N/A'}
-            </p>
+            <Label>Images</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {blog.images.map((image, index) => (
+                <div key={index} className="relative w-full h-32">
+                  <NextImage
+                    src={image.url}
+                    alt={`Blog image ${index + 1}`}
+                    fill
+                    className="object-cover rounded-md"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flex justify-end">
             <Button variant="outline" onClick={onClose}>
@@ -283,22 +242,21 @@ function BannerDetail({ banner, isOpen, onClose }: BannerDetailProps) {
   );
 }
 
-export default function BannerPage() {
-  const [banners, setBanners] = useState<Banner[]>([]);
+export default function BlogPage() {
+  const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [selectedBanner, setSelectedBanner] = useState<Banner | undefined>();
+  const [selectedBlog, setSelectedBlog] = useState<Blog | undefined>();
   const { request } = useApi();
 
   useEffect(() => {
-    const fetchBanners = async () => {
+    const fetchBlogs = async () => {
       try {
-        const data = await request(() => api.get('/banners'));
-        setBanners(data);
-        console.log(data);
+        const response = await request(() => api.get('/blogs'));
+        setBlogs(response.blogs || []);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -306,56 +264,50 @@ export default function BannerPage() {
       }
     };
 
-    fetchBanners();
+    fetchBlogs();
   }, []);
 
-  const filteredBanners = banners.filter(banner =>
-    banner.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    banner.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredBlogs = blogs.filter(blog =>
+    blog.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    blog.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    blog.tag?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddBanner = async (data: Omit<Banner, '_id'>) => {
+  const handleAddBlog = async (data: Omit<Blog, '_id' | 'author' | 'createdAt'>) => {
     try {
       const formData = new FormData();
       formData.append('title', data.title);
-      formData.append('description', data.description || '');
-      formData.append('status', data.status);
-      formData.append('startDate', data.startDate);
-      if (data.endDate) formData.append('endDate', data.endDate);
-      if (data.link) formData.append('link', data.link);
+      formData.append('description', data.description);
+      formData.append('tag', data.tag);
       
-      if (data.image) {
-        formData.append('image', data.image);
-      }
-
       const response = await request(() => 
-        api.post('/banners', formData, {
+        api.post('/blogs', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           }
         })
       );
       
-      setBanners([...banners, response]);
+      setBlogs([...blogs, response]);
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  const handleEditBanner = async (data: Omit<Banner, '_id'>) => {
-    if (!selectedBanner) return;
+  const handleEditBlog = async (data: Omit<Blog, '_id' | 'author' | 'createdAt'>) => {
+    if (!selectedBlog) return;
     try {
-      const response = await request(() => api.put(`/banners/${selectedBanner._id}`, data));
-      setBanners(banners.map(banner => banner._id === selectedBanner._id ? response : banner));
+      const response = await request(() => api.put(`/blogs/${selectedBlog._id}`, data));
+      setBlogs(blogs.map(blog => blog._id === selectedBlog._id ? response : blog));
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  const handleDeleteBanner = async (id: string) => {
+  const handleDeleteBlog = async (id: string) => {
     try {
-      await request(() => api.delete(`/banners/${id}`));
-      setBanners(banners.filter(banner => banner._id !== id));
+      await request(() => api.delete(`/blogs/${id}`));
+      setBlogs(blogs.filter(blog => blog._id !== id));
     } catch (err: any) {
       setError(err.message);
     }
@@ -366,29 +318,30 @@ export default function BannerPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Banner Management</CardTitle>
+            <CardTitle>Blog Management</CardTitle>
             <Button onClick={() => {
-              setSelectedBanner(undefined);
+              setSelectedBlog(undefined);
               setIsFormOpen(true);
-            }}>Add New Banner</Button>
+            }}>Add New Blog</Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search banners..."
+              placeholder="Search blogs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
             <Select>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder="Tag" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">All Tags</SelectItem>
+                <SelectItem value="news">News</SelectItem>
+                <SelectItem value="tips">Tips</SelectItem>
+                <SelectItem value="guides">Guides</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -404,24 +357,24 @@ export default function BannerPage() {
                   <TableHead>No.</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Start Date</TableHead>
+                  <TableHead>Tag</TableHead>
+                  <TableHead>Author</TableHead>
+                  <TableHead>Created At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="table-banner">
-                {filteredBanners.map((banner, index) => (
-                  <TableRow key={banner._id}>
+              <TableBody>
+                {filteredBlogs.map((blog, index) => (
+                  <TableRow key={blog._id}>
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell>{banner.title}</TableCell>
-                    <TableCell>{banner.description}</TableCell>
+                    <TableCell>{blog.title}</TableCell>
+                    <TableCell className="max-w-xs truncate">{blog.description}</TableCell>
                     <TableCell>
-                      <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
-                        {banner.status}
-                      </Badge>
+                      <Badge variant="secondary">{blog.tag}</Badge>
                     </TableCell>
-                    <TableCell>{new Date(banner.startDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>{blog.author.name}</TableCell>
+                    <TableCell>{new Date(blog.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
                       <div className="flex items-center justify-end space-x-2">
                         <Button 
                           variant="ghost" 
@@ -429,7 +382,7 @@ export default function BannerPage() {
                           className="h-8 w-8 p-0" 
                           title="View Details"
                           onClick={() => {
-                            setSelectedBanner(banner);
+                            setSelectedBlog(blog);
                             setIsDetailOpen(true);
                           }}
                         >
@@ -439,9 +392,9 @@ export default function BannerPage() {
                           variant="ghost" 
                           size="sm" 
                           className="h-8 w-8 p-0" 
-                          title="Edit Banner" 
+                          title="Edit Blog" 
                           onClick={() => {
-                            setSelectedBanner(banner);
+                            setSelectedBlog(blog);
                             setIsFormOpen(true);
                           }}
                         >
@@ -451,8 +404,8 @@ export default function BannerPage() {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Delete Banner"
-                          onClick={() => handleDeleteBanner(banner._id)}
+                          title="Delete Blog"
+                          onClick={() => handleDeleteBlog(blog._id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -466,26 +419,26 @@ export default function BannerPage() {
         </CardContent>
       </Card>
 
-      <BannerForm
-        banner={selectedBanner}
-        onSubmit={selectedBanner ? handleEditBanner : handleAddBanner}
+      <BlogForm
+        blog={selectedBlog}
+        onSubmit={selectedBlog ? handleEditBlog : handleAddBlog}
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
-          setSelectedBanner(undefined);
+          setSelectedBlog(undefined);
         }}
       />
 
-      {selectedBanner && (
-        <BannerDetail
-          banner={selectedBanner}
+      {selectedBlog && (
+        <BlogDetail
+          blog={selectedBlog}
           isOpen={isDetailOpen}
           onClose={() => {
             setIsDetailOpen(false);
-            setSelectedBanner(undefined);
+            setSelectedBlog(undefined);
           }}
         />
       )}
     </div>
   );
-}
+} 

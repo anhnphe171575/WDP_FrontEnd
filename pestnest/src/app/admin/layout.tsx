@@ -76,6 +76,7 @@ const menuItems = [
     url: "/admin/banner",
     icon: Image,
   },
+  
 ]
 
 const settingsItems = [
