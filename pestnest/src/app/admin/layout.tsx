@@ -203,6 +203,9 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
+      <div className="p-2">
+          <SidebarTrigger className="ml-2" />
+        </div>
       <SidebarInset>
         {children}
       </SidebarInset>
