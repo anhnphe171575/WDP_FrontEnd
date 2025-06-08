@@ -76,6 +76,11 @@ const menuItems = [
     url: "/admin/banner",
     icon: Image,
   },
+  {
+    title: "Manage Blog",
+    url: "/admin/blog",
+    icon: Image,
+  },
 ]
 
 const settingsItems = [
