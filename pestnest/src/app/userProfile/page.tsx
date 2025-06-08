@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface UserProfile {
     name: string;
@@ -21,16 +22,74 @@ interface InfoFieldProps {
     onChange?: (value: string) => void;
 }
 
+interface ApiResponse {
+    success: boolean;
+    message: string;
+    data: {
+        _id: string;
+        name: string;
+        email: string;
+        phone: string;
+        dob: string;
+        role: number;
+        verified: boolean;
+        address: string[];
+        createdAt: string;
+        updatedAt: string;
+    }
+}
+
 const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [userData, setUserData] = useState<UserProfile>({
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@example.com',
-        phone: '0123456789',
-        address: '123 Đường ABC, Quận XYZ, TP.HCM',
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
         title: 'Người Yêu Động Vật',
-        joinDate: 'Tháng 3, 2022'
+        joinDate: ''
     });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const token = localStorage.getItem('token'); // Lấy token từ localStorage
+                if (!token) {
+                    throw new Error('Không tìm thấy token');
+                }
+
+                const response = await axios.get<ApiResponse>('http://localhost:5000/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.data.success) {
+                    const profileData = response.data.data;
+                    setUserData({
+                        name: profileData.name,
+                        email: profileData.email,
+                        phone: profileData.phone,
+                        address: profileData.address.join(', ') || '',
+                        title: 'Người Yêu Động Vật',
+                        joinDate: new Date(profileData.createdAt).toLocaleDateString('vi-VN', {
+                            month: 'long',
+                            year: 'numeric'
+                        })
+                    });
+                }
+            } catch (err) {
+                setError('Không thể tải thông tin profile. Vui lòng thử lại sau.');
+                console.error('Error fetching profile:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
 
     const handleEdit = () => {
         setIsEditing(!isEditing);
@@ -67,6 +126,22 @@ const UserProfilePage = () => {
             </div>
         </div>
     );
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+                <div className="text-2xl font-semibold text-gray-700">Đang tải...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+                <div className="text-2xl font-semibold text-red-600">{error}</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">

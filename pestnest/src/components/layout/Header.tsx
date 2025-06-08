@@ -8,13 +8,12 @@ import {
   User,
   Menu,
   Heart,
-  MapPin,
   ChevronDown,
   Package,
   Settings,
   LogOut,
 } from "lucide-react"
-
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -207,13 +206,17 @@ function UserDropdown() {
           <p className="text-xs text-muted-foreground">john@example.com</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          My Profile
+        <DropdownMenuItem asChild>
+          <Link href="/userProfile" className="flex items-center">
+            <User className="mr-2 h-4 w-4" />
+            My Profile
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Package className="mr-2 h-4 w-4" />
-          My Orders
+        <DropdownMenuItem asChild>
+          <Link href="/myorder" className="flex items-center">
+            <Package className="mr-2 h-4 w-4" />
+            My Orders
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Heart className="mr-2 h-4 w-4" />
@@ -280,7 +283,7 @@ export default function Header() {
   return (
     <div className="border-b bg-white">
       {/* Top bar */}
-     
+
 
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
