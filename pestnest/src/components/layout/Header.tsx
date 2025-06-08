@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from "react"
+import { useState, useEffect } from "react"
 import {
   Search,
   ShoppingCart,
@@ -13,8 +14,9 @@ import {
   Package,
   Settings,
   LogOut,
+  ChevronRight,
 } from "lucide-react"
-
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +29,35 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
+import { api } from "../../../utils/axios"
+
+interface GrandChildCategory {
+  _id: string;
+  name: string;
+  description: string;
+  image: string | null;
+  children: GrandChildCategory[]; // Can be empty if no further nesting
+}
+
+interface ChildCategory {
+  _id: string;
+  name: string;
+  description: string;
+  image: string;
+  children: GrandChildCategory[];
+}
+
+interface ParentCategory {
+  _id: string;
+  name: string;
+  description: string;
+  image: string;
+}
+
+interface CategoryData {
+  parent: ParentCategory;
+  children: ChildCategory[];
+}
 
 // Sample cart items
 const cartItems = [
@@ -276,6 +307,20 @@ function MobileMenu() {
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = React.useState("")
+  const router = useRouter()
+  const [categories, setCategories] = useState<CategoryData[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('/categories/childCategories');
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
     <div className="border-b bg-white">
@@ -292,7 +337,7 @@ export default function Header() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-lg">S</span>
               </div>
-              <span className="text-xl font-bold">ShopHub</span>
+              <span className="text-xl font-bold">PetHub</span>
             </div>
           </div>
 
@@ -301,7 +346,7 @@ export default function Header() {
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Search for products, brands and more..."
+                placeholder="Tìm kiếm sản phẩm, thương hiệu và nhiều hơn nữa..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4 pr-12 py-2 w-full"
@@ -337,16 +382,76 @@ export default function Header() {
       </div>
 
       {/* Navigation Categories */}
-      <div className="border-t bg-gray-50">
+      <div className="border-t bg-gradient-to-r from-gray-50 to-gray-100">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center space-x-8 overflow-x-auto">
-            {["All Categories", "Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Toys", "Deals"].map(
-              (category) => (
-                <Button key={category} variant="ghost" size="sm" className="whitespace-nowrap">
-                  {category}
+          <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide">
+            {categories.map((category: CategoryData) => (
+              <DropdownMenu key={category.parent._id}>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="whitespace-nowrap text-gray-700 hover:text-primary hover:bg-white/50 transition-all duration-200 rounded-full px-4"
+                  >
+                    {category.parent.name}
+                    <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 p-2">
+                  {category.children.map((subCategory: ChildCategory) => (
+                    subCategory.children && subCategory.children.length > 0 ? (
+                      <DropdownMenu key={subCategory._id}>
+                        <DropdownMenuTrigger asChild>
+                          <DropdownMenuItem 
+                            onSelect={e => e.preventDefault()}
+                            className="flex items-center justify-between rounded-md hover:bg-gray-100 transition-colors duration-200"
+                          >
+                            {subCategory.name}
+                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                          </DropdownMenuItem>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent 
+                          side="right" 
+                          align="start" 
+                          className="w-56 p-2 bg-white shadow-lg rounded-lg border border-gray-100"
+                        >
+                          {subCategory.children.map((grandChild: GrandChildCategory) => (
+                            <DropdownMenuItem
+                              key={grandChild._id}
+                              onClick={() => router.push(`/products?category=${grandChild._id}`)}
+                              className="flex items-center rounded-md hover:bg-gray-100 transition-colors duration-200"
+                            >
+                              {grandChild.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <DropdownMenuItem
+                        key={subCategory._id}
+                        onClick={() => router.push(`/products?category=${subCategory._id}`)}
+                        className="flex items-center rounded-md hover:bg-gray-100 transition-colors duration-200"
+                      >
+                        {subCategory.name}
+                      </DropdownMenuItem>
+                    )
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ))}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="whitespace-nowrap text-gray-700 hover:text-primary hover:bg-white/50 transition-all duration-200 rounded-full px-4"
+                >
+                  Blog
+                  <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </Button>
-              ),
-            )}
+              </DropdownMenuTrigger>
+            </DropdownMenu>
           </div>
         </div>
       </div>
