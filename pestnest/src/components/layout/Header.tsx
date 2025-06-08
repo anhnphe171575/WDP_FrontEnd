@@ -212,9 +212,11 @@ function UserDropdown() {
             My Profile
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Package className="mr-2 h-4 w-4" />
-          My Orders
+        <DropdownMenuItem asChild>
+          <Link href="/myorder" className="flex items-center">
+            <Package className="mr-2 h-4 w-4" />
+            My Orders
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Heart className="mr-2 h-4 w-4" />
