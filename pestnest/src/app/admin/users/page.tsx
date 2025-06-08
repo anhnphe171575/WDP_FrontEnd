@@ -42,26 +42,120 @@ export interface User {
   updatedAt?: Date;
 }
 
+const ROLES = {
+  ADMIN_DEVELOPER: 0,
+  CUSTOMER: 1 << 0,
+  ORDER_MANAGER: 1 << 1,
+  MARKETING_MANAGER: 1 << 2,
+  WAREHOUSE_STAFF: 1 << 3,
+  CUSTOMER_SERVICE: 1 << 4,
+  ADMIN_BUSINESS: 1 << 5,
+};
+
+const ROLE_COLORS = {
+  ADMIN_DEVELOPER: "bg-purple-100 text-purple-800",
+  CUSTOMER: "bg-blue-100 text-blue-800",
+  ORDER_MANAGER: "bg-green-100 text-green-800",
+  MARKETING_MANAGER: "bg-yellow-100 text-yellow-800",
+  WAREHOUSE_STAFF: "bg-orange-100 text-orange-800",
+  CUSTOMER_SERVICE: "bg-pink-100 text-pink-800",
+  ADMIN_BUSINESS: "bg-indigo-100 text-indigo-800",
+} as const;
+
+const ROLE_LABELS = {
+  ADMIN_DEVELOPER: "Admin Developer",
+  CUSTOMER: "Customer",
+  ORDER_MANAGER: "Order Manager",
+  MARKETING_MANAGER: "Marketing Manager",
+  WAREHOUSE_STAFF: "Warehouse Staff",
+  CUSTOMER_SERVICE: "Customer Service",
+  ADMIN_BUSINESS: "Admin Business",
+} as const;
+
+const parseRoles = (bitmask: number) => {
+  const activeRoles = [];
+
+  for (const [roleName, roleValue] of Object.entries(ROLES)) {
+    if (roleValue !== 0 && (bitmask & roleValue) === roleValue) {
+      activeRoles.push(roleName);
+    }
+  }
+
+  // Riêng ADMIN_DEVELOPER là 0, nên ta xét đặc biệt:
+  if (bitmask === 0) {
+    activeRoles.push('ADMIN_DEVELOPER');
+  }
+
+  return activeRoles;
+};
 
 const getRoleBadge = (role: number) => {
-  const colors = {
-    1: "bg-red-100 text-red-800",
-    2: "bg-blue-100 text-blue-800",
-    4: "bg-green-100 text-green-800",
-    8: "bg-yellow-100 text-yellow-800",
-    16: "bg-purple-100 text-purple-800",
-    32: "bg-orange-100 text-orange-800",
-    64: "bg-pink-100 text-pink-800",
-    128: "bg-gray-100 text-gray-800",
-  } as const
+  const activeRoles = parseRoles(role);
+  
+  return (
+    <div className="flex flex-wrap gap-1">
+      {activeRoles.map((roleName) => (
+        <Badge 
+          key={roleName}
+          className={ROLE_COLORS[roleName as keyof typeof ROLE_COLORS]}
+        >
+          {ROLE_LABELS[roleName as keyof typeof ROLE_LABELS]}
+        </Badge>
+      ))}
+    </div>
+  );
+};
 
-  return <Badge className={colors[role as keyof typeof colors] || "bg-gray-100 text-gray-800"}>{role === 1 ? 'Customer' : role === 2 ? 'Order Manager' : role === 4 ? 'Marketing Manager' : role === 8 ? 'Warehouse Staff' : role === 16 ? 'Customer Service' : 'Admin Developer'}</Badge>
-}
 interface UserFormProps {
   user?: User;
   onSubmit: (data: Omit<User, '_id'>) => void;
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface RoleSelectorProps {
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function RoleSelector({ value, onChange }: RoleSelectorProps) {
+  const toggleRole = (roleValue: number) => {
+    if (roleValue === 0) {
+      // Nếu là ADMIN_DEVELOPER, chỉ cho phép chọn một mình nó
+      onChange(0);
+    } else {
+      // Nếu đang là ADMIN_DEVELOPER, bỏ nó đi
+      if (value === 0) {
+        onChange(roleValue);
+      } else {
+        // Toggle role khác
+        onChange(value ^ roleValue);
+      }
+    }
+  };
+
+  const isRoleActive = (roleValue: number) => {
+    if (roleValue === 0) {
+      return value === 0;
+    }
+    return (value & roleValue) === roleValue;
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {Object.entries(ROLES).map(([roleName, roleValue]) => (
+        <Badge
+          key={roleName}
+          className={`cursor-pointer ${ROLE_COLORS[roleName as keyof typeof ROLE_COLORS]} ${
+            isRoleActive(roleValue) ? 'ring-2 ring-offset-2 ring-primary' : ''
+          }`}
+          onClick={() => toggleRole(roleValue)}
+        >
+          {ROLE_LABELS[roleName as keyof typeof ROLE_LABELS]}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
 function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
@@ -204,24 +298,11 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role">Role <span className="text-red-500">*</span></Label>
-            <Select
-              value={formData.role.toString()}
-              onValueChange={(value) => setFormData({ ...formData, role: parseInt(value) })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Admin Developer</SelectItem>
-                <SelectItem value="1">Customer</SelectItem>
-                <SelectItem value="2">Order Manager</SelectItem>
-                <SelectItem value="3">Marketing Manager</SelectItem>
-                <SelectItem value="4">Warehouse Staff</SelectItem>
-                <SelectItem value="8">Customer Service</SelectItem>
-                <SelectItem value="16">Admin Business</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Role <span className="text-red-500">*</span></Label>
+            <RoleSelector
+              value={formData.role}
+              onChange={(value) => setFormData({ ...formData, role: value })}
+            />
           </div>
 
           <div className="space-y-2">
