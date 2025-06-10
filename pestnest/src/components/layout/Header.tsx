@@ -6,7 +6,6 @@ import {
   ShoppingCart,
   Bell,
   User,
-  Menu,
   Heart,
   ChevronDown,
   Package,
@@ -24,8 +23,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
+import axios from 'axios'
+import { useRouter } from 'next/navigation'
+
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        id: {
+          disableAutoSelect: () => void;
+        };
+      };
+    };
+  }
+}
 
 // Sample cart items
 const cartItems = [
@@ -176,15 +188,89 @@ function NotificationDropdown() {
 }
 
 function UserDropdown() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(true) // Toggle this for demo
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState<{name: string, email: string} | null>(null);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Chỉ lấy token từ sessionStorage
+        const token = sessionStorage.getItem('token');
+        
+        if (!token) {
+          setIsLoggedIn(false);
+          setUser(null);
+          return;
+        }
+
+        const axiosInstance = axios.create({
+          baseURL: 'http://localhost:5000',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const response = await axiosInstance.get('/api/auth/myprofile');
+        
+        if (response.data.success) {
+          setUser(response.data.user);
+          setIsLoggedIn(true);
+        } else {
+          // Nếu token không hợp lệ, xóa token
+          sessionStorage.removeItem('token');
+          setIsLoggedIn(false);
+          setUser(null);
+        }
+      } catch (error: unknown) {
+        console.error('Error checking auth:', error);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            // Token không hợp lệ hoặc hết hạn
+            sessionStorage.removeItem('token');
+          }
+        }
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      // Chỉ xóa token từ sessionStorage
+      sessionStorage.removeItem('token');
+      
+      // Xóa thông tin Google Sign-In nếu có
+      if (window.google) {
+        window.google.accounts.id.disableAutoSelect();
+      }
+      
+      // Cập nhật trạng thái
+      setIsLoggedIn(false);
+      setUser(null);
+      
+      // Chuyển hướng về trang chủ
+      router.push('/homepage');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Vẫn chuyển hướng về trang chủ ngay cả khi có lỗi
+      router.push('/homepage');
+    }
+  }
 
   if (!isLoggedIn) {
     return (
       <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="sm" onClick={() => setIsLoggedIn(true)}>
-          Login
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/login">Login</Link>
         </Button>
-        <Button size="sm">Sign Up</Button>
+        <Button size="sm" asChild>
+          <Link href="/signup">Sign Up</Link>
+        </Button>
       </div>
     )
   }
@@ -196,14 +282,14 @@ function UserDropdown() {
           <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
             <User className="h-4 w-4" />
           </div>
-          <span className="hidden md:block">John Doe</span>
+          <span className="hidden md:block">{user?.name}</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="p-2">
-          <p className="text-sm font-medium">John Doe</p>
-          <p className="text-xs text-muted-foreground">john@example.com</p>
+          <p className="text-sm font-medium">{user?.name}</p>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -227,7 +313,7 @@ function UserDropdown() {
           Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600" onClick={() => setIsLoggedIn(false)}>
+        <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </DropdownMenuItem>
@@ -236,67 +322,20 @@ function UserDropdown() {
   )
 }
 
-function MobileMenu() {
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
-          <SheetDescription>Browse our categories</SheetDescription>
-        </SheetHeader>
-        <div className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold">Categories</h3>
-            <div className="space-y-1">
-              {["Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Toys"].map((category) => (
-                <Button key={category} variant="ghost" className="w-full justify-start">
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <Separator />
-          <div className="space-y-2">
-            <h3 className="font-semibold">Quick Links</h3>
-            <div className="space-y-1">
-              {["Deals", "New Arrivals", "Best Sellers", "Customer Service"].map((link) => (
-                <Button key={link} variant="ghost" className="w-full justify-start">
-                  {link}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
 export default function Header() {
   const [searchQuery, setSearchQuery] = React.useState("")
 
   return (
     <div className="border-b bg-white">
-      {/* Top bar */}
-
-
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo and Mobile Menu */}
-          <div className="flex items-center space-x-4">
-            <MobileMenu />
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">S</span>
-              </div>
-              <span className="text-xl font-bold">ShopHub</span>
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">P</span>
             </div>
+            <span className="text-xl font-bold">Pet Nest</span>
           </div>
 
           {/* Search Bar */}
@@ -335,21 +374,6 @@ export default function Header() {
 
             {/* User Account */}
             <UserDropdown />
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Categories */}
-      <div className="border-t bg-gray-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center space-x-8 overflow-x-auto">
-            {["All Categories", "Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Toys", "Deals"].map(
-              (category) => (
-                <Button key={category} variant="ghost" size="sm" className="whitespace-nowrap">
-                  {category}
-                </Button>
-              ),
-            )}
           </div>
         </div>
       </div>
