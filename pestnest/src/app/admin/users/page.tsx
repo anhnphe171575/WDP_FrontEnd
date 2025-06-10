@@ -43,7 +43,6 @@ export interface User {
 }
 
 const ROLES = {
-  ADMIN_DEVELOPER: 0,
   CUSTOMER: 1 << 0,
   ORDER_MANAGER: 1 << 1,
   MARKETING_MANAGER: 1 << 2,
@@ -53,7 +52,6 @@ const ROLES = {
 };
 
 const ROLE_COLORS = {
-  ADMIN_DEVELOPER: "bg-purple-100 text-purple-800",
   CUSTOMER: "bg-blue-100 text-blue-800",
   ORDER_MANAGER: "bg-green-100 text-green-800",
   MARKETING_MANAGER: "bg-yellow-100 text-yellow-800",
@@ -63,7 +61,6 @@ const ROLE_COLORS = {
 } as const;
 
 const ROLE_LABELS = {
-  ADMIN_DEVELOPER: "Admin Developer",
   CUSTOMER: "Customer",
   ORDER_MANAGER: "Order Manager",
   MARKETING_MANAGER: "Marketing Manager",
@@ -76,14 +73,9 @@ const parseRoles = (bitmask: number) => {
   const activeRoles = [];
 
   for (const [roleName, roleValue] of Object.entries(ROLES)) {
-    if (roleValue !== 0 && (bitmask & roleValue) === roleValue) {
+    if ((bitmask & roleValue) === roleValue) {
       activeRoles.push(roleName);
     }
-  }
-
-  // Riêng ADMIN_DEVELOPER là 0, nên ta xét đặc biệt:
-  if (bitmask === 0) {
-    activeRoles.push('ADMIN_DEVELOPER');
   }
 
   return activeRoles;
@@ -418,6 +410,7 @@ export default function UserPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | undefined>();
@@ -483,10 +476,15 @@ export default function UserPage() {
     setIsDetailOpen(true);
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesRole = selectedRole === "all" || 
+      parseRoles(user.role).includes(selectedRole);
+
+    return matchesSearch && matchesRole;
+  });
 
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
@@ -513,6 +511,22 @@ export default function UserPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
+            <Select
+              value={selectedRole}
+              onValueChange={setSelectedRole}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                {Object.entries(ROLE_LABELS).map(([role, label]) => (
+                  <SelectItem key={role} value={role}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {loading ? (
