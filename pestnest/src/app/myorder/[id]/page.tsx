@@ -1,185 +1,232 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Card, Typography, Descriptions, Tag, Space, Divider, Button } from 'antd';
-import { ClockCircleOutlined, EnvironmentOutlined, PhoneOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Header from '@/components/layout/Header';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-const { Title, Text } = Typography;
-
-interface OrderDetails {
-  id: string;
-  orderNumber: string;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
-  createdAt: string;
-  totalAmount: number;
-  customerName: string;
-  address: string;
-  phone: string;
-  items: {
-    id: string;
-    name: string;
+interface OrderItem {
+    _id: string;
+    product: {
+        name: string;
+        id: string;
+    };
     quantity: number;
     price: number;
-  }[];
+    totalPrice: number;
 }
 
-// Mock data
-const mockOrderDetails: OrderDetails = {
-  id: '1',
-  orderNumber: 'ORD-001',
-  status: 'completed',
-  createdAt: '2024-03-15T10:30:00',
-  totalAmount: 1500000,
-  customerName: 'Nguyễn Văn A',
-  address: '123 Đường ABC, Phường XYZ, Quận 1, TP.HCM',
-  phone: '0123456789',
-  items: [
-    {
-      id: '1',
-      name: 'Dịch vụ diệt mối tận gốc',
-      quantity: 1,
-      price: 800000,
-    },
-    {
-      id: '2',
-      name: 'Dịch vụ phun thuốc diệt côn trùng',
-      quantity: 1,
-      price: 700000,
+interface OrderDetails {
+    _id: string;
+    OrderItems: OrderItem[];
+    total: number;
+    status: string;
+    paymentMethod: string;
+    createAt: string;
+    updateAt: string;
+}
+
+const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
+    const resolvedParams = React.use(params);
+    const [order, setOrder] = useState<OrderDetails | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            try {
+                const token = sessionStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Không tìm thấy token');
+                }
+
+                const response = await axios.get(`http://localhost:5000/api/users/orders/${resolvedParams.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.data.success) {
+                    setOrder(response.data.data);
+                }
+            } catch (err) {
+                setError('Không thể tải thông tin đơn hàng. Vui lòng thử lại sau.');
+                console.error('Error fetching order details:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchOrderDetails();
+    }, [resolvedParams.id]);
+
+    const getStatusColor = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'processing':
+                return 'bg-blue-100 text-blue-800';
+            case 'completed':
+                return 'bg-green-100 text-green-800';
+            case 'cancelled':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="container mx-auto px-4 py-8">
+                    <div className="flex justify-center items-center h-64">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                </div>
+            </div>
+        );
     }
-  ]
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="container mx-auto px-4 py-8">
+                    <div className="bg-white p-8 rounded-lg shadow-md text-center">
+                        <div className="text-red-500 text-xl font-medium mb-4">⚠️ {error}</div>
+                        <button 
+                            onClick={() => router.back()} 
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                        >
+                            Quay lại
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!order) {
+        return null;
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <Header />
+            <main className="container mx-auto px-4 py-8">
+                <div className="max-w-4xl mx-auto">
+                    <div className="mb-6">
+                        <button
+                            onClick={() => router.back()}
+                            className="inline-flex items-center text-gray-600 hover:text-gray-900"
+                        >
+                            <ArrowLeft className="w-5 h-5 mr-2" />
+                            Quay lại
+                        </button>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow-sm">
+                        <div className="p-6 border-b">
+                            <div className="flex justify-between items-center">
+                                <h1 className="text-2xl font-semibold text-gray-800">Chi tiết đơn hàng</h1>
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                                    {order.status === 'cancelled' ? 'Đã hủy' : 
+                                     order.status === 'completed' ? 'Hoàn thành' :
+                                     order.status === 'processing' ? 'Đang xử lý' : 'Chờ xử lý'}
+                                </span>
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
+                                <div>
+                                    <p>Mã đơn hàng: #{order._id.slice(-6)}</p>
+                                    <p>Ngày đặt: {formatDate(order.createAt)}</p>
+                                    <p>Cập nhật lần cuối: {formatDate(order.updateAt)}</p>
+                                </div>
+                                <div>
+                                    <p>Phương thức thanh toán: {
+                                        order.paymentMethod === 'credit_card' ? 'Thẻ tín dụng' :
+                                        order.paymentMethod === 'cash' ? 'Tiền mặt' :
+                                        order.paymentMethod === 'momo' ? 'Ví MoMo' : 'Chuyển khoản'
+                                    }</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <h2 className="text-lg font-medium text-gray-800 mb-4">Sản phẩm đã đặt</h2>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Sản phẩm
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Đơn giá
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Số lượng
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Thành tiền
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {order.OrderItems.map((item) => (
+                                            <tr key={item._id}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {item.product.name}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {formatCurrency(item.price)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {item.quantity}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {formatCurrency(item.totalPrice)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colSpan={3} className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                                                Tổng cộng:
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                {formatCurrency(order.total)}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
 };
 
-export default function OrderDetailsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Simulate API call with mock data
-    const fetchOrderDetails = async () => {
-      try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setOrderDetails(mockOrderDetails);
-      } catch (error) {
-        console.error('Error fetching order details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrderDetails();
-  }, [params.id]);
-
-  const getStatusConfig = (status: string) => {
-    const statusConfig = {
-      pending: { color: 'warning', text: 'Chờ xử lý' },
-      processing: { color: 'processing', text: 'Đang xử lý' },
-      completed: { color: 'success', text: 'Hoàn thành' },
-      cancelled: { color: 'error', text: 'Đã hủy' },
-    };
-    return statusConfig[status as keyof typeof statusConfig] || { color: 'default', text: status };
-  };
-
-  if (loading) {
-    return (
-      <>
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div>Đang tải...</div>
-        </div>
-      </>
-    );
-  }
-
-  if (!orderDetails) {
-    return (
-      <>
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div>Không tìm thấy đơn hàng</div>
-        </div>
-      </>
-    );
-  }
-
-  const statusConfig = getStatusConfig(orderDetails.status);
-
-  return (
-    <>
-      <Header />
-      <div className="container mx-auto px-4 py-8">
-        <Button 
-          icon={<ArrowLeftOutlined />} 
-          onClick={() => router.push('/myorder')}
-          className="mb-4"
-        >
-          Quay lại
-        </Button>
-        
-        <Card>
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <div className="flex justify-between items-center">
-              <Title level={3}>Đơn hàng #{orderDetails.orderNumber}</Title>
-              <Tag color={statusConfig.color}>
-                {statusConfig.text}
-              </Tag>
-            </div>
-
-            <Descriptions bordered>
-              <Descriptions.Item label="Ngày đặt hàng" span={3}>
-                <Space>
-                  <ClockCircleOutlined />
-                  {new Date(orderDetails.createdAt).toLocaleDateString('vi-VN')}
-                </Space>
-              </Descriptions.Item>
-              <Descriptions.Item label="Tên khách hàng" span={3}>
-                {orderDetails.customerName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Địa chỉ giao hàng" span={3}>
-                <Space>
-                  <EnvironmentOutlined />
-                  {orderDetails.address}
-                </Space>
-              </Descriptions.Item>
-              <Descriptions.Item label="Số điện thoại" span={3}>
-                <Space>
-                  <PhoneOutlined />
-                  {orderDetails.phone}
-                </Space>
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Divider>Chi tiết sản phẩm</Divider>
-
-            <div className="space-y-4">
-              {orderDetails.items.map((item) => (
-                <Card key={item.id} size="small">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <Text strong>{item.name}</Text>
-                      <br />
-                      <Text type="secondary">Số lượng: {item.quantity}</Text>
-                    </div>
-                    <Text>{(item.price * item.quantity).toLocaleString('vi-VN')} VNĐ</Text>
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <Divider />
-
-            <div className="flex justify-end">
-              <Space direction="vertical" align="end">
-                <Text>Tổng tiền: {orderDetails.totalAmount.toLocaleString('vi-VN')} VNĐ</Text>
-              </Space>
-            </div>
-          </Space>
-        </Card>
-      </div>
-    </>
-  );
-}
+export default OrderDetailsPage;
