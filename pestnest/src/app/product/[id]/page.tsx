@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Header from "@/components/layout/Header"
-import { api } from "@/utils/axios"
+import { api } from "../../../../utils/axios"
 
 interface Product {
   _id: string;
@@ -166,21 +166,34 @@ export default function ProductPage() {
   });
 
   const handleAddToCart = async () => {
-    if (!product) return;
+    if (!product) {
+      setAddToCartError('Product not found');
+      return;
+    }
+
+    if (!product.variants[selectedVariant]) {
+      setAddToCartError('Selected variant not found');
+      return;
+    }
+
+    if (quantity <= 0) {
+      setAddToCartError('Quantity must be greater than 0');
+      return;
+    }
     
     try {
       setAddingToCart(true);
       setAddToCartError(null);
       
-      const response = await api.post('/cart/add-to-cart', {
+      const response = await api.post('/cart/addtocart', {
         productId: product._id,
-        variantId: product.variants[selectedVariant]._id,
+        productVariantId: product.variants[selectedVariant]._id,
         quantity: quantity
       });
 
       if (response.data.success) {
-        // You can add a success notification here if needed
-        console.log('Product added to cart successfully');
+        // Show success message
+        alert('Product added to cart successfully!');
       } else {
         throw new Error(response.data.message || 'Failed to add product to cart');
       }

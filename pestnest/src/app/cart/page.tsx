@@ -1,75 +1,120 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import Header from "@/components/layout/Header"
+import axiosInstance from "../../../utils/axios"
+import { useRouter } from "next/navigation"
 
 interface CartItem {
-  id: string
-  name: string
-  price: number
+  _id: string
   quantity: number
-  image: string
-  size?: string
-  color?: string
+  product: {
+    _id: string
+    name: string
+    description: string
+    selectedVariant: {
+      _id: string
+      price: number
+      images: {
+        _id: string
+        url: string
+      }[]
+      attributes: {
+        value: string
+      }[]
+    }
+  }
+}
+
+interface CartResponse {
+  success: boolean
+  message: string
+  data: {
+    _id: string
+    userId: string
+    cartItems: CartItem[]
+    summary: {
+      totalItems: number
+      totalPrice: number
+    }
+  }
 }
 
 export default function ShoppingCart() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "Áo thun Premium Cotton",
-      price: 299000,
-      quantity: 2,
-      image: "/placeholder.svg?height=100&width=100",
-      size: "L",
-      color: "Đen",
-    },
-    {
-      id: "2",
-      name: "Quần jeans Slim Fit",
-      price: 599000,
-      quantity: 1,
-      image: "/placeholder.svg?height=100&width=100",
-      size: "32",
-      color: "Xanh đậm",
-    },
-    {
-      id: "3",
-      name: "Giày sneaker thể thao",
-      price: 899000,
-      quantity: 1,
-      image: "/placeholder.svg?height=100&width=100",
-      size: "42",
-      color: "Trắng",
-    },
-  ])
-
+  const router = useRouter()
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const updateQuantity = (id: string, newQuantity: number) => {
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        setLoading(true)
+        const response = await axiosInstance.get('/cart/getcart')
+        if (response.data.success) {
+          setCartItems(response.data.data.cartItems)
+        } else {
+          throw new Error(response.data.message || 'Failed to fetch cart')
+        }
+      } catch (err) {
+        console.error('Error fetching cart:', err)
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching cart')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCart()
+  }, [])
+
+  const updateQuantity = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return
-    setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
+    try {
+      const response = await axiosInstance.put('/cart/updatecart', {
+        cartItemId: id,
+        quantity: newQuantity
+      })
+      if (response.data.success) {
+        setCartItems(items => 
+          items.map(item => 
+            item._id === id ? { ...item, quantity: newQuantity } : item
+          )
+        )
+      }
+    } catch (err) {
+      console.error('Error updating quantity:', err)
+    }
   }
 
-  const removeItem = (id: string) => {
-    setCartItems((items) => items.filter((item) => item.id !== id))
-    setSelectedItems((prev) => prev.filter((itemId) => itemId !== id))
+  const removeItem = async (id: string) => {
+    try {
+      const response = await axiosInstance.delete(`/cart/deletecartitem/${id}`)
+      if (response.data.success) {
+        setCartItems(items => items.filter(item => item._id !== id))
+        setSelectedItems(prev => prev.filter(itemId => itemId !== id))
+      }
+    } catch (err) {
+      console.error('Error removing item:', err)
+    }
   }
 
   const toggleItemSelection = (id: string) => {
-    setSelectedItems((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]))
+    setSelectedItems(prev => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    )
   }
 
   const toggleSelectAll = () => {
     if (selectedItems.length === cartItems.length) {
       setSelectedItems([])
     } else {
-      setSelectedItems(cartItems.map((item) => item.id))
+      setSelectedItems(cartItems.map(item => item._id))
     }
   }
 
@@ -82,8 +127,34 @@ export default function ShoppingCart() {
 
   const calculateSelectedTotal = () => {
     return cartItems
-      .filter((item) => selectedItems.includes(item.id))
-      .reduce((sum, item) => sum + item.price * item.quantity, 0)
+      .filter(item => selectedItems.includes(item._id))
+      .reduce((sum, item) => sum + item.product.selectedVariant.price * item.quantity, 0)
+  }
+
+  const handleBuyNow = () => {
+    if (selectedItems.length === 0) return
+    // Store selected items in localStorage for checkout page
+    localStorage.setItem('checkoutItems', JSON.stringify(selectedItems))
+    router.push('/checkout')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   if (cartItems.length === 0) {
@@ -159,35 +230,35 @@ export default function ShoppingCart() {
           {/* Cart Items */}
           {cartItems.map((item) => (
             <Card 
-              key={item.id} 
+              key={item._id} 
               className={`shadow-sm hover:shadow-md transition-all duration-200 ${
-                selectedItems.includes(item.id) ? "ring-2 ring-blue-500 bg-blue-50/50" : ""
+                selectedItems.includes(item._id) ? "ring-2 ring-blue-500 bg-blue-50/50" : ""
               }`}
             >
               <CardContent className="p-6">
                 <div className="flex gap-6">
                   <div className="flex items-start pt-2">
                     <Checkbox
-                      id={`item-${item.id}`}
-                      checked={selectedItems.includes(item.id)}
-                      onChange={() => toggleItemSelection(item.id)}
+                      id={`item-${item._id}`}
+                      checked={selectedItems.includes(item._id)}
+                      onChange={() => toggleItemSelection(item._id)}
                       className="border-gray-300"
                     />
                   </div>
 
                   <img
-                    src={item.image || "/placeholder.svg"}
-                    alt={item.name}
+                    src={item.product.selectedVariant.images[0]?.url || "/placeholder.svg"}
+                    alt={item.product.name}
                     className="w-28 h-28 object-cover rounded-lg shadow-sm"
                   />
 
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-lg text-gray-900">{item.name}</h3>
+                      <h3 className="font-semibold text-lg text-gray-900">{item.product.name}</h3>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item._id)}
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -195,12 +266,11 @@ export default function ShoppingCart() {
                     </div>
 
                     <div className="flex gap-4 text-sm text-gray-600 mb-4">
-                      {item.size && (
-                        <span className="bg-gray-100 px-3 py-1 rounded-full">Size: {item.size}</span>
-                      )}
-                      {item.color && (
-                        <span className="bg-gray-100 px-3 py-1 rounded-full">Màu: {item.color}</span>
-                      )}
+                      {item.product.selectedVariant.attributes.map((attr, index) => (
+                        <span key={index} className="bg-gray-100 px-3 py-1 rounded-full">
+                          {attr.value}
+                        </span>
+                      ))}
                     </div>
 
                     <div className="flex justify-between items-center">
@@ -208,7 +278,7 @@ export default function ShoppingCart() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item._id, item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           className="border-gray-300 hover:bg-gray-100"
                         >
@@ -218,7 +288,7 @@ export default function ShoppingCart() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
                           className="border-gray-300 hover:bg-gray-100"
                         >
                           <Plus className="h-4 w-4" />
@@ -228,15 +298,17 @@ export default function ShoppingCart() {
                       <div className="text-right">
                         <div
                           className={`font-semibold text-xl ${
-                            selectedItems.includes(item.id) ? "text-blue-600" : "text-gray-900"
+                            selectedItems.includes(item._id) ? "text-blue-600" : "text-gray-900"
                           }`}
                         >
-                          {formatPrice(item.price * item.quantity)}
-                          {selectedItems.includes(item.id) && (
+                          {formatPrice(item.product.selectedVariant.price * item.quantity)}
+                          {selectedItems.includes(item._id) && (
                             <span className="text-xs text-blue-500 block mt-1">✓ Đã chọn</span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-600 mt-1">{formatPrice(item.price)} / sản phẩm</div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {formatPrice(item.product.selectedVariant.price)} / sản phẩm
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -259,7 +331,10 @@ export default function ShoppingCart() {
               <Button variant="outline" className="border-gray-300 hover:bg-gray-100">
                 Thêm vào yêu thích
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                onClick={handleBuyNow}
+              >
                 Mua ngay ({selectedItems.length})
               </Button>
             </div>
