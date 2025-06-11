@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { api } from "../../../../utils/axios"
 import { useParams, useRouter } from "next/navigation"
-
+import Header from '@/components/layout/Header';
+import { useCart } from '@/context/CartContext';
+    
 
 
 const brands = [
@@ -117,6 +119,7 @@ export default function ProductsPage() {
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const { addToCart } = useCart();
 
   const fetchFilteredProducts = async (filterParams: FilterParams) => {
     try {
@@ -368,6 +371,19 @@ export default function ProductsPage() {
     );
   };
 
+  const handleAddToCart = (product: Product) => {
+    const variant = product.variants[0];
+    if (!variant) return;
+
+    addToCart({
+      _id: product._id,
+      name: product.name,
+      price: variant.sellPrice,
+      image: variant.images[0]?.url || "/placeholder.svg",
+      variantId: variant._id
+    });
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -378,6 +394,8 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+            <Header />
+
       {/* Breadcrumb */}
       <div className="bg-gray-50 py-3">
         <div className="max-w-7xl mx-auto px-4">
@@ -595,7 +613,10 @@ export default function ProductsPage() {
                         </div>
                       </div>
 
-                      <Button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                      <Button 
+                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                        onClick={() => handleAddToCart(product)}
+                      >
                         Add to Cart
                       </Button>
                     </CardContent>

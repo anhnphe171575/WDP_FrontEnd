@@ -31,6 +31,7 @@ import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useCart } from '@/context/CartContext';
 
 interface GrandChildCategory {
   _id: string;
@@ -58,6 +59,15 @@ interface ParentCategory {
 interface CategoryData {
   parent: ParentCategory;
   children: ChildCategory[];
+}
+
+interface CartItem {
+  _id: string;
+  variantId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
 }
 
 // Sample cart items
@@ -111,8 +121,29 @@ const notifications = [
 ]
 
 function CartDropdown() {
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
+  const [isLoading, setIsLoading] = useState(true);
+  const [cartData, setCartData] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get('/cart/get-cart');
+        console.log(response.data);
+        // Ensure we're setting an array of cart items
+        const cartItems = Array.isArray(response.data) ? response.data : response.data.items || [];
+        setCartData(cartItems);
+      } catch (error) {
+        console.error("Failed to fetch cart data:", error);
+        setCartData([]); // Set empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCartData();
+  }, []);
 
   return (
     <DropdownMenu>
@@ -128,37 +159,72 @@ function CartDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="p-4">
-          <h3 className="font-semibold mb-3">Shopping Cart ({totalItems} items)</h3>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {cartItems.map((item) => (
-              <div key={item.id} className="flex items-center space-x-3">
-                <img
-                  src={item.image || "/placeholder.svg"}
-                  alt={item.name}
-                  className="w-12 h-12 rounded-md object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    ${item.price} × {item.quantity}
-                  </p>
-                </div>
-                <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+          <h3 className="font-semibold mb-3">Shopping Cart ({cartData.length} items)</h3>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : cartData.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              Your cart is empty
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {cartData.map((item) => (
+                  <div key={`${item._id}-${item.variantId}`} className="flex items-center space-x-3">
+                    <img
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      className="w-12 h-12 rounded-md object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <span className="text-sm">{item.quantity}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-red-500"
+                        onClick={() => removeFromCart(item._id)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <Separator className="my-3" />
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-semibold">Total: ${totalPrice.toFixed(2)}</span>
-          </div>
-          <div className="space-y-2">
-            <Button className="w-full" size="sm">
-              View Cart
-            </Button>
-            <Button className="w-full" variant="outline" size="sm">
-              Checkout
-            </Button>
-          </div>
+              <Separator className="my-3" />
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-semibold">Total: ${totalPrice.toFixed(2)}</span>
+              </div>
+              <div className="space-y-2">
+                <Button className="w-full" size="sm" asChild>
+                  <Link href="/cart">View Cart</Link>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
