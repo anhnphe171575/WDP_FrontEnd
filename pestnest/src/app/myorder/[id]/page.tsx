@@ -21,6 +21,8 @@ interface OrderDetails {
     _id: string;
     OrderItems: OrderItem[];
     total: number;
+    finalTotal?: number;
+    voucherDiscount?: number;
     status: string;
     paymentMethod: string;
     createAt: string;
@@ -32,16 +34,22 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
     const [order, setOrder] = useState<OrderDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showLoginMessage, setShowLoginMessage] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            setShowLoginMessage(true);
+            setLoading(false);
+            setTimeout(() => {
+                router.push('/login');
+            }, 2000);
+            return;
+        }
+
         const fetchOrderDetails = async () => {
             try {
-                const token = sessionStorage.getItem('token');
-                if (!token) {
-                    throw new Error('Không tìm thấy token');
-                }
-
                 const response = await axios.get(`http://localhost:5000/api/users/orders/${resolvedParams.id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -60,7 +68,7 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
         };
 
         fetchOrderDetails();
-    }, [resolvedParams.id]);
+    }, [resolvedParams.id, router]);
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -94,6 +102,20 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
         }).format(amount);
     };
 
+    if (showLoginMessage) {
+        return (
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="container mx-auto px-4 py-8">
+                    <div className="bg-white p-8 rounded-lg shadow-md text-center">
+                        <div className="text-yellow-500 text-xl font-medium mb-4">⚠️ Bạn cần đăng nhập để xem chi tiết đơn hàng</div>
+                        <p className="text-gray-500">Đang chuyển hướng đến trang đăng nhập...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -114,8 +136,8 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                 <div className="container mx-auto px-4 py-8">
                     <div className="bg-white p-8 rounded-lg shadow-md text-center">
                         <div className="text-red-500 text-xl font-medium mb-4">⚠️ {error}</div>
-                        <button 
-                            onClick={() => router.back()} 
+                        <button
+                            onClick={() => router.back()}
                             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                         >
                             Quay lại
@@ -134,7 +156,7 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
         <div className="min-h-screen bg-gray-50">
             <Header />
             <main className="container mx-auto px-4 py-8">
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     <div className="mb-6">
                         <button
                             onClick={() => router.back()}
@@ -150,9 +172,9 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                             <div className="flex justify-between items-center">
                                 <h1 className="text-2xl font-semibold text-gray-800">Chi tiết đơn hàng</h1>
                                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                                    {order.status === 'cancelled' ? 'Đã hủy' : 
-                                     order.status === 'completed' ? 'Hoàn thành' :
-                                     order.status === 'processing' ? 'Đang xử lý' : 'Chờ xử lý'}
+                                    {order.status === 'cancelled' ? 'Đã hủy' :
+                                        order.status === 'completed' ? 'Hoàn thành' :
+                                            order.status === 'processing' ? 'Đang xử lý' : 'Chờ xử lý'}
                                 </span>
                             </div>
                             <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
@@ -164,9 +186,18 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                                 <div>
                                     <p>Phương thức thanh toán: {
                                         order.paymentMethod === 'credit_card' ? 'Thẻ tín dụng' :
-                                        order.paymentMethod === 'cash' ? 'Tiền mặt' :
-                                        order.paymentMethod === 'momo' ? 'Ví MoMo' : 'Chuyển khoản'
+                                            order.paymentMethod === 'cash' ? 'Tiền mặt' :
+                                                order.paymentMethod === 'momo' ? 'Ví MoMo' : 'Chuyển khoản'
                                     }</p>
+                                    <button
+                                        onClick={() => {
+                                            // TODO: Implement reorder functionality
+                                            alert('Chức năng đang được phát triển');
+                                        }}
+                                        className="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                    >
+                                        Mua lại
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -220,6 +251,18 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                                         </tr>
                                     </tfoot>
                                 </table>
+                            </div>
+                            <h2 className="text-lg font-medium text-gray-800 mb-4">Thông tin thanh toán</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                <div>
+                                    <p>Tổng tiền gốc: <span className="font-semibold text-gray-900">{formatCurrency(order.total)}</span></p>
+                                    {order.voucherDiscount !== undefined && order.voucherDiscount > 0 && (
+                                        <p>Giảm giá Voucher: <span className="font-semibold text-red-600">- {formatCurrency(order.voucherDiscount)}</span></p>
+                                    )}
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-lg font-semibold text-gray-900">Tổng cộng: {formatCurrency(order.finalTotal !== undefined ? order.finalTotal : order.total)}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
