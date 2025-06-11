@@ -1,21 +1,18 @@
 'use client';
 
 import * as React from "react"
-import { useState, useEffect } from "react"
 import {
   Search,
   ShoppingCart,
   Bell,
   User,
-  Menu,
   Heart,
   ChevronDown,
   Package,
   Settings,
   LogOut,
-  ChevronRight,
 } from "lucide-react"
-
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -26,38 +23,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
-import { api } from "../../../utils/axios"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import axios from 'axios'
+import { useRouter } from 'next/navigation'
 
-interface GrandChildCategory {
-  _id: string;
-  name: string;
-  description: string;
-  image: string | null;
-  children: GrandChildCategory[]; // Can be empty if no further nesting
-}
-
-interface ChildCategory {
-  _id: string;
-  name: string;
-  description: string;
-  image: string;
-  children: GrandChildCategory[];
-}
-
-interface ParentCategory {
-  _id: string;
-  name: string;
-  description: string;
-  image: string;
-}
-
-interface CategoryData {
-  parent: ParentCategory;
-  children: ChildCategory[];
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        id: {
+          disableAutoSelect: () => void;
+        };
+      };
+    };
+  }
 }
 
 // Sample cart items
@@ -209,15 +188,89 @@ function NotificationDropdown() {
 }
 
 function UserDropdown() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(true) // Toggle this for demo
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState<{name: string, email: string} | null>(null);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Chỉ lấy token từ sessionStorage
+        const token = sessionStorage.getItem('token');
+        
+        if (!token) {
+          setIsLoggedIn(false);
+          setUser(null);
+          return;
+        }
+
+        const axiosInstance = axios.create({
+          baseURL: 'http://localhost:5000',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const response = await axiosInstance.get('/api/auth/myprofile');
+        
+        if (response.data.success) {
+          setUser(response.data.user);
+          setIsLoggedIn(true);
+        } else {
+          // Nếu token không hợp lệ, xóa token
+          sessionStorage.removeItem('token');
+          setIsLoggedIn(false);
+          setUser(null);
+        }
+      } catch (error: unknown) {
+        console.error('Error checking auth:', error);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            // Token không hợp lệ hoặc hết hạn
+            sessionStorage.removeItem('token');
+          }
+        }
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      // Chỉ xóa token từ sessionStorage
+      sessionStorage.removeItem('token');
+      
+      // Xóa thông tin Google Sign-In nếu có
+      if (window.google) {
+        window.google.accounts.id.disableAutoSelect();
+      }
+      
+      // Cập nhật trạng thái
+      setIsLoggedIn(false);
+      setUser(null);
+      
+      // Chuyển hướng về trang chủ
+      router.push('/homepage');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Vẫn chuyển hướng về trang chủ ngay cả khi có lỗi
+      router.push('/homepage');
+    }
+  }
 
   if (!isLoggedIn) {
     return (
       <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="sm" onClick={() => setIsLoggedIn(true)}>
-          Login
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/login">Login</Link>
         </Button>
-        <Button size="sm">Sign Up</Button>
+        <Button size="sm" asChild>
+          <Link href="/signup">Sign Up</Link>
+        </Button>
       </div>
     )
   }
@@ -229,14 +282,14 @@ function UserDropdown() {
           <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
             <User className="h-4 w-4" />
           </div>
-          <span className="hidden md:block">John Doe</span>
+          <span className="hidden md:block">{user?.name}</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="p-2">
-          <p className="text-sm font-medium">John Doe</p>
-          <p className="text-xs text-muted-foreground">john@example.com</p>
+          <p className="text-sm font-medium">{user?.name}</p>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -260,7 +313,7 @@ function UserDropdown() {
           Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600" onClick={() => setIsLoggedIn(false)}>
+        <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </DropdownMenuItem>
@@ -269,81 +322,20 @@ function UserDropdown() {
   )
 }
 
-function MobileMenu() {
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
-          <SheetDescription>Browse our categories</SheetDescription>
-        </SheetHeader>
-        <div className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold">Categories</h3>
-            <div className="space-y-1">
-              {["Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Toys"].map((category) => (
-                <Button key={category} variant="ghost" className="w-full justify-start">
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <Separator />
-          <div className="space-y-2">
-            <h3 className="font-semibold">Quick Links</h3>
-            <div className="space-y-1">
-              {["Deals", "New Arrivals", "Best Sellers", "Customer Service"].map((link) => (
-                <Button key={link} variant="ghost" className="w-full justify-start">
-                  {link}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
 export default function Header() {
   const [searchQuery, setSearchQuery] = React.useState("")
-  const router = useRouter()
-  const [categories, setCategories] = useState<CategoryData[]>([]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await api.get('/categories/childCategories');
-        setCategories(response.data);
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-      }
-    };
-    fetchCategories();
-  }, []);
 
   return (
     <div className="border-b bg-white">
-      {/* Top bar */}
-
-
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo and Mobile Menu */}
-          <div className="flex items-center space-x-4">
-            <MobileMenu />
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">S</span>
-              </div>
-              <span className="text-xl font-bold">PetHub</span>
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">P</span>
             </div>
+            <span className="text-xl font-bold">Pet Nest</span>
           </div>
 
           {/* Search Bar */}
@@ -351,7 +343,7 @@ export default function Header() {
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Tìm kiếm sản phẩm, thương hiệu và nhiều hơn nữa..."
+                placeholder="Search for products, brands and more..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4 pr-12 py-2 w-full"
@@ -382,81 +374,6 @@ export default function Header() {
 
             {/* User Account */}
             <UserDropdown />
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Categories */}
-      <div className="border-t bg-gradient-to-r from-gray-50 to-gray-100">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center space-x-6 overflow-x-auto scrollbar-hide">
-            {categories.map((category: CategoryData) => (
-              <DropdownMenu key={category.parent._id}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="whitespace-nowrap text-gray-700 hover:text-primary hover:bg-white/50 transition-all duration-200 rounded-full px-4"
-                  >
-                    {category.parent.name}
-                    <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 p-2">
-                  {category.children.map((subCategory: ChildCategory) => (
-                    subCategory.children && subCategory.children.length > 0 ? (
-                      <DropdownMenu key={subCategory._id}>
-                        <DropdownMenuTrigger asChild>
-                          <DropdownMenuItem 
-                            onSelect={e => e.preventDefault()}
-                            className="flex items-center justify-between rounded-md hover:bg-gray-100 transition-colors duration-200"
-                          >
-                            {subCategory.name}
-                            <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
-                          </DropdownMenuItem>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                          side="right" 
-                          align="start" 
-                          className="w-56 p-2 bg-white shadow-lg rounded-lg border border-gray-100"
-                        >
-                          {subCategory.children.map((grandChild: GrandChildCategory) => (
-                            <DropdownMenuItem
-                              key={grandChild._id}
-                              onClick={() => router.push(`/products?category=${grandChild._id}`)}
-                              className="flex items-center rounded-md hover:bg-gray-100 transition-colors duration-200"
-                            >
-                              {grandChild.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <DropdownMenuItem
-                        key={subCategory._id}
-                        onClick={() => router.push(`/products?category=${subCategory._id}`)}
-                        className="flex items-center rounded-md hover:bg-gray-100 transition-colors duration-200"
-                      >
-                        {subCategory.name}
-                      </DropdownMenuItem>
-                    )
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ))}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="whitespace-nowrap text-gray-700 hover:text-primary hover:bg-white/50 transition-all duration-200 rounded-full px-4"
-                >
-                  Blog
-                  <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                </Button>
-              </DropdownMenuTrigger>
-            </DropdownMenu>
           </div>
         </div>
       </div>

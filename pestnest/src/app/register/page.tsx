@@ -102,9 +102,10 @@ export default function RegisterPage() {
       <div className={styles.left + ' relative'}>
         <Image
           src="/images/background.jpg"
-          alt="Pet Shop Background"
+          alt="Background"
           fill
-
+          sizes="100vw"
+          className="object-cover"
           priority
         />
       </div>
