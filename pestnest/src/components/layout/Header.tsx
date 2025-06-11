@@ -190,14 +190,14 @@ function NotificationDropdown() {
 function UserDropdown() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [user, setUser] = React.useState<{name: string, email: string} | null>(null);
+  const [user, setUser] = React.useState<{ name: string, email: string } | null>(null);
 
   React.useEffect(() => {
     const checkAuth = async () => {
       try {
         // Chỉ lấy token từ sessionStorage
         const token = sessionStorage.getItem('token');
-        
+
         if (!token) {
           setIsLoggedIn(false);
           setUser(null);
@@ -213,7 +213,7 @@ function UserDropdown() {
         });
 
         const response = await axiosInstance.get('/api/auth/myprofile');
-        
+
         if (response.data.success) {
           setUser(response.data.user);
           setIsLoggedIn(true);
@@ -241,18 +241,22 @@ function UserDropdown() {
 
   const handleLogout = () => {
     try {
-      // Chỉ xóa token từ sessionStorage
+      // Xóa token từ sessionStorage
       sessionStorage.removeItem('token');
-      
+
       // Xóa thông tin Google Sign-In nếu có
-      if (window.google) {
-        window.google.accounts.id.disableAutoSelect();
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (error) {
+          console.error('Error disabling Google auto select:', error);
+        }
       }
-      
+
       // Cập nhật trạng thái
       setIsLoggedIn(false);
       setUser(null);
-      
+
       // Chuyển hướng về trang chủ
       router.push('/homepage');
     } catch (error) {
@@ -330,13 +334,14 @@ export default function Header() {
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">P</span>
+          <Link href='/homepage'>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">P</span>
+              </div>
+              <span className="text-xl font-bold">Pet Nest</span>
             </div>
-            <span className="text-xl font-bold">Pet Nest</span>
-          </div>
+          </Link>
 
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
