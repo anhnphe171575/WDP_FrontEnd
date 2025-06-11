@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Edit, Eye, Image, Trash2 } from "lucide-react";
 import NextImage from "next/image";
+import { log } from "console";
 
 interface Blog {
   _id: string;
@@ -23,62 +24,79 @@ interface Blog {
   description: string;
   tag: string;
   images: { url: string }[];
-  author: {
-    name: string;
-    email: string;
-  };
   createdAt: string;
 }
 
 interface BlogFormProps {
   blog?: Blog;
-  onSubmit: (data: Omit<Blog, '_id' | 'author' | 'createdAt'>) => void;
+  onSubmit: (data: FormData) => Promise<void>;
   isOpen: boolean;
   onClose: () => void;
+  uploadProgress: number;
+  setUploadProgress: (progress: number) => void;
 }
 
-function BlogForm({ blog, onSubmit, isOpen, onClose }: BlogFormProps) {
+function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadProgress }: BlogFormProps) {
   const [formData, setFormData] = useState({
-    title: blog?.title || '',
-    description: blog?.description || '',
-    tag: blog?.tag || '',
+    title: '',
+    description: '',
+    tag: '',
   });
-  const [imagePreview, setImagePreview] = useState<string[]>(blog?.images.map(img => img.url) || []);
+  const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [existingImages, setExistingImages] = useState<{ url: string }[]>([]);
   const { request } = useApi();
 
-  // Reset form when blog changes
+  // Reset form when dialog opens/closes or blog changes
   useEffect(() => {
-    if (blog) {
-      setFormData({
-        title: blog.title,
-        description: blog.description,
-        tag: blog.tag,
-      });
-      setImagePreview(blog.images.map(img => img.url));
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        tag: '',
-      });
-      setImagePreview([]);
+    if (isOpen) {
+      if (blog) {
+        // If editing, set the blog data
+        setFormData({
+          title: blog.title,
+          description: blog.description,
+          tag: blog.tag,
+        });
+        setExistingImages(blog.images);
+        setImagePreview(blog.images.map(img => img.url));
+      } else {
+        // If creating new, reset form
+        setFormData({
+          title: '',
+          description: '',
+          tag: '',
+        });
+        setImagePreview([]);
+        setSelectedFiles([]);
+        setExistingImages([]);
+      }
     }
-  }, [blog]);
+  }, [isOpen, blog]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
-      setSelectedFiles(files);
-      const previews = files.map(file => URL.createObjectURL(file));
-      setImagePreview([...imagePreview, ...previews]);
+      // Update selectedFiles with all files
+      setSelectedFiles(prevFiles => [...prevFiles, ...files]);
+      
+      // Create preview URLs for all files
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setImagePreview(prevPreviews => [...prevPreviews, ...newPreviews]);
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImagePreview(imagePreview.filter((_, i) => i !== index));
+  const handleRemoveImage = (index: number, isExisting: boolean) => {
+    if (isExisting) {
+      // Remove from existing images
+      setExistingImages(prev => prev.filter((_, i) => i !== index));
+      setImagePreview(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Remove from new images
+      const newIndex = index - existingImages.length;
+      setSelectedFiles(prev => prev.filter((_, i) => i !== newIndex));
+      setImagePreview(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,30 +110,27 @@ function BlogForm({ blog, onSubmit, isOpen, onClose }: BlogFormProps) {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('tag', formData.tag);
       
-      selectedFiles.forEach(file => {
+      // Append existing images
+      existingImages.forEach((image, index) => {
+        formDataToSend.append('existingImages', image.url);
+      });
+      
+      // Append new files
+      selectedFiles.forEach((file) => {
         formDataToSend.append('images', file);
       });
 
-      const response = await request(() => 
-        api.post('/blogs', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-            if (progressEvent.total) {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setUploadProgress(progress);
-            }
-          },
-        })
-      );
-      onSubmit(response);
+      await onSubmit(formDataToSend);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving blog:', error);
+      throw error;
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+      setSelectedFiles([]);
+      setImagePreview([]);
+      setExistingImages([]);
     }
   };
 
@@ -123,42 +138,38 @@ function BlogForm({ blog, onSubmit, isOpen, onClose }: BlogFormProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-bold">{blog ? 'Edit Blog' : 'Add New Blog'}</DialogTitle>
+          <DialogTitle>{blog ? 'Edit Blog' : 'Add New Blog'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title" className="font-bold">Title <span className="text-red-500">*</span></Label>
+            <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
-              placeholder="Enter blog title"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description" className="font-bold">Description <span className="text-red-500">*</span></Label>
+            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
-              placeholder="Enter blog description"
-              className="min-h-[150px]"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tag" className="font-bold">Tag <span className="text-red-500">*</span></Label>
+            <Label htmlFor="tag">Tag <span className="text-red-500">*</span></Label>
             <Input
               id="tag"
               value={formData.tag}
               onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
               required
-              placeholder="Enter blog tag"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="images" className="font-bold">Blog Images</Label>
+            <Label htmlFor="images">Blog Images</Label>
             <Input
               id="images"
               type="file"
@@ -181,19 +192,17 @@ function BlogForm({ blog, onSubmit, isOpen, onClose }: BlogFormProps) {
             {imagePreview.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {imagePreview.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <div className="relative w-full h-32">
-                      <NextImage
-                        src={url}
-                        alt={`Preview ${index + 1}`}
-                        fill
-                        className="object-cover rounded-md"
-                      />
-                    </div>
+                  <div key={index} className="relative w-full h-32 group">
+                    <NextImage
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      fill
+                      className="object-cover rounded-md"
+                    />
                     <button
                       type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleRemoveImage(index, index < existingImages.length)}
+                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -227,33 +236,29 @@ function BlogDetail({ blog, isOpen, onClose }: BlogDetailProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-bold">Blog Details</DialogTitle>
+          <DialogTitle>Blog Details</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="font-bold">Title</Label>
+            <Label>Title</Label>
             <p className="text-sm text-gray-700">{blog.title}</p>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Description</Label>
+            <Label>Description</Label>
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{blog.description}</p>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Tag</Label>
+            <Label>Tag</Label>
             <Badge variant="secondary">{blog.tag}</Badge>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Author</Label>
-            <p className="text-sm text-gray-700">{blog.author.name}</p>
-          </div>
-          <div className="space-y-2">
-            <Label className="font-bold">Created At</Label>
+            <Label>Created At</Label>
             <p className="text-sm text-gray-700">
               {new Date(blog.createdAt).toLocaleDateString()}
             </p>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Images</Label>
+            <Label>Images</Label>
             <div className="grid grid-cols-2 gap-2">
               {blog.images.map((image, index) => (
                 <div key={index} className="relative w-full h-32">
@@ -278,6 +283,55 @@ function BlogDetail({ blog, isOpen, onClose }: BlogDetailProps) {
   );
 }
 
+interface PaginationProps {
+  filteredBlogs: Blog[];
+  itemsPerPage: number;
+  currentPage: number;
+  setCurrentPage: (value: number) => void;
+}
+
+function Pagination({ filteredBlogs, itemsPerPage, currentPage, setCurrentPage }: PaginationProps) {
+  const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredBlogs.slice(startIndex, endIndex);
+
+  return (
+    <div className="flex items-center justify-end mt-4">
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function BlogPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -286,20 +340,29 @@ export default function BlogPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<Blog | undefined>();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { request } = useApi();
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const response = await request(() => api.get('/blogs'));
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      const response = await request(() => api.get('/blogs'));
+      if (response.success) {
         setBlogs(response.blogs || []);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      } else {
+        setError('Failed to fetch blogs');
       }
-    };
+    } catch (err: any) {
+      console.error('Error fetching blogs:', err);
+      setError(err.message || 'Failed to fetch blogs');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBlogs();
   }, []);
 
@@ -309,43 +372,87 @@ export default function BlogPage() {
     blog.tag?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddBlog = async (data: Omit<Blog, '_id' | 'author' | 'createdAt'>) => {
+  const handleAddBlog = async (formData: FormData) => {
     try {
-      const formData = new FormData();
-      formData.append('title', data.title);
-      formData.append('description', data.description);
-      formData.append('tag', data.tag);
-      
       const response = await request(() => 
         api.post('/blogs', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-          }
+          },
+          onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+            if (progressEvent.total) {
+              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(progress);
+            }
+          },
         })
       );
+      console.log(response);
       
-      setBlogs([...blogs, response]);
+      if (response.success && response.blog) {
+        await fetchBlogs(); // Fetch updated list after creating
+        return response.blog;
+      } else {
+        throw new Error(response.message || 'Failed to create blog');
+      }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error creating blog:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to create blog');
+      throw err;
     }
   };
 
-  const handleEditBlog = async (data: Omit<Blog, '_id' | 'author' | 'createdAt'>) => {
+  const handleEditBlog = async (formData: FormData) => {
     if (!selectedBlog) return;
     try {
-      const response = await request(() => api.put(`/blogs/${selectedBlog._id}`, data));
-      setBlogs(blogs.map(blog => blog._id === selectedBlog._id ? response : blog));
+      const response = await request(() => 
+        api.put(`/blogs/${selectedBlog._id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+            if (progressEvent.total) {
+              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(progress);
+            }
+          },
+        })
+      );
+
+      if (response.success) {
+        // Update the blogs array with the updated blog
+        setBlogs(prevBlogs => 
+          prevBlogs.map(blog => 
+            blog._id === selectedBlog._id ? { ...response.blog, createdAt: blog.createdAt } : blog
+          )
+        );
+        setIsFormOpen(false);
+        setSelectedBlog(undefined);
+      } else {
+        setError(response.message || 'Failed to update blog');
+      }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error updating blog:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to update blog');
     }
   };
 
   const handleDeleteBlog = async (id: string) => {
     try {
-      await request(() => api.delete(`/blogs/${id}`));
-      setBlogs(blogs.filter(blog => blog._id !== id));
+      if (!window.confirm('Are you sure you want to delete this blog?')) {
+        return;
+      }
+
+      const deleteResponse = await request(() => api.delete(`/blogs/${id}`));
+      
+      if (deleteResponse.success) {
+        await fetchBlogs(); // Fetch updated list after deleting
+      } else {
+        setError(deleteResponse.message || 'Failed to delete blog');
+      }
     } catch (err: any) {
-      setError(err.message);
+      console.error('Error deleting blog:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to delete blog');
     }
   };
 
@@ -362,6 +469,11 @@ export default function BlogPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="flex items-center gap-4 mb-4">
             <Input
               placeholder="Search blogs..."
@@ -369,88 +481,85 @@ export default function BlogPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
-            <Select>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Tag" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Tags</SelectItem>
-                <SelectItem value="news">News</SelectItem>
-                <SelectItem value="tips">Tips</SelectItem>
-                <SelectItem value="guides">Guides</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {loading ? (
-            <div>Loading...</div>
-          ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <div className="flex justify-center items-center h-32">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Tag</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBlogs.map((blog, index) => (
-                  <TableRow key={blog._id}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{blog.title}</TableCell>
-                    <TableCell className="max-w-xs truncate">{blog.description}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{blog.tag}</Badge>
-                    </TableCell>
-                    <TableCell>{blog.author.name}</TableCell>
-                    <TableCell>{new Date(blog.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0" 
-                          title="View Details"
-                          onClick={() => {
-                            setSelectedBlog(blog);
-                            setIsDetailOpen(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0" 
-                          title="Edit Blog" 
-                          onClick={() => {
-                            setSelectedBlog(blog);
-                            setIsFormOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Delete Blog"
-                          onClick={() => handleDeleteBlog(blog._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>No.</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Tag</TableHead>
+                    <TableHead>Created At</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredBlogs
+                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    .map((blog, index) => (
+                    <TableRow key={blog._id}>
+                      <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                      <TableCell>{blog.title}</TableCell>
+                      <TableCell className="max-w-xs truncate">{blog.description}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{blog.tag}</Badge>
+                      </TableCell>
+                      <TableCell>{new Date(blog.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="View Details"
+                            onClick={() => {
+                              setSelectedBlog(blog);
+                              setIsDetailOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Edit Blog" 
+                            onClick={() => {
+                              setSelectedBlog(blog);
+                              setIsFormOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete Blog"
+                            onClick={() => handleDeleteBlog(blog._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination
+                filteredBlogs={filteredBlogs}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+              />
+            </>
           )}
         </CardContent>
       </Card>
@@ -462,7 +571,10 @@ export default function BlogPage() {
         onClose={() => {
           setIsFormOpen(false);
           setSelectedBlog(undefined);
+          setUploadProgress(0);
         }}
+        uploadProgress={uploadProgress}
+        setUploadProgress={setUploadProgress}
       />
 
       {selectedBlog && (
