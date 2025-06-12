@@ -81,6 +81,11 @@ const menuItems = [
     url: "/admin/blog",
     icon: Image,
   },
+  {
+    title: "Manage Review",
+    url: "/admin/review",
+    icon: Image,
+  },
 ]
 
 const settingsItems = [

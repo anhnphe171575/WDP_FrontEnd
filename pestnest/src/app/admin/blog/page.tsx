@@ -336,6 +336,7 @@ export default function BlogPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -428,6 +429,11 @@ export default function BlogPage() {
         );
         setIsFormOpen(false);
         setSelectedBlog(undefined);
+        setSuccessMessage('Blog updated successfully!');
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
       } else {
         setError(response.message || 'Failed to update blog');
       }
@@ -472,6 +478,11 @@ export default function BlogPage() {
           {error && (
             <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-md">
               {error}
+            </div>
+          )}
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-50 text-green-600 rounded-md">
+              {successMessage}
             </div>
           )}
           <div className="flex items-center gap-4 mb-4">
