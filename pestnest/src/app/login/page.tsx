@@ -36,12 +36,11 @@ export default function LoginPage() {
         const { token } = response.data;
         
         // Store the token
-        if (rememberMe) {
+        if (rememberMe){
           localStorage.setItem('token', token);
-        } else {
+        } else{
           sessionStorage.setItem('token', token);
-        }
-        
+        }        
         // Redirect to dashboard
         router.push('/homepage');
       } else {
