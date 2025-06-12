@@ -111,11 +111,24 @@ function CartDropdown() {
     const fetchCartData = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/cart/get-cart');
+        const response = await api.get('/cart/getlatestcartitem');
         console.log(response.data);
-        // Ensure we're setting an array of cart items
-        const cartItems = Array.isArray(response.data) ? response.data : response.data.items || [];
-        setCartData(cartItems);
+        
+        if (response.data.success && response.data.data) {
+          const latestItem = response.data.data;
+          // Transform the data to match CartItem interface
+          const transformedItem: CartItem = {
+            _id: latestItem._id,
+            variantId: latestItem.product.selectedVariant._id,
+            name: latestItem.product.name,
+            price: latestItem.product.selectedVariant.price,
+            quantity: latestItem.quantity,
+            image: latestItem.product.selectedVariant.images[0]?.url || "/placeholder.svg"
+          };
+          setCartData([transformedItem]);
+        } else {
+          setCartData([]);
+        }
       } catch (error) {
         console.error("Failed to fetch cart data:", error);
         setCartData([]); // Set empty array on error
@@ -132,11 +145,6 @@ function CartDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <ShoppingCart className="h-5 w-5" />
-          {totalItems > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-              {totalItems}
-            </Badge>
-          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
@@ -163,43 +171,16 @@ function CartDropdown() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.name}</p>
                       <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                        >
-                          -
-                        </Button>
-                        <span className="text-sm">{item.quantity}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                        >
-                          +
-                        </Button>
+                       
+                       
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 text-red-500"
-                        onClick={() => removeFromCart(item._id)}
-                      >
-                        ×
-                      </Button>
-                    </div>
+                   
                   </div>
                 ))}
               </div>
               <Separator className="my-3" />
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold">Total: ${totalPrice.toFixed(2)}</span>
-              </div>
+            
               <div className="space-y-2">
                 <Button className="w-full" size="sm" asChild>
                   <Link href="/cart">View Cart</Link>

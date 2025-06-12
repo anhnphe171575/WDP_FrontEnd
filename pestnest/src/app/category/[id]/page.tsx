@@ -14,6 +14,7 @@ import { api } from "../../../../utils/axios"
 import { useParams, useRouter } from "next/navigation"
 import Header from '@/components/layout/Header';
 import { useCart } from '@/context/CartContext';
+import Link from 'next/link';
     
 
 
@@ -577,50 +578,48 @@ export default function ProductsPage() {
               ) : (
                 // Show actual products when loaded
                 currentProducts.map((product) => (
-                  <Card
-                    key={product._id}
-                    className="group hover:shadow-xl transition-all duration-300 border border-gray-200 bg-white"
-                  >
-                    <CardContent className="p-4">
-                      <div className="relative mb-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
-                        >
-                          <Heart className="w-4 h-4" />
-                        </Button>
-                        <Image
-                          src={product.variants[0]?.images[0]?.url || "/placeholder.svg"}
-                          alt={product.name}
-                          width={300}
-                          height={300}
-                          className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-
-                      <h3 className="font-medium text-sm mb-3 line-clamp-3 group-hover:text-blue-600 leading-relaxed">
-                        {product.name}
-                      </h3>
-
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {product.description}
-                      </p>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-lg text-red-600">${product.variants[0]?.sellPrice}</span>
+                  <Link href={`/product/${product._id}`} key={product._id}>
+                    <Card
+                      className="group hover:shadow-xl transition-all duration-300 border border-gray-200 bg-white cursor-pointer"
+                    >
+                      <CardContent className="p-4">
+                        <div className="relative mb-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              // Add to wishlist logic here
+                            }}
+                          >
+                            <Heart className="w-4 h-4" />
+                          </Button>
+                          <Image
+                            src={product.variants[0]?.images[0]?.url || "/placeholder.svg"}
+                            alt={product.name}
+                            width={300}
+                            height={300}
+                            className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                          />
                         </div>
-                      </div>
 
-                      <Button 
-                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                        onClick={() => handleAddToCart(product)}
-                      >
-                        Add to Cart
-                      </Button>
-                    </CardContent>
-                  </Card>
+                        <h3 className="font-medium text-sm mb-3 line-clamp-3 group-hover:text-blue-600 leading-relaxed">
+                          {product.name}
+                        </h3>
+
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {product.description}
+                        </p>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-lg text-red-600">${product.variants[0]?.sellPrice}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))
               )}
             </div>
