@@ -6,7 +6,6 @@ import {
   ShoppingCart,
   Bell,
   User,
-  Menu,
   Heart,
   ChevronDown,
   Package,
@@ -24,8 +23,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
+import { api } from "../../../utils/axios"
+import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useCart } from '@/context/CartContext';
+import axios from 'axios'
+
+
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        id: {
+          disableAutoSelect: () => void;
+        };
+      };
+    };
+  }
+}
+
+interface CartItem {
+  _id: string;
+  variantId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
 
 // Sample cart items
 const cartItems = [
@@ -78,8 +103,29 @@ const notifications = [
 ]
 
 function CartDropdown() {
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
+  const [isLoading, setIsLoading] = useState(true);
+  const [cartData, setCartData] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get('/cart/get-cart');
+        console.log(response.data);
+        // Ensure we're setting an array of cart items
+        const cartItems = Array.isArray(response.data) ? response.data : response.data.items || [];
+        setCartData(cartItems);
+      } catch (error) {
+        console.error("Failed to fetch cart data:", error);
+        setCartData([]); // Set empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCartData();
+  }, []);
 
   return (
     <DropdownMenu>
@@ -95,37 +141,72 @@ function CartDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="p-4">
-          <h3 className="font-semibold mb-3">Shopping Cart ({totalItems} items)</h3>
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {cartItems.map((item) => (
-              <div key={item.id} className="flex items-center space-x-3">
-                <img
-                  src={item.image || "/placeholder.svg"}
-                  alt={item.name}
-                  className="w-12 h-12 rounded-md object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    ${item.price} × {item.quantity}
-                  </p>
-                </div>
-                <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+          <h3 className="font-semibold mb-3">Shopping Cart ({cartData.length} items)</h3>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : cartData.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              Your cart is empty
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {cartData.map((item) => (
+                  <div key={`${item._id}-${item.variantId}`} className="flex items-center space-x-3">
+                    <img
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      className="w-12 h-12 rounded-md object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                        >
+                          -
+                        </Button>
+                        <span className="text-sm">{item.quantity}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-red-500"
+                        onClick={() => removeFromCart(item._id)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <Separator className="my-3" />
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-semibold">Total: ${totalPrice.toFixed(2)}</span>
-          </div>
-          <div className="space-y-2">
-            <Button className="w-full" size="sm">
-              View Cart
-            </Button>
-            <Button className="w-full" variant="outline" size="sm">
-              Checkout
-            </Button>
-          </div>
+              <Separator className="my-3" />
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-semibold">Total: ${totalPrice.toFixed(2)}</span>
+              </div>
+              <div className="space-y-2">
+                <Button className="w-full" size="sm" asChild>
+                  <Link href="/cart">View Cart</Link>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -176,15 +257,93 @@ function NotificationDropdown() {
 }
 
 function UserDropdown() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(true) // Toggle this for demo
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState<{ name: string, email: string } | null>(null);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Chỉ lấy token từ sessionStorage
+        const token = sessionStorage.getItem('token');
+
+        if (!token) {
+          setIsLoggedIn(false);
+          setUser(null);
+          return;
+        }
+
+        const axiosInstance = axios.create({
+          baseURL: 'http://localhost:5000',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const response = await axiosInstance.get('/api/auth/myprofile');
+
+        if (response.data.success) {
+          setUser(response.data.user);
+          setIsLoggedIn(true);
+        } else {
+          // Nếu token không hợp lệ, xóa token
+          sessionStorage.removeItem('token');
+          setIsLoggedIn(false);
+          setUser(null);
+        }
+      } catch (error: unknown) {
+        console.error('Error checking auth:', error);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            // Token không hợp lệ hoặc hết hạn
+            sessionStorage.removeItem('token');
+          }
+        }
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      // Xóa token từ sessionStorage
+      sessionStorage.removeItem('token');
+
+      // Xóa thông tin Google Sign-In nếu có
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (error) {
+          console.error('Error disabling Google auto select:', error);
+        }
+      }
+
+      // Cập nhật trạng thái
+      setIsLoggedIn(false);
+      setUser(null);
+
+      // Chuyển hướng về trang chủ
+      router.push('/homepage');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Vẫn chuyển hướng về trang chủ ngay cả khi có lỗi
+      router.push('/homepage');
+    }
+  }
 
   if (!isLoggedIn) {
     return (
       <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="sm" onClick={() => setIsLoggedIn(true)}>
-          Login
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/login">Login</Link>
         </Button>
-        <Button size="sm">Sign Up</Button>
+        <Button size="sm" asChild>
+          <Link href="/signup">Sign Up</Link>
+        </Button>
       </div>
     )
   }
@@ -196,14 +355,14 @@ function UserDropdown() {
           <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
             <User className="h-4 w-4" />
           </div>
-          <span className="hidden md:block">John Doe</span>
+          <span className="hidden md:block">{user?.name}</span>
           <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="p-2">
-          <p className="text-sm font-medium">John Doe</p>
-          <p className="text-xs text-muted-foreground">john@example.com</p>
+          <p className="text-sm font-medium">{user?.name}</p>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -227,7 +386,7 @@ function UserDropdown() {
           Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-red-600" onClick={() => setIsLoggedIn(false)}>
+        <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </DropdownMenuItem>
@@ -236,68 +395,22 @@ function UserDropdown() {
   )
 }
 
-function MobileMenu() {
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="md:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
-          <SheetDescription>Browse our categories</SheetDescription>
-        </SheetHeader>
-        <div className="mt-6 space-y-4">
-          <div className="space-y-2">
-            <h3 className="font-semibold">Categories</h3>
-            <div className="space-y-1">
-              {["Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Toys"].map((category) => (
-                <Button key={category} variant="ghost" className="w-full justify-start">
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <Separator />
-          <div className="space-y-2">
-            <h3 className="font-semibold">Quick Links</h3>
-            <div className="space-y-1">
-              {["Deals", "New Arrivals", "Best Sellers", "Customer Service"].map((link) => (
-                <Button key={link} variant="ghost" className="w-full justify-start">
-                  {link}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
 export default function Header() {
   const [searchQuery, setSearchQuery] = React.useState("")
 
   return (
     <div className="border-b bg-white">
-      {/* Top bar */}
-
-
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo and Mobile Menu */}
-          <div className="flex items-center space-x-4">
-            <MobileMenu />
+          <Link href='/homepage'>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">S</span>
+                <span className="text-primary-foreground font-bold text-lg">P</span>
               </div>
-              <span className="text-xl font-bold">ShopHub</span>
+              <span className="text-xl font-bold">Pet Nest</span>
             </div>
-          </div>
+          </Link>
 
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
@@ -335,21 +448,6 @@ export default function Header() {
 
             {/* User Account */}
             <UserDropdown />
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Categories */}
-      <div className="border-t bg-gray-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center space-x-8 overflow-x-auto">
-            {["All Categories", "Electronics", "Fashion", "Home & Garden", "Sports", "Books", "Toys", "Deals"].map(
-              (category) => (
-                <Button key={category} variant="ghost" size="sm" className="whitespace-nowrap">
-                  {category}
-                </Button>
-              ),
-            )}
           </div>
         </div>
       </div>
