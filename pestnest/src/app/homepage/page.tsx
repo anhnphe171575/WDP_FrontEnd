@@ -348,7 +348,7 @@ export default function HomePage() {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   className="group"
                 >
-                  <Link href={`/categories/${category.slug}`} className="block">
+                  <Link href={`/category/${category._id}`} className="block">
                     <div className="relative aspect-square rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-300">
                       <Image
                         src={category.image}
@@ -476,26 +476,25 @@ export default function HomePage() {
                       transition={{ duration: 0.8, delay: index * 0.1 }}
                       className="w-72 flex-shrink-0 bg-white rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300"
                     >
-                      <div className="relative h-48 w-full">
-                        <span className="absolute top-3 left-3 bg-yellow-500 text-white text-sm font-bold px-3 py-1 rounded-full z-10">Bán chạy</span>
-                        <Image
-                          src={product.images[0]?.url || '/images/placeholder.jpg'}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="p-6">
-                        <h4 className="text-base font-bold text-gray-800 mb-2 line-clamp-2">{product.name}</h4>
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-sm text-gray-600">Đã bán: {product.totalSold}</p>
-                          <p className="text-xl font-bold text-gray-900">{product.minSellPrice.toLocaleString('vi-VN')}đ</p>
+                      <Link href={`/product/${product._id}`} className="block">
+                        <div className="relative h-48 w-full">
+                          <span className="absolute top-3 left-3 bg-yellow-500 text-white text-sm font-bold px-3 py-1 rounded-full z-10">Bán chạy</span>
+                          <Image
+                            src={product.images[0]?.url || '/images/placeholder.jpg'}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                          />
                         </div>
-                        <button className="w-full bg-pink-600 text-white py-2 rounded-lg hover:bg-pink-700 transition-colors">
-                          Thêm vào giỏ
-                        </button>
-                      </div>
+                        <div className="p-6">
+                          <h4 className="text-base font-bold text-gray-800 mb-2 line-clamp-2">{product.name}</h4>
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm text-gray-600">Đã bán: {product.totalSold}</p>
+                            <p className="text-xl font-bold text-gray-900">{product.minSellPrice.toLocaleString('vi-VN')}đ</p>
+                          </div>
+                        </div>
+                      </Link>
                     </motion.div>
                   ))}
                 </div>

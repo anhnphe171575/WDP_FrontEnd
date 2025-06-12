@@ -137,14 +137,14 @@ export default function ProductPage() {
     );
   }
 
-  const variant = product.variants[selectedVariant];
+  const variant = product.variants[selectedVariant] || {};
   const discount = variant?.importBatches && variant.importBatches.length > 0 && variant.importBatches[0]?.costPrice 
     ? Math.round((1 - variant.sellPrice / variant.importBatches[0].costPrice) * 100)
     : 0;
 
   // Lấy tất cả các attribute cha (parentId: null)
   const parentAttributes = product.variants
-    .flatMap(v => v.attributes)
+    .flatMap(v => v.attributes || [])
     .filter(attr => attr.parentId === null)
     .reduce((acc, attr) => {
       acc[attr._id] = attr.value;
@@ -154,7 +154,7 @@ export default function ProductPage() {
   // Nhóm các attribute con theo parentId
   const attributeOptions: Record<string, { value: string, variantIndex: number }[]> = {};
   product.variants.forEach((variant, idx) => {
-    variant.attributes.forEach(attr => {
+    (variant.attributes || []).forEach(attr => {
       if (attr.parentId && parentAttributes[attr.parentId]) {
         if (!attributeOptions[attr.parentId]) attributeOptions[attr.parentId] = [];
         // Tránh trùng lặp value
@@ -184,7 +184,6 @@ export default function ProductPage() {
     try {
       setAddingToCart(true);
       setAddToCartError(null);
-      
       const response = await api.post('/cart/addtocart', {
         productId: product._id,
         productVariantId: product.variants[selectedVariant]._id,
@@ -216,7 +215,7 @@ export default function ProductPage() {
             <div className="aspect-square rounded-xl overflow-hidden bg-muted shadow-lg">
               <Image
                 src={variant?.images?.[0]?.url || "/placeholder.svg"}
-                alt={product.name}
+                alt={product.name || 'Product image'}
                 width={600}
                 height={600}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
@@ -244,7 +243,7 @@ export default function ProductPage() {
           <div className="space-y-8">
             <div>
               <Badge variant="secondary" className="mb-3 text-sm px-3 py-1">
-                {product.category[0]?.name}
+                {product.category?.[0]?.name || 'Uncategorized'}
               </Badge>
               <h1 className="text-4xl font-bold mb-3">{product.name}</h1>
               {Object.entries(attributeOptions).map(([parentId, options]) => (
@@ -398,12 +397,12 @@ export default function ProductPage() {
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={product.reviewUsers[index]?.avatar || "/placeholder.svg"} alt={product.reviewUsers[index]?.name} />
+                          <AvatarImage src={product.reviewUsers?.[index]?.avatar || "/placeholder.svg"} alt={product.reviewUsers?.[index]?.name || 'User'} />
                           <AvatarFallback>
-                            {product.reviewUsers[index]?.name
+                            {product.reviewUsers?.[index]?.name
                               ?.split(" ")
                               .map((n: string) => n[0])
-                              .join("")}
+                              .join("") || 'U'}
                           </AvatarFallback>
                         </Avatar>
 
@@ -411,7 +410,7 @@ export default function ProductPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-lg">{product.reviewUsers[index]?.name}</span>
+                                <span className="font-medium text-lg">{product.reviewUsers?.[index]?.name}</span>
                                 <Badge variant="secondary" className="text-xs">
                                   Verified Purchase
                                 </Badge>
