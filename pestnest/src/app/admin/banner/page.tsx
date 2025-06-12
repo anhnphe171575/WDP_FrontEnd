@@ -2,10 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react";
-import { useApi } from "../../../../utils/axios";
 import { api } from "../../../../utils/axios";
-import { AxiosProgressEvent } from "axios";
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,8 +18,8 @@ interface Banner {
   _id: string;
   title: string;
   description?: string;
-  imageUrl: string;
-  image?: File;
+  imageUrl?: string;  // URL của ảnh sau khi upload
+  image?: File;       // File ảnh khi upload
   status: 'active' | 'inactive';
   startDate: string;
   endDate?: string;
@@ -31,7 +28,7 @@ interface Banner {
 
 interface BannerFormProps {
   banner?: Banner;
-  onSubmit: (data: Omit<Banner, '_id'>) => void;
+  onSubmit: (data: Omit<Banner, '_id'>) => Promise<void>;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -41,7 +38,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
     _id: banner?._id || '',
     title: banner?.title || '',
     description: banner?.description || '',
-    imageUrl: banner?.imageUrl || '',
+    image: banner?.image || '', // Chuyển đổi File sang string tạm thời
     status: banner?.status || 'active',
     startDate: banner?.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     endDate: banner?.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
@@ -51,65 +48,48 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { request } = useApi();
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setImagePreview(URL.createObjectURL(file));
+ const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    setSelectedFile(file); // selectedFile: File | null
+    setImagePreview(URL.createObjectURL(file)); // Nếu bạn muốn preview
+  }
+};
+
+
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsUploading(true);
+
+  try {
+    if (!selectedFile && !banner) {
+      throw new Error('Please select an image');
     }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUploading(true);
-    setUploadProgress(0);
+    const bannerData: Omit<Banner, '_id'> = {
+      title: formData.title,
+      description: formData.description,
+      status: formData.status as 'active' | 'inactive',
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      link: formData.link,
+      image: selectedFile || undefined
+    };
 
-    try {
-      if (!selectedFile && !banner) {
-        throw new Error('Please select an image');
-      }
+    await onSubmit(bannerData);
+    onClose();
+  } catch (error) {
+    console.error('Error saving banner:', error);
+  } finally {
+    setIsUploading(false);
+  }
+};
 
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description || '');
-      formDataToSend.append('status', formData.status);
-      formDataToSend.append('startDate', formData.startDate);
-      if (formData.endDate) formDataToSend.append('endDate', formData.endDate);
-      if (formData.link) formDataToSend.append('link', formData.link);
-      
-      if (selectedFile) {
-        formDataToSend.append('image', selectedFile);
-      }
-
-      const response = await request(() => 
-        api.post('/banners', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-            if (progressEvent.total) {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setUploadProgress(progress);
-            }
-          },
-        })
-      );
-      onSubmit(response);
-      onClose();
-    } catch (error) {
-      console.error('Error saving banner:', error);
-      // You might want to show an error toast here
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="xl:max-w-[1000px] w-full max-h-screen overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{banner ? 'Edit Banner' : 'Add New Banner'}</DialogTitle>
         </DialogHeader>
@@ -283,6 +263,7 @@ function BannerDetail({ banner, isOpen, onClose }: BannerDetailProps) {
   );
 }
 
+
 export default function BannerPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -291,27 +272,31 @@ export default function BannerPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState<Banner | undefined>();
-  const { request } = useApi();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5); // Số item trên mỗi trang
 
   useEffect(() => {
-    const fetchBanners = async () => {
-      try {
-        const data = await request(() => api.get('/banners'));
-        setBanners(data);
-        console.log(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBanners();
   }, []);
-
+  const fetchBanners = async () => {
+    try {
+      const data = await api.get('/banners');
+      setBanners(data.data);
+     console.log(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   const filteredBanners = banners.filter(banner =>
     banner.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     banner.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const paginatedBanners = filteredBanners.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleAddBanner = async (data: Omit<Banner, '_id'>) => {
@@ -323,20 +308,18 @@ export default function BannerPage() {
       formData.append('startDate', data.startDate);
       if (data.endDate) formData.append('endDate', data.endDate);
       if (data.link) formData.append('link', data.link);
-      
       if (data.image) {
         formData.append('image', data.image);
       }
 
-      const response = await request(() => 
-        api.post('/banners', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          }
-        })
-      );
-      
-      setBanners([...banners, response]);
+      const response = await api.post('/banners', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setBanners([...banners]);
+      fetchBanners();
     } catch (err: any) {
       setError(err.message);
     }
@@ -344,9 +327,33 @@ export default function BannerPage() {
 
   const handleEditBanner = async (data: Omit<Banner, '_id'>) => {
     if (!selectedBanner) return;
+    
     try {
-      const response = await request(() => api.put(`/banners/${selectedBanner._id}`, data));
-      setBanners(banners.map(banner => banner._id === selectedBanner._id ? response : banner));
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('description', data.description || '');
+      formData.append('status', data.status);
+      formData.append('startDate', data.startDate);
+      if (data.endDate) formData.append('endDate', data.endDate);
+      if (data.link) formData.append('link', data.link);
+      if (data.image) {
+        formData.append('image', data.image);
+      }
+
+      const response = await api.put(`/banners/${selectedBanner._id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Cập nhật lại danh sách banner
+      setBanners(banners.map(banner => 
+        banner._id === selectedBanner._id ? response.data : banner
+      ));
+      
+      // Đóng form và reset selectedBanner
+      setIsFormOpen(false);
+      setSelectedBanner(undefined);
     } catch (err: any) {
       setError(err.message);
     }
@@ -354,7 +361,7 @@ export default function BannerPage() {
 
   const handleDeleteBanner = async (id: string) => {
     try {
-      await request(() => api.delete(`/banners/${id}`));
+      await api.delete(`/banners/${id}`);
       setBanners(banners.filter(banner => banner._id !== id));
     } catch (err: any) {
       setError(err.message);
@@ -410,9 +417,9 @@ export default function BannerPage() {
                 </TableRow>
               </TableHeader>
               <TableBody className="table-banner">
-                {filteredBanners.map((banner, index) => (
+                {paginatedBanners.map((banner, index) => (
                   <TableRow key={banner._id}>
-                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                     <TableCell>{banner.title}</TableCell>
                     <TableCell>{banner.description}</TableCell>
                     <TableCell>
@@ -466,15 +473,24 @@ export default function BannerPage() {
         </CardContent>
       </Card>
 
-      <BannerForm
-        banner={selectedBanner}
-        onSubmit={selectedBanner ? handleEditBanner : handleAddBanner}
-        isOpen={isFormOpen}
-        onClose={() => {
-          setIsFormOpen(false);
-          setSelectedBanner(undefined);
-        }}
-      />
+      <Dialog open={isFormOpen} onOpenChange={() => setIsFormOpen(false)}>
+        <DialogContent className="xl:max-w-[1000px]">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedBanner ? 'Edit Banner' : 'Add New Banner'}
+            </DialogTitle>
+          </DialogHeader>
+          <BannerForm
+            banner={selectedBanner}
+            isOpen={isFormOpen}
+            onClose={() => {
+              setIsFormOpen(false);
+              setSelectedBanner(undefined);
+            }}
+            onSubmit={selectedBanner ? handleEditBanner : handleAddBanner}
+          />
+        </DialogContent>
+      </Dialog>
 
       {selectedBanner && (
         <BannerDetail
@@ -486,6 +502,61 @@ export default function BannerPage() {
           }}
         />
       )}
+
+      <Pagination 
+        filteredBanners={filteredBanners}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        setItemsPerPage={setItemsPerPage}
+        setCurrentPage={setCurrentPage}
+      />
+    </div>
+  );
+}
+
+interface PaginationProps {
+  filteredBanners: Banner[];
+  itemsPerPage: number;
+  currentPage: number;
+  setItemsPerPage: (value: number) => void;
+  setCurrentPage: (value: number) => void;
+}
+function Pagination({ filteredBanners, itemsPerPage, currentPage, setItemsPerPage, setCurrentPage }: PaginationProps) {
+  const totalPages = Math.ceil(filteredBanners.length / itemsPerPage);
+
+  return (
+    <div className="flex items-center justify-between px-2 py-4">
+      
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        <div className="flex items-center gap-1">
+          {[...Array(totalPages)].map((_, index) => (
+            <Button
+              key={index + 1}
+              variant={currentPage === index + 1 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentPage(index + 1)}
+            >
+              {index + 1}
+            </Button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,36 +1,82 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Header from '@/components/layout/Header';
+import { User, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 
 interface UserProfile {
     name: string;
     email: string;
     phone: string;
     address: string;
-    avatar?: string;
-    title?: string;
     joinDate?: string;
 }
 
-interface InfoFieldProps {
-    icon: string;
-    label: string;
-    value: string;
-    className?: string;
-    isEditing?: boolean;
-    onChange?: (value: string) => void;
+interface ApiResponse {
+    success: boolean;
+    message: string;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+        phone: string;
+        role: number;
+        address?: string;
+        verified: boolean;
+        createdAt: string;
+    }
 }
 
 const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [userData, setUserData] = useState<UserProfile>({
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@example.com',
-        phone: '0123456789',
-        address: '123 Đường ABC, Quận XYZ, TP.HCM',
-        title: 'Người Yêu Động Vật',
-        joinDate: 'Tháng 3, 2022'
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        joinDate: ''
     });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const token = sessionStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Không tìm thấy token');
+                }
+
+                const response = await axios.get<ApiResponse>('http://localhost:5000/api/auth/myprofile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.data.success) {
+                    const profileData = response.data.user;
+                    setUserData({
+                        name: profileData.name,
+                        email: profileData.email,
+                        phone: profileData.phone,
+                        address: profileData.address || 'Chưa cập nhật địa chỉ',
+                        joinDate: new Date(profileData.createdAt).toLocaleDateString('vi-VN', {
+                            month: 'long',
+                            year: 'numeric'
+                        })
+                    });
+                }
+            } catch (err) {
+                setError('Không thể tải thông tin profile. Vui lòng thử lại sau.');
+                console.error('Error fetching profile:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
 
     const handleEdit = () => {
         setIsEditing(!isEditing);
@@ -41,144 +87,168 @@ const UserProfilePage = () => {
         setIsEditing(false);
     };
 
-    const handleChangePassword = () => {
-        // TODO: Thêm logic đổi mật khẩu
-    };
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
-    const InfoField = ({ icon, label, value, className = "", isEditing = false, onChange }: InfoFieldProps) => (
-        <div className={`group p-5 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/30 hover:bg-white/90 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${className}`}>
-            <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <span className="text-lg font-bold">{icon}</span>
-                </div>
-                <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-600 mb-1 uppercase tracking-wide">{label}</p>
-                    {isEditing ? (
-                        <input
-                            type="text"
-                            value={value}
-                            onChange={(e) => onChange?.(e.target.value)}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    ) : (
-                        <p className="text-gray-900 font-medium text-lg">{value}</p>
-                    )}
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="bg-white p-8 rounded-lg shadow-md">
+                    <div className="text-red-500 text-xl font-medium mb-4">⚠️ {error}</div>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                        Thử lại
+                    </button>
                 </div>
             </div>
-        </div>
-    );
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
-            {/* Background Decorations */}
-            <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
-            <div className="absolute top-0 right-0 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse animation-delay-2000"></div>
-            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse animation-delay-4000"></div>
+        <div className="min-h-screen bg-gray-50">
+            <Header />
+            <main className="container mx-auto px-4 py-8">
+                <div className="max-w-3xl mx-auto">
+                    {/* Profile Header */}
+                    <div className="bg-white rounded-t-xl shadow-sm p-6 border-b">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <User className="w-10 h-10 text-blue-500" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-800">{userData.name}</h1>
+                                    <p className="text-gray-500">Thành viên từ {userData.joinDate}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleEdit}
+                                className={`px-4 py-2 rounded-lg transition-colors ${
+                                    isEditing 
+                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                                }`}
+                            >
+                                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+                            </button>
+                        </div>
+                    </div>
 
-            <div className="relative py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto">
-                    {/* Main Profile Card */}
-                    <div className="bg-white/80 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border border-white/30 hover:shadow-3xl transition-all duration-500">
-                        {/* Header with Gradient */}
-                        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-8 py-16 text-white relative overflow-hidden">
-                            <div className="absolute inset-0">
-                                <div className="absolute inset-0 bg-black/10"></div>
-                                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent"></div>
+                    {/* Profile Information */}
+                    <div className="bg-white rounded-b-xl shadow-sm p-6">
+                        <div className="space-y-6">
+                            {/* Name Field */}
+                            <div className="flex items-start space-x-4">
+                                <div className="p-3 bg-blue-50 rounded-lg">
+                                    <User className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={userData.name}
+                                            onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    ) : (
+                                        <p className="text-gray-900 text-lg">{userData.name}</p>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="relative z-10">
-                                <div className="flex flex-col md:flex-row items-center space-y-8 md:space-y-0 md:space-x-8">
-                                    {/* Avatar */}
-                                    <div className="relative group">
-                                        <div className="w-36 h-36 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-6xl font-bold border-4 border-white/40 group-hover:scale-110 transition-all duration-300 shadow-2xl">
-                                            {userData.name.charAt(0)}
-                                        </div>
-                                        <button className="absolute bottom-2 right-2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/40 hover:bg-white/30 hover:scale-110 transition-all duration-300 flex items-center justify-center text-lg">
-                                            📷
-                                        </button>
-                                    </div>
+                            {/* Email Field */}
+                            <div className="flex items-start space-x-4">
+                                <div className="p-3 bg-green-50 rounded-lg">
+                                    <Mail className="w-6 h-6 text-green-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    {isEditing ? (
+                                        <input
+                                            type="email"
+                                            value={userData.email}
+                                            onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                        />
+                                    ) : (
+                                        <p className="text-gray-900 text-lg">{userData.email}</p>
+                                    )}
+                                </div>
+                            </div>
 
-                                    {/* User Details */}
-                                    <div className="text-center md:text-left flex-1">
-                                        <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-white to-white/80 bg-clip-text">{userData.name}</h1>
-                                        <p className="text-2xl text-white/90 mb-6 font-light">{userData.title}</p>
-                                        <div className="flex flex-wrap justify-center md:justify-start gap-3">
-                                            <span className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm border border-white/30 font-medium">
-                                                🗓️ Thành viên từ {userData.joinDate}
-                                            </span>
-                                        </div>
-                                    </div>
+                            {/* Phone Field */}
+                            <div className="flex items-start space-x-4">
+                                <div className="p-3 bg-purple-50 rounded-lg">
+                                    <Phone className="w-6 h-6 text-purple-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                    {isEditing ? (
+                                        <input
+                                            type="tel"
+                                            value={userData.phone}
+                                            onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                        />
+                                    ) : (
+                                        <p className="text-gray-900 text-lg">{userData.phone}</p>
+                                    )}
+                                </div>
+                            </div>
 
-                                    {/* Edit Button */}
-                                    <button
-                                        onClick={handleEdit}
-                                        className="p-4 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/30 hover:bg-white/30 hover:scale-110 transition-all duration-300 text-2xl shadow-lg"
-                                    >
-                                        ✏️
-                                    </button>
+                            {/* Address Field */}
+                            <div className="flex items-start space-x-4">
+                                <div className="p-3 bg-orange-50 rounded-lg">
+                                    <MapPin className="w-6 h-6 text-orange-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={userData.address}
+                                            onChange={(e) => setUserData({ ...userData, address: e.target.value })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                        />
+                                    ) : (
+                                        <p className="text-gray-900 text-lg">{userData.address}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Join Date Field */}
+                            <div className="flex items-start space-x-4">
+                                <div className="p-3 bg-pink-50 rounded-lg">
+                                    <Calendar className="w-6 h-6 text-pink-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tham gia</label>
+                                    <p className="text-gray-900 text-lg">{userData.joinDate}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Information Section */}
-                        <div className="px-8 py-10">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                                👤 Thông tin liên hệ
-                            </h2>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <InfoField
-                                    icon="👤"
-                                    label="Họ và tên"
-                                    value={userData.name}
-                                    isEditing={isEditing}
-                                    onChange={(value) => setUserData({ ...userData, name: value })}
-                                />
-                                <InfoField
-                                    icon="📧"
-                                    label="Email"
-                                    value={userData.email}
-                                    isEditing={isEditing}
-                                    onChange={(value) => setUserData({ ...userData, email: value })}
-                                />
-                                <InfoField
-                                    icon="📱"
-                                    label="Số điện thoại"
-                                    value={userData.phone}
-                                    isEditing={isEditing}
-                                    onChange={(value) => setUserData({ ...userData, phone: value })}
-                                />
-                                <InfoField
-                                    icon="📍"
-                                    label="Địa chỉ"
-                                    value={userData.address}
-                                    className="md:col-span-2"
-                                    isEditing={isEditing}
-                                    onChange={(value) => setUserData({ ...userData, address: value })}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="px-8 pb-10">
-                            <div className="flex flex-col sm:flex-row gap-4">
+                        {isEditing && (
+                            <div className="mt-8">
                                 <button
                                     onClick={handleUpdate}
-                                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-xl hover:shadow-2xl text-lg"
+                                    className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-lg"
                                 >
-                                    🔄 Cập nhật thông tin
-                                </button>
-                                <button
-                                    onClick={handleChangePassword}
-                                    className="flex-1 bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-300 transform hover:scale-105 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl text-lg"
-                                >
-                                    🔐 Đổi mật khẩu
+                                    Lưu thay đổi
                                 </button>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };
