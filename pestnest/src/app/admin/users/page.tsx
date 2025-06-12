@@ -1,5 +1,7 @@
 'use client';
+import { io } from 'socket.io-client';
 
+const socket = io('http://localhost:5000');
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react";
 import { api } from "../../../../utils/axios";
@@ -12,8 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Edit, Eye, Trash2 } from "lucide-react";
 import NextImage from "next/image";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@radix-ui/react-separator";
 
 export interface Address {
   _id?: string; // MongoDB sẽ tự tạo nếu không chỉ định
@@ -71,9 +71,8 @@ const ROLE_LABELS = {
 
 const parseRoles = (bitmask: number) => {
   const activeRoles = [];
-
   for (const [roleName, roleValue] of Object.entries(ROLES)) {
-    if ((bitmask & roleValue) === roleValue) {
+    if ((Math.abs(bitmask) & roleValue) === roleValue) {
       activeRoles.push(roleName);
     }
   }
@@ -83,11 +82,11 @@ const parseRoles = (bitmask: number) => {
 
 const getRoleBadge = (role: number) => {
   const activeRoles = parseRoles(role);
-  
+
   return (
     <div className="flex flex-wrap gap-1">
       {activeRoles.map((roleName) => (
-        <Badge 
+        <Badge
           key={roleName}
           className={ROLE_COLORS[roleName as keyof typeof ROLE_COLORS]}
         >
@@ -138,9 +137,8 @@ function RoleSelector({ value, onChange }: RoleSelectorProps) {
       {Object.entries(ROLES).map(([roleName, roleValue]) => (
         <Badge
           key={roleName}
-          className={`cursor-pointer ${ROLE_COLORS[roleName as keyof typeof ROLE_COLORS]} ${
-            isRoleActive(roleValue) ? 'ring-2 ring-offset-2 ring-primary' : ''
-          }`}
+          className={`cursor-pointer ${ROLE_COLORS[roleName as keyof typeof ROLE_COLORS]} ${isRoleActive(roleValue) ? 'ring-2 ring-offset-2 ring-primary' : ''
+            }`}
           onClick={() => toggleRole(roleValue)}
         >
           {ROLE_LABELS[roleName as keyof typeof ROLE_LABELS]}
@@ -419,6 +417,9 @@ export default function UserPage() {
 
   useEffect(() => {
     fetchUsers();
+    socket.on('notification', (data) => {
+      alert(data.message);
+    });
   }, []);
 
   const fetchUsers = async () => {
@@ -475,12 +476,23 @@ export default function UserPage() {
     setSelectedUser(user);
     setIsDetailOpen(true);
   };
+  const changeActiveStatus = async (user: User) => {
+    try {
+      const updatedUser = { ...user, role: -user.role  }; // Toggle active status
+      const response = await api.put(`/users/${user._id}`, updatedUser);
+      console.log(response.data);
+      setUsers(users.map(u => u._id === user._id ? response.data.data : u));
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message);
+    }
+  };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = selectedRole === "all" || 
+
+    const matchesRole = selectedRole === "all" ||
       parseRoles(user.role).includes(selectedRole);
 
     return matchesSearch && matchesRole;
@@ -541,6 +553,7 @@ export default function UserPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Active</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -552,7 +565,11 @@ export default function UserPage() {
                     <TableCell>{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
-
+                    <TableCell>
+                      <Badge onClick={()=>changeActiveStatus(user)} className={user.role > 0 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
+                        {user.role > 0 ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={user.verified ? 'default' : 'secondary'}>
                         {user.verified ? 'Verified' : 'Unverified'}
@@ -683,7 +700,7 @@ export default function UserPage() {
           )}
         </DialogContent>
       </Dialog>
-      <Pagination 
+      <Pagination
         filteredUsers={filteredUsers}
         itemsPerPage={itemsPerPage}
         currentPage={currentPage}
@@ -705,7 +722,7 @@ function Pagination({ filteredUsers, itemsPerPage, currentPage, setItemsPerPage,
 
   return (
     <div className="flex items-center justify-between px-2 py-4">
-      
+
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
