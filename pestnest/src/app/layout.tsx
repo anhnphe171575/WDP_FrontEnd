@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 // Sử dụng NEXT_PUBLIC_ prefix để có thể truy cập từ client-side
-const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const clientId = process.env.GOOGLE_CLIENT_ID;
 
 export default function RootLayout({
   children,
