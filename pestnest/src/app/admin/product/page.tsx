@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useApi } from "../../../../utils/axios";
 import { api } from "../../../../utils/axios";
 
@@ -72,215 +72,204 @@ interface EditProductModalProps {
 
 function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModalProps) {
   const [level1Categories, setLevel1Categories] = useState<Array<{ _id: string; name: string; description: string }>>([]);
-  const [selectedCategories, setSelectedCategories] = useState<CategorySelection[]>([]);
-  const [categorySets, setCategorySets] = useState<Record<string, CategorySet>>({});
   const [formData, setFormData] = useState({
     name: product.name,
     description: product.description
   });
+  const [selectedParentCategory, setSelectedParentCategory] = useState<string | null>(null);
+  const [selectedChildCategory, setSelectedChildCategory] = useState<string | null>(null);
+  const [selectedGrandChildCategory, setSelectedGrandChildCategory] = useState<string | null>(null);
+  const [categorySets, setCategorySets] = useState<Record<string, CategorySet>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submitRef = useRef(false);
   const { request } = useApi();
 
-  // Fetch level 1 categories when modal opens
+  // Reset states when modal closes
   useEffect(() => {
-    const fetchLevel1Categories = async () => {
+    if (!isOpen) {
+      submitRef.current = false;
+      setError(null);
+    }
+  }, [isOpen]);
+
+  // Fetch level 1 categories and product data when modal opens
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        console.log('Starting to fetch categories...');
+        console.log('Starting to fetch data...');
         
         // Fetch level 1 categories
-        const data = await request(() => api.get('/categories/parent'));
-        console.log('Level 1 categories:', data);
-        setLevel1Categories(data);
+        const categoriesResponse = await request(() => api.get('/categories/parent'));
+        console.log('Level 1 categories response:', categoriesResponse);
         
-        // If product has categories, set them
-        if (product._id) {
-          console.log('Fetching product details for:', product._id);
+        if (categoriesResponse && categoriesResponse.success) {
+          setLevel1Categories(categoriesResponse.data);
+        } else {
+          console.error('Failed to fetch categories:', categoriesResponse?.message || 'Unknown error');
+          return;
+        }
+
+        // Fetch product details
+        const productResponse = await request(() => api.get(`/products/productById/${product._id}`));
+        console.log('Product details:', productResponse);
+
+        if (productResponse.success) {
+          const productData = productResponse.data;
           
-          // Get product details with category hierarchy
-          const productData = await request(() => api.get(`/products/${product._id}`));
-          console.log('Product details with hierarchy:', productData);
+          // Set form data
+          setFormData({
+            name: productData.name,
+            description: productData.description
+          });
 
-          if (productData.categoryHierarchy && productData.categoryHierarchy.length > 0) {
-            // Get the first category hierarchy (since we're showing one set)
-            const hierarchy = productData.categoryHierarchy[0];
-            console.log('Category hierarchy:', hierarchy);
+          // Process categories
+          if (productData.category && productData.category.length > 0) {
+            // Get category IDs in order
+            const categoryIds = productData.category.map((cat: { id?: string; _id: string }) => cat.id || cat._id);
+            console.log('Category IDs:', categoryIds);
 
-            // Create selection based on hierarchy
-            const selection = {
-              level1: '',
-              level2: '',
-              level3: ''
-            };
+            if (categoryIds.length > 0) {
+              // Set parent category
+              setSelectedParentCategory(categoryIds[0]);
+              
+              // Fetch child categories for parent
+              const childResponse = await request(() => api.get(`/categories/child-categories/${categoryIds[0]}`));
+              if (childResponse.success) {
+                setCategorySets({
+                  [categoryIds[0]]: {
+                    level2: childResponse.data || [],
+                    level3: []
+                  }
+                });
 
-            // Set levels based on hierarchy length
-            if (hierarchy.length === 3) {
-              selection.level1 = hierarchy[0]._id;
-              selection.level2 = hierarchy[1]._id;
-              selection.level3 = hierarchy[2]._id;
+                if (categoryIds.length > 1) {
+                  // Set child category
+                  setSelectedChildCategory(categoryIds[1]);
+                  
+                  // Fetch grandchild categories
+                  const grandChildResponse = await request(() => api.get(`/categories/child-categories/${categoryIds[1]}`));
+                  if (grandChildResponse.success) {
+                    setCategorySets(prev => ({
+                      [categoryIds[0]]: {
+                        ...prev[categoryIds[0]],
+                        level3: grandChildResponse.data || []
+                      }
+                    }));
 
-              // Fetch level 2 and 3 categories
-              const [level2Data, level3Data] = await Promise.all([
-                request(() => api.get(`/categories/childCategories/${selection.level1}`)),
-                request(() => api.get(`/categories/childCategories/${selection.level2}`))
-              ]);
-
-              setCategorySets({
-                [selection.level1]: {
-                  level2: level2Data.data,
-                  level3: level3Data.data
+                    if (categoryIds.length > 2) {
+                      // Set grandchild category
+                      setSelectedGrandChildCategory(categoryIds[2]);
+                    }
+                  }
                 }
-              });
-            } else if (hierarchy.length === 2) {
-              selection.level1 = hierarchy[0]._id;
-              selection.level2 = hierarchy[1]._id;
-
-              // Fetch level 2 categories
-              const level2Data = await request(() => api.get(`/categories/childCategories/${selection.level1}`));
-
-              setCategorySets({
-                [selection.level1]: {
-                  level2: level2Data.data,
-                  level3: []
-                }
-              });
-            } else {
-              selection.level1 = hierarchy[0]._id;
+              }
             }
-
-            console.log('Final selection:', selection);
-            setSelectedCategories([selection]);
           }
         }
       } catch (error) {
-        console.error('Error in fetchLevel1Categories:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
     if (isOpen) {
-      fetchLevel1Categories();
+      fetchData();
     }
-  }, [isOpen]);
+  }, [isOpen, product._id]);
 
-  // Add debug log for selectedCategories changes
-  useEffect(() => {
-    console.log('Selected categories updated:', selectedCategories);
-  }, [selectedCategories]);
-
-  // Add debug log for categorySets changes
-  useEffect(() => {
-    console.log('Category sets updated:', categorySets);
-  }, [categorySets]);
-
-  const handleLevel1Change = async (level1Id: string, index: number) => {
+  const handleParentCategoryChange = async (categoryId: string) => {
+    setSelectedParentCategory(categoryId);
+    setSelectedChildCategory(null);
+    setSelectedGrandChildCategory(null);
+    
     try {
-      const newSelections = [...selectedCategories];
-      newSelections[index] = {
-        level1: level1Id,
-        level2: '',
-        level3: ''
-      };
-      setSelectedCategories(newSelections);
-
-      // Fetch level 2 categories
-      const level2Data = await request(() => api.get(`/categories/childCategories/${level1Id}`));
+      // Fetch child categories for the selected parent
+      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
+      console.log('Child categories response:', response);
       
-      setCategorySets(prev => ({
-        ...prev,
-        [level1Id]: {
-          level2: level2Data.data,
-          level3: []
-        }
-      }));
+      if (response && response.success) {
+        setCategorySets({
+          [categoryId]: {
+            level2: response.data || [],
+            level3: []
+          }
+        });
+      }
     } catch (error) {
-      console.error('Error fetching level 2 categories:', error);
+      console.error('Error fetching child categories:', error);
     }
   };
 
-  const handleLevel2Change = async (level2Id: string, index: number) => {
+  const handleChildCategoryChange = async (categoryId: string) => {
+    setSelectedChildCategory(categoryId);
+    setSelectedGrandChildCategory(null);
+    
     try {
-      const newSelections = [...selectedCategories];
-      newSelections[index] = {
-        ...newSelections[index],
-        level2: level2Id,
-        level3: ''
-      };
-      setSelectedCategories(newSelections);
-
-      // Fetch level 3 categories
-      const level3Data = await request(() => api.get(`/categories/childCategories/${level2Id}`));
+      // Fetch grandchild categories
+      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
+      console.log('Grandchild categories response:', response);
       
-      setCategorySets(prev => ({
-        ...prev,
-        [newSelections[index].level1]: {
-          ...prev[newSelections[index].level1],
-          level3: level3Data.data
-        }
-      }));
+      if (response && response.success) {
+        setCategorySets(prev => ({
+          ...prev,
+          [selectedParentCategory!]: {
+            ...prev[selectedParentCategory!],
+            level3: response.data || []
+          }
+        }));
+      }
     } catch (error) {
-      console.error('Error fetching level 3 categories:', error);
+      console.error('Error fetching grandchild categories:', error);
     }
   };
 
-  const handleLevel3Change = (level3Id: string, index: number) => {
-    const newSelections = [...selectedCategories];
-    newSelections[index] = {
-      ...newSelections[index],
-      level3: level3Id
-    };
-    setSelectedCategories(newSelections);
-  };
-
-  const addCategorySelection = () => {
-    setSelectedCategories([...selectedCategories, { level1: '', level2: '', level3: '' }]);
-  };
-
-  const removeCategorySelection = (index: number) => {
-    const newSelections = selectedCategories.filter((_, i) => i !== index);
-    setSelectedCategories(newSelections);
+  const handleGrandChildCategoryChange = (categoryId: string) => {
+    setSelectedGrandChildCategory(categoryId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent multiple submissions
+    if (submitRef.current) {
+      return;
+    }
+    submitRef.current = true;
+    setError(null);
+
     try {
+      setIsSubmitting(true);
+
       // Validate required fields
       if (!formData.name || !formData.description) {
         throw new Error('Name and description are required');
       }
 
-      if (selectedCategories.length === 0) {
-        throw new Error('Please select at least one category');
+      if (!selectedParentCategory) {
+        throw new Error('Please select a parent category');
       }
 
-      // Get all selected category IDs in order (parent to child)
-      const categoryIds = selectedCategories.map(selection => {
-        const ids = [];
-        if (selection.level1) ids.push(selection.level1);
-        if (selection.level2) ids.push(selection.level2);
-        if (selection.level3) ids.push(selection.level3);
-        return ids;
-      }).flat();
-
-      if (categoryIds.length === 0) {
-        throw new Error('Please select at least one category level');
+      // Create array of category IDs
+      const categoryIds = [selectedParentCategory];
+      if (selectedChildCategory) {
+        categoryIds.push(selectedChildCategory);
       }
-
-      // Filter out any empty or invalid category IDs
-      const validCategoryIds = categoryIds.filter(id => id && id.trim() !== '');
-
-      if (validCategoryIds.length === 0) {
-        throw new Error('Please select valid categories');
+      if (selectedGrandChildCategory) {
+        categoryIds.push(selectedGrandChildCategory);
       }
 
       const submitData = {
         name: formData.name,
         description: formData.description,
-        categories: validCategoryIds.map(categoryId => ({
-          categoryId
+        categories: categoryIds.map(categoryId => ({
+          categoryId: categoryId
         }))
       };
 
-      console.log('Sending data to create product:', submitData);
+      console.log('Sending data to update product:', submitData);
       
-      const response = await request(() => api.post('/products', submitData));
+      const response = await request(() => api.put(`/products/${product._id}`, submitData));
 
       console.log('Response from server:', response);
 
@@ -288,21 +277,29 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
         onSave(response.data);
         onClose();
       } else {
-        throw new Error(response.message || 'Failed to create product');
+        throw new Error(response.message || 'Failed to update product');
       }
     } catch (error: any) {
-      console.error('Error creating product:', error);
-      throw error;
+      console.error('Error updating product:', error);
+      setError(error.message || 'Failed to update product');
+    } finally {
+      setIsSubmitting(false);
+      submitRef.current = false;
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -321,90 +318,70 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
             />
           </div>
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div>
               <Label>Categories <span className="text-red-500">*</span></Label>
-              <Button type="button" variant="outline" onClick={addCategorySelection}>
-                Add Category
-              </Button>
-            </div>
-            {selectedCategories.map((selection, index) => (
-              <div key={index} className="space-y-4 p-4 border rounded-lg">
-                <div className="flex justify-between items-center">
-                  <Label>Category Set {index + 1}</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeCategorySelection(index)}
-                  >
-                    Remove
-                  </Button>
+              <div className="grid grid-cols-3 gap-4 mt-2">
+                <div>
+                  <Label>Parent Category</Label>
+                  <div className="space-y-2">
+                    {level1Categories.map((category) => (
+                      <div key={`parent-${category._id}`} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id={`parent-${category._id}`}
+                          name="parentCategory"
+                          checked={selectedParentCategory === category._id}
+                          onChange={() => handleParentCategoryChange(category._id)}
+                          required
+                        />
+                        <Label htmlFor={`parent-${category._id}`}>{category.name}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Level 1</Label>
-                    <Select
-                      value={selection.level1}
-                      onValueChange={(value) => handleLevel1Change(value, index)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level 1" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {level1Categories.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label>Child Category</Label>
+                  <div className="space-y-2">
+                    {selectedParentCategory && categorySets[selectedParentCategory]?.level2.map((category) => (
+                      <div key={`child-${category._id}`} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id={`child-${category._id}`}
+                          name="childCategory"
+                          checked={selectedChildCategory === category._id}
+                          onChange={() => handleChildCategoryChange(category._id)}
+                        />
+                        <Label htmlFor={`child-${category._id}`}>{category.name}</Label>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <Label>Level 2</Label>
-                    <Select
-                      value={selection.level2}
-                      onValueChange={(value) => handleLevel2Change(value, index)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level 2" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categorySets[selection.level1]?.level2.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Level 3</Label>
-                    <Select
-                      value={selection.level3}
-                      onValueChange={(value) => handleLevel3Change(value, index)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level 3" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categorySets[selection.level1]?.level3.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                </div>
+                <div>
+                  <Label>Grandchild Category</Label>
+                  <div className="space-y-2">
+                    {selectedChildCategory && categorySets[selectedParentCategory!]?.level3.map((category) => (
+                      <div key={`grandchild-${category._id}`} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id={`grandchild-${category._id}`}
+                          name="grandchildCategory"
+                          checked={selectedGrandChildCategory === category._id}
+                          onChange={() => handleGrandChildCategoryChange(category._id)}
+                        />
+                        <Label htmlFor={`grandchild-${category._id}`}>{category.name}</Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">
-              Save Changes
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>
@@ -700,21 +677,6 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
     }
   };
 
-  const handleUpdateVariantPrice = async (variantId: string, newPrice: number) => {
-    try {
-      const response = await request(() => 
-        api.put(`/products/variant/${variantId}/price`, { sellPrice: newPrice })
-      );
-      if (response.success) {
-        setVariants(variants.map(v => v._id === variantId ? response.data : v));
-      } else {
-        setError(response.message || 'Failed to update price');
-      }
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
@@ -745,7 +707,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                   <Label>Images <span className="text-red-500">*</span></Label>
                   <div className="space-y-2">
                     {newVariant.images.map((image, index) => (
-                      <div key={index} className="flex gap-2">
+                      <div key={`image-${index}`} className="flex gap-2">
                         <Input
                           type="text"
                           value={image.url}
@@ -782,7 +744,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       <Label>Parent Attributes</Label>
                       <div className="space-y-2">
                         {attributes.parentAttributes.map((attr) => (
-                          <div key={attr._id} className="flex items-center space-x-2">
+                          <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
                             <input
                               type="radio"
                               id={`parent-${attr._id}`}
@@ -800,7 +762,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       <Label>Child Attributes</Label>
                       <div className="space-y-2">
                         {attributes.childAttributes.map((attr) => (
-                          <div key={attr._id} className="flex items-center space-x-2">
+                          <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
                             <input
                               type="radio"
                               id={`child-${attr._id}`}
@@ -859,7 +821,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                   <Label>Images <span className="text-red-500">*</span></Label>
                   <div className="space-y-2">
                     {newVariant.images.map((image, index) => (
-                      <div key={index} className="flex gap-2">
+                      <div key={`edit-image-${index}`} className="flex gap-2">
                         <Input
                           type="text"
                           value={image.url}
@@ -896,16 +858,16 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       <Label>Parent Attributes</Label>
                       <div className="space-y-2">
                         {attributes.parentAttributes.map((attr) => (
-                          <div key={attr._id} className="flex items-center space-x-2">
+                          <div key={`edit-parent-attr-${attr._id}`} className="flex items-center space-x-2">
                             <input
                               type="radio"
-                              id={`parent-${attr._id}`}
+                              id={`edit-parent-${attr._id}`}
                               name="parentAttribute"
                               checked={selectedParentAttribute === attr._id}
                               onChange={() => handleParentAttributeChange(attr._id)}
                               required
                             />
-                            <Label htmlFor={`parent-${attr._id}`}>{attr.value}</Label>
+                            <Label htmlFor={`edit-parent-${attr._id}`}>{attr.value}</Label>
                           </div>
                         ))}
                       </div>
@@ -914,17 +876,17 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       <Label>Child Attributes</Label>
                       <div className="space-y-2">
                         {attributes.childAttributes.map((attr) => (
-                          <div key={attr._id} className="flex items-center space-x-2">
+                          <div key={`edit-child-attr-${attr._id}`} className="flex items-center space-x-2">
                             <input
                               type="radio"
-                              id={`child-${attr._id}`}
+                              id={`edit-child-${attr._id}`}
                               name="childAttribute"
                               checked={selectedChildAttribute === attr._id}
                               onChange={() => handleChildAttributeChange(attr._id)}
                               disabled={!selectedParentAttribute}
                               required
                             />
-                            <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
+                            <Label htmlFor={`edit-child-${attr._id}`}>{attr.value}</Label>
                           </div>
                         ))}
                       </div>
@@ -933,9 +895,9 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                 </div>
 
                 <div>
-                  <Label htmlFor="price">Price <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="edit-price">Price <span className="text-red-500">*</span></Label>
                   <Input
-                    id="price"
+                    id="edit-price"
                     type="number"
                     value={newVariant.sellPrice}
                     onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))}
@@ -987,31 +949,25 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                 </TableHeader>
                 <TableBody>
                   {variants.map((variant, index) => (
-                    <TableRow key={variant._id}>
+                    <TableRow key={`variant-${variant._id}`}>
                       <TableCell className="w-[50px]">{index + 1}</TableCell>
                       <TableCell className="min-w-[200px]">
                         <div className="flex flex-wrap gap-1">
                           {variant.attribute.map((attr, i) => (
-                            <Badge key={i} variant="secondary">
+                            <Badge key={`variant-attr-${attr._id}`} variant="secondary">
                               {attr.parentId ? `${attr.parentId.value}: ` : ''}{attr.value}
                             </Badge>
                           ))}
                         </div>
                       </TableCell>
                       <TableCell className="w-[120px]">
-                        <Input
-                          type="number"
-                          value={variant.sellPrice}
-                          onChange={(e) => handleUpdateVariantPrice(variant._id, Number(e.target.value))}
-                          className="w-24"
-                          min={0}
-                        />
+                        {variant.sellPrice}
                       </TableCell>
                       <TableCell className="min-w-[150px]">
                         <div className="flex gap-2">
                           {variant.images.map((image, i) => (
                             <img
-                              key={i}
+                              key={`variant-image-${i}`}
                               src={image.url}
                               alt={`Variant ${index + 1} image ${i + 1}`}
                               className="w-10 h-10 object-cover rounded"
@@ -1096,23 +1052,43 @@ interface AddProductModalProps {
 
 function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
   const [level1Categories, setLevel1Categories] = useState<Array<{ _id: string; name: string; description: string }>>([]);
-  const [selectedCategories, setSelectedCategories] = useState<CategorySelection[]>([]);
-  const [categorySets, setCategorySets] = useState<Record<string, CategorySet>>({});
   const [formData, setFormData] = useState({
     name: '',
     description: ''
   });
+  const [selectedParentCategory, setSelectedParentCategory] = useState<string | null>(null);
+  const [selectedChildCategory, setSelectedChildCategory] = useState<string | null>(null);
+  const [selectedGrandChildCategory, setSelectedGrandChildCategory] = useState<string | null>(null);
+  const [categorySets, setCategorySets] = useState<Record<string, CategorySet>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submitRef = useRef(false);
   const { request } = useApi();
+
+  // Reset states when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      submitRef.current = false;
+      setError(null);
+      setFormData({ name: '', description: '' });
+      setSelectedParentCategory(null);
+      setSelectedChildCategory(null);
+      setSelectedGrandChildCategory(null);
+      setCategorySets({});
+    }
+  }, [isOpen]);
 
   // Fetch level 1 categories when modal opens
   useEffect(() => {
     const fetchLevel1Categories = async () => {
       try {
-        const data = await request(() => api.get('/categories/parent'));
-        setLevel1Categories(data);
+        const response = await request(() => api.get('/categories/parent'));
+        if (response && response.success) {
+          setLevel1Categories(response.data);
+        }
       } catch (error) {
-        console.error('Error in fetchLevel1Categories:', error);
+        console.error('Error fetching level 1 categories:', error);
+        setError('Failed to fetch categories');
       }
     };
 
@@ -1121,83 +1097,65 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
     }
   }, [isOpen]);
 
-  const handleLevel1Change = async (level1Id: string, index: number) => {
+  const handleParentCategoryChange = async (categoryId: string) => {
+    setSelectedParentCategory(categoryId);
+    setSelectedChildCategory(null);
+    setSelectedGrandChildCategory(null);
+    
     try {
-      const newSelections = [...selectedCategories];
-      newSelections[index] = {
-        level1: level1Id,
-        level2: '',
-        level3: ''
-      };
-      setSelectedCategories(newSelections);
-
-      // Fetch level 2 categories
-      const level2Data = await request(() => api.get(`/categories/childCategories/${level1Id}`));
-      console.log('Level 2 categories:', level2Data);
-      
-      setCategorySets(prev => ({
-        ...prev,
-        [level1Id]: {
-          level2: level2Data.data || [],
-          level3: []
-        }
-      }));
+      // Fetch child categories for the selected parent
+      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
+      if (response && response.success) {
+        setCategorySets({
+          [categoryId]: {
+            level2: response.data || [],
+            level3: []
+          }
+        });
+      }
     } catch (error) {
-      console.error('Error fetching level 2 categories:', error);
+      console.error('Error fetching child categories:', error);
+      setError('Failed to fetch child categories');
     }
   };
 
-  const handleLevel2Change = async (level2Id: string, index: number) => {
+  const handleChildCategoryChange = async (categoryId: string) => {
+    setSelectedChildCategory(categoryId);
+    setSelectedGrandChildCategory(null);
+    
     try {
-      const newSelections = [...selectedCategories];
-      newSelections[index] = {
-        ...newSelections[index],
-        level2: level2Id,
-        level3: ''
-      };
-      setSelectedCategories(newSelections);
-
-      // Fetch level 3 categories
-      const level3Data = await request(() => api.get(`/categories/childCategories/${level2Id}`));
-      console.log('Level 3 categories:', level3Data);
-      
-      setCategorySets(prev => ({
-        ...prev,
-        [newSelections[index].level1]: {
-          ...prev[newSelections[index].level1],
-          level3: level3Data.data || []
-        }
-      }));
+      // Fetch grandchild categories
+      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
+      if (response && response.success) {
+        setCategorySets(prev => ({
+          ...prev,
+          [selectedParentCategory!]: {
+            ...prev[selectedParentCategory!],
+            level3: response.data || []
+          }
+        }));
+      }
     } catch (error) {
-      console.error('Error fetching level 3 categories:', error);
+      console.error('Error fetching grandchild categories:', error);
+      setError('Failed to fetch grandchild categories');
     }
   };
 
-  const handleLevel3Change = (level3Id: string, index: number) => {
-    const newSelections = [...selectedCategories];
-    newSelections[index] = {
-      ...newSelections[index],
-      level3: level3Id
-    };
-    setSelectedCategories(newSelections);
-  };
-
-  const addCategorySelection = () => {
-    setSelectedCategories([...selectedCategories, { level1: '', level2: '', level3: '' }]);
-  };
-
-  const removeCategorySelection = (index: number) => {
-    const newSelections = selectedCategories.filter((_, i) => i !== index);
-    setSelectedCategories(newSelections);
+  const handleGrandChildCategoryChange = (categoryId: string) => {
+    setSelectedGrandChildCategory(categoryId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     
     // Prevent multiple submissions
-    if (isSubmitting) {
+    if (submitRef.current || isSubmitting) {
+      console.log('Preventing duplicate submission');
       return;
     }
+    submitRef.current = true;
+    setError(null);
 
     try {
       setIsSubmitting(true);
@@ -1207,39 +1165,25 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
         throw new Error('Name and description are required');
       }
 
-      if (selectedCategories.length === 0) {
-        throw new Error('Please select at least one category');
+      if (!selectedParentCategory) {
+        throw new Error('Please select a parent category');
       }
 
-      // Get all selected category IDs in order (parent to child)
-      const categoryIds = selectedCategories.map(selection => {
-        const ids = [];
-        if (selection.level1) ids.push(selection.level1);
-        if (selection.level2) ids.push(selection.level2);
-        if (selection.level3) ids.push(selection.level3);
-        return ids;
-      }).flat();
-
-      if (categoryIds.length === 0) {
-        throw new Error('Please select at least one category level');
+      // Create array of category IDs
+      const categoryIds = [selectedParentCategory];
+      if (selectedChildCategory) {
+        categoryIds.push(selectedChildCategory);
       }
-
-      // Filter out any empty or invalid category IDs
-      const validCategoryIds = categoryIds.filter(id => id && id.trim() !== '');
-
-      if (validCategoryIds.length === 0) {
-        throw new Error('Please select valid categories');
+      if (selectedGrandChildCategory) {
+        categoryIds.push(selectedGrandChildCategory);
       }
-
-      // Create array of category objects with categoryId
-      const categories = validCategoryIds.map(categoryId => ({
-        categoryId: categoryId
-      }));
 
       const submitData = {
         name: formData.name,
         description: formData.description,
-        categories: categories
+        categories: categoryIds.map(categoryId => ({
+          categoryId: categoryId
+        }))
       };
 
       console.log('Sending data to create product:', submitData);
@@ -1256,19 +1200,25 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       }
     } catch (error: any) {
       console.error('Error creating product:', error);
-      throw error;
+      setError(error.message || 'Failed to create product');
     } finally {
       setIsSubmitting(false);
+      submitRef.current = false;
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">
+              {error}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
             <Input
@@ -1288,86 +1238,65 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
             />
           </div>
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div>
               <Label>Categories <span className="text-red-500">*</span></Label>
-              <Button type="button" variant="outline" onClick={addCategorySelection}>
-                Add Category
-              </Button>
-            </div>
-            {selectedCategories.map((selection, index) => (
-              <div key={index} className="space-y-4 p-4 border rounded-lg">
-                <div className="flex justify-between items-center">
-                  <Label>Category Set {index + 1}</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeCategorySelection(index)}
-                  >
-                    Remove
-                  </Button>
+              <div className="grid grid-cols-3 gap-4 mt-2">
+                <div>
+                  <Label>Parent Category <span className="text-red-500">*</span></Label>
+                  <div className="space-y-2">
+                    {level1Categories.map((category) => (
+                      <div key={`parent-${category._id}`} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id={`parent-${category._id}`}
+                          name="parentCategory"
+                          checked={selectedParentCategory === category._id}
+                          onChange={() => handleParentCategoryChange(category._id)}
+                          required
+                        />
+                        <Label htmlFor={`parent-${category._id}`}>{category.name}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Level 1 <span className="text-red-500">*</span></Label>
-                    <Select
-                      value={selection.level1}
-                      onValueChange={(value) => handleLevel1Change(value, index)}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level 1" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {level1Categories.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label>Child Category <span className="text-red-500">*</span></Label>
+                  <div className="space-y-2">
+                    {selectedParentCategory && categorySets[selectedParentCategory]?.level2.map((category) => (
+                      <div key={`child-${category._id}`} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id={`child-${category._id}`}
+                          name="childCategory"
+                          checked={selectedChildCategory === category._id}
+                          onChange={() => handleChildCategoryChange(category._id)}
+                          required
+                        />
+                        <Label htmlFor={`child-${category._id}`}>{category.name}</Label>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <Label>Level 2</Label>
-                    <Select
-                      value={selection.level2}
-                      onValueChange={(value) => handleLevel2Change(value, index)}
-                      disabled={!selection.level1}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level 2" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categorySets[selection.level1]?.level2.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Level 3</Label>
-                    <Select
-                      value={selection.level3}
-                      onValueChange={(value) => handleLevel3Change(value, index)}
-                      disabled={!selection.level2}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select level 3" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categorySets[selection.level1]?.level3.map((category) => (
-                          <SelectItem key={category._id} value={category._id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                </div>
+                <div>
+                  <Label>Grandchild Category <span className="text-red-500">*</span></Label>
+                  <div className="space-y-2">
+                    {selectedChildCategory && categorySets[selectedParentCategory!]?.level3.map((category) => (
+                      <div key={`grandchild-${category._id}`} className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id={`grandchild-${category._id}`}
+                          name="grandchildCategory"
+                          checked={selectedGrandChildCategory === category._id}
+                          onChange={() => handleGrandChildCategoryChange(category._id)}
+                          required
+                        />
+                        <Label htmlFor={`grandchild-${category._id}`}>{category.name}</Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -1396,6 +1325,7 @@ export default function ProductPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { request } = useApi();
 
   useEffect(() => {
@@ -1474,31 +1404,11 @@ export default function ProductPage() {
 
   const handleAddProduct = async (newProduct: Product) => {
     try {
-      const requestData = {
-        name: newProduct.name,
-        description: newProduct.description,
-        categories: newProduct.category.map(cat => ({
-          categoryId: cat.categoryId
-        }))
-      };
-      
-      console.log('Sending data to create product:', requestData);
-      
-      const response = await request(() => 
-        api.post('/products', requestData)
-      );
-
-      console.log('Response from server:', response);
-
-      if (response.success) {
-        setProducts([...products, response.data]);
-        setIsAddModalOpen(false);
-        setError(null);
-      } else {
-        console.error('Error creating product:', response.message || 'Failed to create product');
-      }
+      setProducts([...products, newProduct]);
+      setIsAddModalOpen(false);
+      setError(null);
     } catch (err: any) {
-      console.error('Error creating product:', err);
+      console.error('Error adding product:', err);
       setError(err.message);
     }
   };
@@ -1611,7 +1521,10 @@ export default function ProductPage() {
 
       <AddProductModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setError(null);
+        }}
         onSave={handleAddProduct}
       />
 
