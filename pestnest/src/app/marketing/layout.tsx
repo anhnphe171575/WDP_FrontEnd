@@ -2,21 +2,18 @@
 
 import {
   BarChart3,
-  Calendar,
   Home,
-  Inbox,
   Search,
   Settings,
-  Users,
   FileText,
   TrendingUp,
-  DollarSign,
-  Activity,
-  CreditCard,
   LogOut,
   User,
   ChevronUp,
-  Image,
+  Megaphone,
+  Target,
+  Mail,
+  Share2,
 } from "lucide-react"
 
 import {
@@ -47,73 +44,68 @@ import Link from "next/link"
 // Menu items for the sidebar
 const menuItems = [
   {
-    title: "Dashboard",
-    url: "/admin/dashboard",
+    title: "Bảng điều khiển",
+    url: "/marketing/dashboard",
     icon: Home,
   },
   {
-    title: "Analytics",
-    url: "/admin/analytics",
+    title: "Chiến dịch",
+    url: "/marketing/campaigns",
+    icon: Megaphone,
+  },
+  {
+    title: "Phân tích",
+    url: "/marketing/analytics",
     icon: BarChart3,
   },
   {
-    title: "Users",
-    url: "/admin/users",
-    icon: Users,
+    title: "Đối tượng mục tiêu",
+    url: "/marketing/audience",
+    icon: Target,
   },
   {
-    title: "Messages",
-    url: "/admin/messages",
-    icon: Inbox,
+    title: "Email Marketing",
+    url: "/marketing/email",
+    icon: Mail,
   },
   {
-    title: "Calendar",
-    url: "/admin/calendar",
-    icon: Calendar,
+    title: "Mạng xã hội",
+    url: "/marketing/social",
+    icon: Share2,
   },
   {
-    title: "Banner",
-    url: "/admin/banner",
-    icon: Image,
-  },
-  {
-    title: "Manage Blog",
-    url: "/admin/blog",
-    icon: Image,
-  },
-  {
-    title: "Manage Review",
-    url: "/admin/review",
-    icon: Image,
+    title: "Nội dung",
+    url: "/marketing/content",
+    icon: FileText,
   },
 ]
 
 const settingsItems = [
   {
-    title: "Settings",
-    url: "/admin/settings",
+    title: "Cài đặt",
+    url: "/marketing/settings",
     icon: Settings,
   },
   {
-    title: "Search",
-    url: "/admin/search",
+    title: "Tìm kiếm",
+    url: "/marketing/search",
     icon: Search,
   },
 ]
 
-function AppSidebar() {
+function MarketingSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/admin/dashboard">
+              <Link href="/marketing/dashboard">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <TrendingUp className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Dashboard</span>
+                  <span className="font-semibold">Marketing</span>
                   <span className="text-xs">v1.0.0</span>
                 </div>
               </Link>
@@ -123,7 +115,7 @@ function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>Công cụ Marketing</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -140,7 +132,7 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Other</SidebarGroupLabel>
+          <SidebarGroupLabel>Khác</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsItems.map((item) => (
@@ -170,8 +162,8 @@ function AppSidebar() {
                     <User className="size-4" />
                   </div>
                   <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">John Doe</span>
-                    <span className="text-xs text-sidebar-foreground/70">john@example.com</span>
+                    <span className="font-semibold">Người dùng Marketing</span>
+                    <span className="text-xs text-sidebar-foreground/70">marketing@example.com</span>
                   </div>
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
@@ -184,16 +176,16 @@ function AppSidebar() {
               >
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                  <span>Hồ sơ</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>Cài đặt</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>Đăng xuất</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -205,14 +197,14 @@ function AppSidebar() {
   )
 }
 
-export default function AdminLayout({
+export default function MarketingLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <MarketingSidebar />
       <div className="p-2">
           <SidebarTrigger className="ml-2" />
         </div>
@@ -221,4 +213,4 @@ export default function AdminLayout({
       </SidebarInset>
     </SidebarProvider>
   )
-} 
+}
