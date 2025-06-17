@@ -12,6 +12,16 @@ interface OrderItem {
         name: string;
         id: string;
     };
+    variant: {
+        images: Array<{
+            url: string;
+        }>;
+        attributes: Array<{
+            value: string;
+            parentId: string | null;
+        }>;
+        sellPrice: number;
+    };
     quantity: number;
     price: number;
     totalPrice: number;
@@ -212,6 +222,12 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                                                 Sản phẩm
                                             </th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Ảnh
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Loại
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Đơn giá
                                             </th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -228,6 +244,22 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {item.product.name}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {item.variant?.images?.[0]?.url ? (
+                                                        <img 
+                                                            src={item.variant.images[0].url} 
+                                                            alt={item.product.name}
+                                                            className="h-48 w-48 object-cover rounded"
+                                                        />
+                                                    ) : (
+                                                        <div className="h-48 w-48 bg-gray-100 rounded flex items-center justify-center">
+                                                            <span className="text-gray-400 text-sm">Không có ảnh</span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {item.variant?.attributes?.find(attr => attr.parentId === null)?.value || 'Không có'}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {formatCurrency(item.price)}
                                                 </td>
@@ -242,7 +274,7 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colSpan={3} className="px-6 py-4 text-right text-sm font-medium text-gray-900">
+                                            <td colSpan={5} className="px-6 py-4 text-right text-sm font-medium text-gray-900">
                                                 Tổng cộng:
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
