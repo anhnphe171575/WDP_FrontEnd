@@ -1,53 +1,278 @@
-'use client';
+"use client"
+
+import * as React from "react"
+
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
+import {
+  Package,
+  ShoppingCart,
+  TrendingUp,
+} from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { DollarSign, Users, CreditCard, Activity } from "lucide-react"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { api } from "../../../../utils/axios"
 
-// Dashboard stats data
-const stats = [
-  {
-    title: "Total Revenue",
-    value: "$45,231.89",
-    change: "+20.1% from last month",
-    icon: DollarSign,
-  },
-  {
-    title: "Subscriptions",
-    value: "+2350",
-    change: "+180.1% from last month",
-    icon: Users,
-  },
-  {
-    title: "Sales",
-    value: "+12,234",
-    change: "+19% from last month",
-    icon: CreditCard,
-  },
-  {
-    title: "Active Now",
-    value: "+573",
-    change: "+201 since last hour",
-    icon: Activity,
-  },
-]
 
-export default function DashboardPage() {
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const statusColors = {
+  pending: "#f59e0b",
+  processing: "#3b82f6",
+  shipped: "#06b6d4",
+  cancelled: "#ef4444",
+  completed: "#22c55e",
+  returned: "#f97316"
+};
+
+function formatOrderStatusData(data: any, year: number, month: number) {
+  if (!data?.ordersStatusByYearMonth) return [];
+
+  // Find the data for selected year
+  const yearData = data.ordersStatusByYearMonth.find((y: any) => y.year === Number(year));
+  if (!yearData) return [];
+
+  // Find the data for selected month
+  const monthData = yearData.months.find((m: any) => m.month === Number(month));
+  if (!monthData) return [];
+
+  // Map the statuses to the format needed for the pie chart
+  return monthData.statuses.map((s: any) => ({
+    name: s.status.charAt(0).toUpperCase() + s.status.slice(1),
+    value: s.count,
+    color: statusColors[s.status as keyof typeof statusColors]
+  }));
+}
+
+function formatOrdersData(ordersData: any, year: number) {
+  const yearData = ordersData.ordersByYear.find((y: any) => y.year === year);
+  if (!yearData) return MONTHS.map((m) => ({ month: m, orders: 0 }));
+
+  return yearData.months.map((m: any) => ({
+    month: MONTHS[m.month - 1],
+    orders: m.count,
+  }));
+}
+
+
+export default function Component() {
+  const [selectedYear, setSelectedYear] = React.useState<string>("2024")
+  const [selectedMonth, setSelectedMonth] = React.useState<string>(String(new Date().getMonth() + 1)) // Default to this month
+  const [ordersData, setOrdersData] = React.useState<any>(null)
+  const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [year, setYear] = React.useState<number[]>([2024, 2025, 2022])
+
+  React.useEffect(() => {
+    fetchOrders()
+  }, [])
+  // Fetch orders data from API
+  const fetchOrders = async () => {
+    try {
+      const data = await api.get('/orders/dashboard');
+      setOrdersData(data.data);
+      setYear(data.data.ordersByYear.map((y: any) => y.year))
+      console.log(data.data.ordersStatusByYearMonth[0].months[0].statuses);
+
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const filteredOrdersData = React.useMemo(() => {
+    if (!ordersData) return [];
+    return formatOrdersData(ordersData, Number(selectedYear));
+  }, [ordersData, selectedYear]);
+
+
+  const filteredOrderStatusData = React.useMemo(() => {
+    if (!ordersData) return [];
+    return formatOrderStatusData(ordersData, Number(selectedYear), Number(selectedMonth));
+  }, [ordersData, selectedYear, selectedMonth]);
+
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
-          <Card key={index}>
+
+
+    <div className="flex flex-col flex-1">
+
+
+      {/* Dashboard Content */}
+      <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.change}</p>
+              <div className="text-2xl font-bold">{ordersData?.totalOrders || 'null'}</div>
+              <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$45,231</div>
+              <p className="text-xs text-muted-foreground">+8% from last month</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$156</div>
+              <p className="text-xs text-muted-foreground">+3% from last month</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
+          {/* Monthly Orders Chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Monthly Orders</CardTitle>
+                  <CardDescription>Order volume by month</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {year.map((y) => (
+                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  orders: {
+                    label: "Orders",
+                    color: "hsl(var(--chart-1))",
+                  },
+                }}
+                className="h-[300px]"
+              >
+                <BarChart data={filteredOrdersData}>
+                  <XAxis dataKey="month" />
+                  <YAxis allowDecimals={false} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="orders" fill="var(--color-orders)" radius={2} />
+                </BarChart>
+              </ChartContainer>
+              <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Order Status Distribution Chart */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Order Status Distribution</CardTitle>
+                <div className="flex gap-4">
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue placeholder="Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {year.map((y) => (
+                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">January</SelectItem>
+                      <SelectItem value="2">February</SelectItem>
+                      <SelectItem value="3">March</SelectItem>
+                      <SelectItem value="4">April</SelectItem>
+                      <SelectItem value="5">May</SelectItem>
+                      <SelectItem value="6">June</SelectItem>
+                      <SelectItem value="7">July</SelectItem>
+                      <SelectItem value="8">August</SelectItem>
+                      <SelectItem value="9">September</SelectItem>
+                      <SelectItem value="10">October</SelectItem>
+                      <SelectItem value="11">November</SelectItem>
+                      <SelectItem value="12">December</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={filteredOrderStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {filteredOrderStatusData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white p-2 border rounded shadow">
+                              <p>{data.name}: {data.value} orders</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                {filteredOrderStatusData.map((item: any) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {item.name}: {item.value} 
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   )
-} 
+}
