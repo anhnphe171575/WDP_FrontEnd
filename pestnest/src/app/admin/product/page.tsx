@@ -9,29 +9,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Eye, Trash2, Package } from "lucide-react";
+import { Edit, Eye, Trash2, Package, Warehouse } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-interface Category {
-  _id: string;
-  name: string;
-  description?: string;
-  image?: string;
-}
-
-interface CategorySelection {
-  level1: string;
-  level2: string;
-  level3: string;
-}
 
 interface Product {
   _id: string;
   name: string;
   description: string;
+  brand?: string;
   category: Array<{
     categoryId: string;
     name: string;
@@ -39,16 +28,7 @@ interface Product {
   }>;
 }
 
-interface CategoryWithLevel {
-  _id: string;
-  name: string;
-  description: string;
-  level: number;
-  parentChain: Array<{
-    _id: string;
-    name: string;
-  }>;
-}
+
 
 interface CategorySet {
   level2: Array<{
@@ -74,7 +54,8 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
   const [level1Categories, setLevel1Categories] = useState<Array<{ _id: string; name: string; description: string }>>([]);
   const [formData, setFormData] = useState({
     name: product.name,
-    description: product.description
+    description: product.description,
+    brand: product.brand || ''
   });
   const [selectedParentCategory, setSelectedParentCategory] = useState<string | null>(null);
   const [selectedChildCategory, setSelectedChildCategory] = useState<string | null>(null);
@@ -120,7 +101,8 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
           // Set form data
           setFormData({
             name: productData.name,
-            description: productData.description
+            description: productData.description,
+            brand: productData.brand || ''
           });
 
           // Process categories
@@ -262,6 +244,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
       const submitData = {
         name: formData.name,
         description: formData.description,
+        brand: formData.brand,
         categories: categoryIds.map(categoryId => ({
           categoryId: categoryId
         }))
@@ -315,6 +298,14 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="brand">Brand</Label>
+            <Input
+              id="brand"
+              value={formData.brand}
+              onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
             />
           </div>
           <div className="space-y-4">
@@ -404,6 +395,7 @@ interface ProductVariant {
     };
   }>;
   sellPrice: number;
+  totalQuantity?: number;
 }
 
 interface Attribute {
@@ -431,12 +423,15 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [variantToDelete, setVariantToDelete] = useState<string | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedVariantForImport, setSelectedVariantForImport] = useState<ProductVariant | null>(null);
   const [attributes, setAttributes] = useState<{
     parentAttributes: Attribute[];
     childAttributes: Attribute[];
   }>({ parentAttributes: [], childAttributes: [] });
   const [selectedParentAttribute, setSelectedParentAttribute] = useState<string | null>(null);
   const [selectedChildAttribute, setSelectedChildAttribute] = useState<string | null>(null);
+  const [isAddVariantFormOpen, setIsAddVariantFormOpen] = useState(false);
   const [newVariant, setNewVariant] = useState({
     images: [{ url: '' }],
     attributes: [] as string[],
@@ -739,7 +734,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
 
                 <div>
                   <Label>Attributes <span className="text-red-500">*</span></Label>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
                     <div>
                       <Label>Parent Attributes</Label>
                       <div className="space-y-2">
@@ -853,7 +848,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
 
                 <div>
                   <Label>Attributes <span className="text-red-500">*</span></Label>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
                     <div>
                       <Label>Parent Attributes</Label>
                       <div className="space-y-2">
@@ -943,6 +938,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                     <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead className="min-w-[200px]">Attributes</TableHead>
                     <TableHead className="w-[120px]">Price</TableHead>
+                    <TableHead className="w-[120px]">Total Quantity</TableHead>
                     <TableHead className="min-w-[150px]">Images</TableHead>
                     <TableHead className="w-[100px] text-right">Actions</TableHead>
                   </TableRow>
@@ -963,6 +959,9 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       <TableCell className="w-[120px]">
                         {variant.sellPrice}
                       </TableCell>
+                      <TableCell className="w-[120px]">
+                        {variant.totalQuantity || 0}
+                      </TableCell>
                       <TableCell className="min-w-[150px]">
                         <div className="flex gap-2">
                           {variant.images.map((image, i) => (
@@ -977,6 +976,18 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       </TableCell>
                       <TableCell className="w-[100px] text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Manage Import"
+                            onClick={() => {
+                              setSelectedVariantForImport(variant);
+                              setIsImportModalOpen(true);
+                            }}
+                          >
+                            <Warehouse className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1010,6 +1021,18 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
           </div>
         </div>
       </DialogContent>
+
+      {selectedVariantForImport && (
+        <ImportManagementModal
+          variant={selectedVariantForImport}
+          product={product}
+          isOpen={isImportModalOpen}
+          onClose={() => {
+            setIsImportModalOpen(false);
+            setSelectedVariantForImport(null);
+          }}
+        />
+      )}
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -1054,7 +1077,8 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
   const [level1Categories, setLevel1Categories] = useState<Array<{ _id: string; name: string; description: string }>>([]);
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    brand: ''
   });
   const [selectedParentCategory, setSelectedParentCategory] = useState<string | null>(null);
   const [selectedChildCategory, setSelectedChildCategory] = useState<string | null>(null);
@@ -1064,17 +1088,41 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
   const [error, setError] = useState<string | null>(null);
   const submitRef = useRef(false);
   const { request } = useApi();
+  const [variants, setVariants] = useState<Array<{
+    images: Array<{ url: string }>;
+    attributes: string[];
+    sellPrice: number;
+  }>>([]);
+  const [attributes, setAttributes] = useState<{ parentAttributes: Attribute[]; childAttributes: Attribute[] }>({ parentAttributes: [], childAttributes: [] });
+  const [selectedParentAttribute, setSelectedParentAttribute] = useState<string | null>(null);
+  const [selectedChildAttribute, setSelectedChildAttribute] = useState<string | null>(null);
+  const [isAddVariantFormOpen, setIsAddVariantFormOpen] = useState(false);
+  const [newVariant, setNewVariant] = useState({
+    images: [{ url: '' }],
+    attributes: [] as string[],
+    sellPrice: 0
+  });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Reset states when modal closes
   useEffect(() => {
     if (!isOpen) {
       submitRef.current = false;
       setError(null);
-      setFormData({ name: '', description: '' });
+      setFormData({ name: '', description: '', brand: '' });
       setSelectedParentCategory(null);
       setSelectedChildCategory(null);
       setSelectedGrandChildCategory(null);
       setCategorySets({});
+      setVariants([]);
+      setAttributes({ parentAttributes: [], childAttributes: [] });
+      setSelectedParentAttribute(null);
+      setSelectedChildAttribute(null);
+      setIsAddVariantFormOpen(false);
+      setNewVariant({ images: [{ url: '' }], attributes: [], sellPrice: 0 });
+      setSelectedFile(null);
+      setImagePreview(null);
     }
   }, [isOpen]);
 
@@ -1096,6 +1144,55 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       fetchLevel1Categories();
     }
   }, [isOpen]);
+
+  // Sửa useEffect fetch attribute:
+  useEffect(() => {
+    const fetchAttributes = async () => {
+      if (selectedParentCategory) {
+        try {
+          const responseRaw = await request(() => api.get(`/categories/attributes/${selectedParentCategory}`));
+          const attributesData = responseRaw?.attributes;
+          if (responseRaw.success && attributesData) {
+            const parentAttributes = attributesData.map((attr: any) => ({
+              _id: attr._id,
+              value: attr.value,
+              description: attr.description
+            }));
+            const childAttributes: any[] = [];
+            attributesData.forEach((attr: any) => {
+              if (attr.children && attr.children.length > 0) {
+                attr.children.forEach((child: any) => {
+                  childAttributes.push({
+                    _id: child._id,
+                    value: child.value,
+                    description: child.description,
+                    parentId: { _id: attr._id, value: attr.value }
+                  });
+                });
+              }
+            });
+            setAttributes({ parentAttributes, childAttributes });
+          } else {
+            setAttributes({ parentAttributes: [], childAttributes: [] });
+          }
+        } catch (err: any) {
+          setAttributes({ parentAttributes: [], childAttributes: [] });
+        }
+      } else {
+        setAttributes({ parentAttributes: [], childAttributes: [] });
+      }
+    };
+    fetchAttributes();
+  }, [selectedParentCategory]);
+
+  // Khi chọn parent attribute, fetch child attribute động (nếu cần)
+  useEffect(() => {
+    if (!selectedParentAttribute) {
+      setSelectedChildAttribute(null);
+      return;
+    }
+    // Không cần fetch lại vì đã lấy hết child attribute ở trên
+  }, [selectedParentAttribute]);
 
   const handleParentCategoryChange = async (categoryId: string) => {
     setSelectedParentCategory(categoryId);
@@ -1148,7 +1245,6 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
     // Prevent multiple submissions
     if (submitRef.current || isSubmitting) {
       console.log('Preventing duplicate submission');
@@ -1181,19 +1277,30 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       const submitData = {
         name: formData.name,
         description: formData.description,
+        brand: formData.brand,
         categories: categoryIds.map(categoryId => ({
           categoryId: categoryId
         }))
       };
 
       console.log('Sending data to create product:', submitData);
-      
       const response = await request(() => api.post('/products', submitData));
-
       console.log('Response from server:', response);
 
       if (response.success) {
-        onSave(response.data);
+        const createdProduct = response.data;
+        // Tạo các variant nếu có
+        if (variants.length > 0) {
+          for (const variant of variants) {
+            try {
+              await request(() => api.post(`/products/${createdProduct._id}/variant`, variant));
+            } catch (err) {
+              // Có thể log lỗi từng variant nếu muốn
+              console.error('Error creating variant:', err);
+            }
+          }
+        }
+        onSave(createdProduct);
         onClose();
       } else {
         throw new Error(response.message || 'Failed to create product');
@@ -1207,9 +1314,70 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
     }
   };
 
+  const handleAddVariant = () => {
+    if (newVariant.images.length === 0 || newVariant.images.some(img => !img.url.trim())) {
+      setError('Please add at least one image');
+      return;
+    }
+    if (!selectedParentAttribute) {
+      setError('Please select a parent attribute');
+      return;
+    }
+    if (!selectedChildAttribute) {
+      setError('Please select a child attribute');
+      return;
+    }
+    if (newVariant.sellPrice <= 0) {
+      setError('Please enter a valid price');
+      return;
+    }
+    setVariants([...variants, { ...newVariant }]);
+    setIsAddVariantFormOpen(false);
+    setNewVariant({ images: [{ url: '' }], attributes: [], sellPrice: 0 });
+    setSelectedParentAttribute(null);
+    setSelectedChildAttribute(null);
+    setError(null);
+  };
+
+  const handleRemoveVariant = (index: number) => {
+    setVariants(variants.filter((_, i) => i !== index));
+  };
+
+  const handleAddImage = () => {
+    setNewVariant(prev => ({ ...prev, images: [...prev.images, { url: '' }] }));
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setNewVariant(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+  };
+
+  const handleImageChange = (index: number, url: string) => {
+    setNewVariant(prev => ({ ...prev, images: prev.images.map((img, i) => i === index ? { url } : img) }));
+  };
+
+  const handleParentAttributeChange = (attributeId: string) => {
+    setSelectedParentAttribute(attributeId);
+    setSelectedChildAttribute(null);
+    setNewVariant(prev => ({ ...prev, attributes: [attributeId] }));
+  };
+
+  const handleChildAttributeChange = (attributeId: string) => {
+    setSelectedChildAttribute(attributeId);
+    setNewVariant(prev => ({ ...prev, attributes: selectedParentAttribute ? [selectedParentAttribute, attributeId] : [attributeId] }));
+  };
+
+  const handleVariantImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setNewVariant(prev => ({ ...prev, images: [{ url: '' }] })); // reset url, sẽ upload file
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
         </DialogHeader>
@@ -1235,6 +1403,14 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="brand">Brand</Label>
+            <Input
+              id="brand"
+              value={formData.brand}
+              onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
             />
           </div>
           <div className="space-y-4">
@@ -1298,6 +1474,86 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
               </div>
             </div>
           </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-sm text-gray-700">Product Variants</h3>
+              <Button type="button" onClick={() => setIsAddVariantFormOpen(true)} disabled={!selectedGrandChildCategory}>Add Variant</Button>
+            </div>
+            {variants.length > 0 && (
+              <div className="space-y-2 mb-4">
+                <h4 className="text-sm font-medium">Added Variants ({variants.length})</h4>
+                {variants.map((variant, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                    <div className="flex items-center space-x-4">
+                      <div className="text-sm"><span className="font-medium">Price:</span> ${variant.sellPrice}</div>
+                      <div className="text-sm"><span className="font-medium">Images:</span> {variant.images.length}</div>
+                      <div className="text-sm"><span className="font-medium">Attributes:</span> {variant.attributes.length}</div>
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveVariant(index)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {isAddVariantFormOpen && (
+              <div className="border rounded-lg p-4 bg-white">
+                <div className="space-y-4">
+                  <div>
+                    <Label>Images <span className="text-red-500">*</span></Label>
+                    <div className="space-y-2">
+                      {newVariant.images.map((image, index) => (
+                        <div key={`image-${index}`} className="flex gap-2">
+                          <Input type="text" value={image.url} onChange={(e) => handleImageChange(index, e.target.value)} placeholder="Image URL" required />
+                          <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveImage(index)} disabled={newVariant.images.length === 1}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" onClick={handleAddImage}>Add Image</Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Attributes <span className="text-red-500">*</span></Label>
+                    <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
+                      <div>
+                        <Label>Parent Attributes</Label>
+                        <div className="space-y-2">
+                          {attributes.parentAttributes.map((attr) => (
+                            <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
+                              <input type="radio" id={`parent-${attr._id}`} name="parentAttribute" checked={selectedParentAttribute === attr._id} onChange={() => handleParentAttributeChange(attr._id)} required />
+                              <Label htmlFor={`parent-${attr._id}`}>{attr.value}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Child Attributes</Label>
+                        <div className="space-y-2">
+                          {attributes.childAttributes.map((attr) => (
+                            <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
+                              <input type="radio" id={`child-${attr._id}`} name="childAttribute" checked={selectedChildAttribute === attr._id} onChange={() => handleChildAttributeChange(attr._id)} disabled={!selectedParentAttribute} required />
+                              <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="price">Price <span className="text-red-500">*</span></Label>
+                    <Input id="price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => {
+                      setIsAddVariantFormOpen(false);
+                      setNewVariant({ images: [{ url: '' }], attributes: [], sellPrice: 0 });
+                      setSelectedParentAttribute(null);
+                      setSelectedChildAttribute(null);
+                      setError(null);
+                    }}>Cancel</Button>
+                    <Button type="button" onClick={handleAddVariant}>Add Variant</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
@@ -1310,6 +1566,475 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       </DialogContent>
     </Dialog>
   );
+}
+
+interface ImportBatch {
+  _id: string;
+  variantId: string;
+  importDate: string;
+  quantity: number;
+  costPrice: number;
+}
+
+interface ImportManagementModalProps {
+  variant: ProductVariant;
+  product: Product;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function ImportManagementModal({ variant, product, isOpen, onClose }: ImportManagementModalProps) {
+  const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<ImportBatch | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [batchToDelete, setBatchToDelete] = useState<string | null>(null);
+  const [newBatch, setNewBatch] = useState({
+    importDate: new Date().toISOString().split('T')[0],
+    quantity: 0,
+    costPrice: 0
+  });
+  const { request } = useApi();
+
+  useEffect(() => {
+    const fetchImportBatches = async () => {
+      try {
+        const response = await request(() => api.get(`/products/import-batches/${variant._id}`));
+        if (response.success) {
+          setImportBatches(response.data);
+        } else {
+          setError(response.message || 'Failed to fetch import batches');
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchImportBatches();
+    }
+  }, [isOpen, variant._id]);
+
+  const handleAddBatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (newBatch.quantity <= 0) {
+      setError('Quantity must be greater than 0');
+      return;
+    }
+
+    if (newBatch.costPrice <= 0) {
+      setError('Cost price must be greater than 0');
+      return;
+    }
+
+    try {
+      const response = await request(() => 
+        api.post(`/products/import-batches/${variant._id}`, newBatch)
+      );
+      if (response.success) {
+        setImportBatches([...importBatches, response.data]);
+        setIsAddFormOpen(false);
+        setNewBatch({
+          importDate: new Date().toISOString().split('T')[0],
+          quantity: 0,
+          costPrice: 0
+        });
+        setError(null);
+      } else {
+        setError(response.message || 'Failed to add import batch');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleEditBatch = (batch: ImportBatch) => {
+    setSelectedBatch(batch);
+    setNewBatch({
+      importDate: batch.importDate.split('T')[0],
+      quantity: batch.quantity,
+      costPrice: batch.costPrice
+    });
+    setIsEditFormOpen(true);
+  };
+
+  const handleUpdateBatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBatch) return;
+
+    // Validate required fields
+    if (newBatch.quantity <= 0) {
+      setError('Quantity must be greater than 0');
+      return;
+    }
+
+    if (newBatch.costPrice <= 0) {
+      setError('Cost price must be greater than 0');
+      return;
+    }
+
+    try {
+      const response = await request(() => 
+        api.put(`/products/import-batches/${selectedBatch._id}`, newBatch)
+      );
+      if (response.success) {
+        setImportBatches(importBatches.map(batch => 
+          batch._id === selectedBatch._id ? response.data : batch
+        ));
+        setIsEditFormOpen(false);
+        setSelectedBatch(null);
+        setNewBatch({
+          importDate: new Date().toISOString().split('T')[0],
+          quantity: 0,
+          costPrice: 0
+        });
+        setError(null);
+      } else {
+        setError(response.message || 'Failed to update import batch');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteBatch = async (batchId: string) => {
+    setBatchToDelete(batchId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteBatch = async () => {
+    if (!batchToDelete) return;
+    
+    try {
+      await request(() => api.delete(`/products/import-batches/${batchToDelete}`));
+      setImportBatches(importBatches.filter(batch => batch._id !== batchToDelete));
+      setIsDeleteDialogOpen(false);
+      setBatchToDelete(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const totalQuantity = importBatches.reduce((sum, batch) => sum + batch.quantity, 0);
+  const averageCostPrice = importBatches.length > 0 
+    ? importBatches.reduce((sum, batch) => sum + batch.costPrice, 0) / importBatches.length 
+    : 0;
+  const totalInventoryValue = importBatches.reduce((sum, batch) => sum + (batch.quantity * batch.costPrice), 0);
+
+  // Format variant attributes for display
+  const variantAttributes = variant.attribute.map(attr => 
+    attr.parentId ? `${attr.parentId.value}: ${attr.value}` : attr.value
+  ).join(', ');
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>
+            Manage Import Batches - {product.name} ({variantAttributes})
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+          {/* Variant Info */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-sm text-gray-700 mb-2">Variant Information</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Product:</span> {product.name}
+              </div>
+              <div>
+                <span className="font-medium">Brand:</span> {product.brand || 'N/A'}
+              </div>
+              <div>
+                <span className="font-medium">Attributes:</span> {variantAttributes}
+              </div>
+              <div>
+                <span className="font-medium">Categories:</span> {product.category.map(cat => cat.name).join(', ')}
+              </div>
+              <div>
+                <span className="font-medium">Sell Price:</span> ${variant.sellPrice}
+              </div>
+              <div>
+                <span className="font-medium">Images:</span> {variant.images.length}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <Button 
+              type="button" 
+              onClick={() => setIsAddFormOpen(true)}
+              className="mb-4"
+            >
+              Add New Import Batch
+            </Button>
+          </div>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-4 gap-4 mb-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm font-medium text-gray-500">Total Quantity</div>
+                <div className="text-2xl font-bold">{totalQuantity}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm font-medium text-gray-500">Average Cost Price</div>
+                <div className="text-2xl font-bold">${averageCostPrice.toFixed(2)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm font-medium text-gray-500">Total Inventory Value</div>
+                <div className="text-2xl font-bold text-blue-600">${totalInventoryValue.toFixed(2)}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-sm font-medium text-gray-500">Profit Margin</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {averageCostPrice > 0 ? `${((variant.sellPrice - averageCostPrice) / variant.sellPrice * 100).toFixed(1)}%` : '-'}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">
+              {error}
+            </div>
+          )}
+
+          {isAddFormOpen && (
+            <div className="border rounded-lg p-4 mb-4">
+              <form onSubmit={handleAddBatch} className="space-y-4">
+                <div>
+                  <Label htmlFor="importDate">Import Date <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="importDate"
+                    type="date"
+                    value={newBatch.importDate}
+                    onChange={(e) => setNewBatch(prev => ({ ...prev, importDate: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="quantity">Quantity <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={newBatch.quantity}
+                    onChange={(e) => setNewBatch(prev => ({ ...prev, quantity: Number(e.target.value) }))}
+                    min={1}
+                    placeholder="Enter quantity"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="costPrice">Cost Price <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="costPrice"
+                    type="number"
+                    value={newBatch.costPrice}
+                    onChange={(e) => setNewBatch(prev => ({ ...prev, costPrice: Number(e.target.value) }))}
+                    min={0.01}
+                    step={0.01}
+                    placeholder="Enter cost price"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsAddFormOpen(false);
+                    setNewBatch({
+                      importDate: new Date().toISOString().split('T')[0],
+                      quantity: 0,
+                      costPrice: 0
+                    });
+                    setError(null);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Add Batch
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {isEditFormOpen && selectedBatch && (
+            <div className="border rounded-lg p-4 mb-4">
+              <form onSubmit={handleUpdateBatch} className="space-y-4">
+                <div>
+                  <Label htmlFor="editImportDate">Import Date <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="editImportDate"
+                    type="date"
+                    value={newBatch.importDate}
+                    onChange={(e) => setNewBatch(prev => ({ ...prev, importDate: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editQuantity">Quantity <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="editQuantity"
+                    type="number"
+                    value={newBatch.quantity}
+                    onChange={(e) => setNewBatch(prev => ({ ...prev, quantity: Number(e.target.value) }))}
+                    min={1}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editCostPrice">Cost Price <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="editCostPrice"
+                    type="number"
+                    value={newBatch.costPrice}
+                    onChange={(e) => setNewBatch(prev => ({ ...prev, costPrice: Number(e.target.value) }))}
+                    min={0.01}
+                    step={0.01}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsEditFormOpen(false);
+                    setSelectedBatch(null);
+                    setNewBatch({
+                      importDate: new Date().toISOString().split('T')[0],
+                      quantity: 0,
+                      costPrice: 0
+                    });
+                    setError(null);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    Update Batch
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {loading ? (
+            <div>Loading import batches...</div>
+          ) : error ? (
+            <div className="text-red-500">Error: {error}</div>
+          ) : importBatches.length === 0 ? (
+            <div className="text-center py-4">No import batches found for this variant</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">No.</TableHead>
+                    <TableHead className="w-[120px]">Import Date</TableHead>
+                    <TableHead className="w-[100px]">Quantity</TableHead>
+                    <TableHead className="w-[120px]">Cost Price</TableHead>
+                    <TableHead className="w-[120px]">Total Value</TableHead>
+                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {importBatches.map((batch, index) => (
+                    <TableRow key={`batch-${batch._id}`}>
+                      <TableCell className="w-[50px]">{index + 1}</TableCell>
+                      <TableCell className="w-[120px]">
+                        {new Date(batch.importDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="w-[100px] font-medium">{batch.quantity}</TableCell>
+                      <TableCell className="w-[120px]">${batch.costPrice.toFixed(2)}</TableCell>
+                      <TableCell className="w-[120px] font-semibold text-green-600">
+                        ${(batch.quantity * batch.costPrice).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="w-[100px] text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Edit Batch"
+                            onClick={() => handleEditBatch(batch)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete Batch"
+                            onClick={() => handleDeleteBatch(batch._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 sticky bottom-0 bg-white pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Import Batch</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete this import batch? This action cannot be undone.</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setBatchToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDeleteBatch}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Dialog>
+  );
+}
+
+// Đặt interface PaginationProps ở ngoài function ProductPage
+interface PaginationProps {
+  filteredProducts: Product[];
+  itemsPerPage: number;
+  currentPage: number;
+  setItemsPerPage: (value: number) => void;
+  setCurrentPage: (value: number) => void;
 }
 
 export default function ProductPage() {
@@ -1327,6 +2052,8 @@ export default function ProductPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { request } = useApi();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -1345,7 +2072,13 @@ export default function ProductPage() {
 
   const filteredProducts = products.filter(product =>
     product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleEditProduct = async (updatedProduct: Product) => {
@@ -1413,6 +2146,44 @@ export default function ProductPage() {
     }
   };
 
+  function Pagination({ filteredProducts, itemsPerPage, currentPage, setItemsPerPage, setCurrentPage }: PaginationProps) {
+    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+    return (
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {[...Array(totalPages)].map((_, index) => (
+              <Button
+                key={index + 1}
+                variant={currentPage === index + 1 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
       <Card>
@@ -1442,16 +2213,18 @@ export default function ProductPage() {
                 <TableRow>
                   <TableHead>No.</TableHead>
                   <TableHead>Name</TableHead>
+                  <TableHead>Brand</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Categories</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product, index) => (
+                {paginatedProducts.map((product, index) => (
                   <TableRow key={product._id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{product.name}</TableCell>
+                    <TableCell>{product.brand || '-'}</TableCell>
                     <TableCell>{product.description}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -1576,6 +2349,14 @@ export default function ProductPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Pagination
+        filteredProducts={filteredProducts}
+        itemsPerPage={itemsPerPage}
+        currentPage={currentPage}
+        setItemsPerPage={setItemsPerPage}
+        setCurrentPage={setCurrentPage}
+      />
     </div>
   );
 }
