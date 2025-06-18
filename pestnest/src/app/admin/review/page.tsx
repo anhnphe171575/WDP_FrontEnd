@@ -98,6 +98,7 @@ export default function ReviewManagement() {
   const [selectedProductName, setSelectedProductName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState<string>("all");
+  const [commentRatingFilter, setCommentRatingFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -153,10 +154,18 @@ export default function ReviewManagement() {
       const response = await api.get(`/reviews/product/${productId}`);
       setSelectedProductComments(response.data.data.filter((review: any) => review.comment));
       setSelectedProductName(productName);
+      setCommentRatingFilter("all"); // Reset comment rating filter when opening new product
     } catch (error) {
       console.error("Error fetching comments:", error);
     }
   };
+
+  // Filter comments based on rating
+  const filteredComments = selectedProductComments.filter(comment => {
+    if (commentRatingFilter === "all") return true;
+    const rating = parseInt(commentRatingFilter);
+    return comment.rating === rating;
+  });
 
   const renderStars = (rating: string) => {
     const numericRating = parseFloat(rating);
@@ -281,9 +290,27 @@ export default function ReviewManagement() {
                             <DialogHeader>
                               <DialogTitle>Comments for {selectedProductName}</DialogTitle>
                             </DialogHeader>
+                            <div className="mb-4">
+                              <Select
+                                value={commentRatingFilter}
+                                onValueChange={setCommentRatingFilter}
+                              >
+                                <SelectTrigger className="w-[120px]">
+                                  <SelectValue placeholder="Filter by rating" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All Ratings</SelectItem>
+                                  <SelectItem value="5">5 Stars</SelectItem>
+                                  <SelectItem value="4">4 Stars</SelectItem>
+                                  <SelectItem value="3">3 Stars</SelectItem>
+                                  <SelectItem value="2">2 Stars</SelectItem>
+                                  <SelectItem value="1">1 Star</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <div className="max-h-[400px] overflow-y-auto pr-4">
                               <div className="space-y-4">
-                                {selectedProductComments.map((comment) => (
+                                {filteredComments.map((comment) => (
                                   <div key={comment._id} className="border rounded-lg p-4">
                                     <div className="flex justify-between items-start mb-2">
                                       <div>
