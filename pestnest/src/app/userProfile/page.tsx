@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Header from '@/components/layout/Header';
-import { User, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
 
 interface UserProfile {
     name: string;
@@ -29,6 +30,7 @@ interface ApiResponse {
 }
 
 const UserProfilePage = () => {
+    const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -87,6 +89,10 @@ const UserProfilePage = () => {
         setIsEditing(false);
     };
 
+    const handleChangePassword = () => {
+        router.push('/changepass');
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -128,16 +134,25 @@ const UserProfilePage = () => {
                                     <p className="text-gray-500">Thành viên từ {userData.joinDate}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={handleEdit}
-                                className={`px-4 py-2 rounded-lg transition-colors ${
-                                    isEditing 
-                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                                }`}
-                            >
-                                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
-                            </button>
+                            <div className="flex items-center space-x-3">
+                                <button
+                                    onClick={handleChangePassword}
+                                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2"
+                                >
+                                    <Lock className="w-4 h-4" />
+                                    <span>Thay đổi mật khẩu</span>
+                                </button>
+                                <button
+                                    onClick={handleEdit}
+                                    className={`px-4 py-2 rounded-lg transition-colors ${
+                                        isEditing 
+                                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                                    }`}
+                                >
+                                    {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
