@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '../../../utils/axios';
 import './blog.css';
+import Header from '@/components/layout/Header';
 
 interface BlogImage {
   url: string;
@@ -39,7 +40,7 @@ export default function BlogPage() {
         setPosts(response.data.blogs);
       } catch (err: unknown) {
         const error = err as { response?: { data?: { message?: string } } };
-        setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải bài viết');
+        setError(error.response?.data?.message || 'Error loading posts');
       } finally {
         setLoading(false);
       }
@@ -69,13 +70,24 @@ export default function BlogPage() {
 
   return (
     <div className="blog-container">
+      <Header></Header>
       <div className="blog-content">
+        {/* Back Button */}
+        <div className="blog-back-button">
+          <Link href="/homepage" className="back-link">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Home
+          </Link>
+        </div>
+
         {/* Search Bar */}
         <div className="blog-search">
           <div className="blog-search-container">
             <input
               type="text"
-              placeholder="Tìm kiếm bài viết..."
+              placeholder="Search posts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="blog-search-input"
@@ -90,7 +102,7 @@ export default function BlogPage() {
               onClick={() => setSelectedTag('')}
               className={`blog-tag-button ${selectedTag === '' ? 'active' : ''}`}
             >
-              Tất cả
+              All
             </button>
             {Array.from(new Set(posts.map(post => post.tag))).map((tag) => (
               <button
@@ -139,20 +151,18 @@ export default function BlogPage() {
                     href={`/blog/${post._id}`}
                     className="blog-card-link"
                   >
-                    Đọc thêm
+                    Read more
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>
                   </Link>
-                  <span className="blog-card-author">
-                    By {post.author?.name || 'Unknown'}
-                  </span>
                 </div>
               </div>
             </article>
           ))}
         </div>
       </div>
+      
     </div>
   );
 }

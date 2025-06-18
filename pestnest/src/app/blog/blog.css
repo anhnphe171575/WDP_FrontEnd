@@ -3,6 +3,33 @@
   background: linear-gradient(to bottom, #fffbeb, #fff7ed);
 }
 
+.blog-back-button {
+  margin-bottom: 2rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #d97706;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #fef3c7;
+  transition: all 0.2s ease;
+}
+
+.back-link:hover {
+  background-color: #fcd34d;
+  color: #b45309;
+}
+
+.back-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 .blog-loading {
   min-height: 100vh;
   background: linear-gradient(to bottom, #fffbeb, #fff7ed);

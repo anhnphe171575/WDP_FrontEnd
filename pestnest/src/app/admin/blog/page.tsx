@@ -18,6 +18,7 @@ import { Edit, Eye, Image, Trash2 } from "lucide-react";
 import NextImage from "next/image";
 import { log } from "console";
 
+
 interface Blog {
   _id: string;
   title: string;
@@ -503,12 +504,12 @@ export default function BlogPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Tag</TableHead>
-                    <TableHead>Created At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="font-bold">No.</TableHead>
+                    <TableHead className="font-bold">Title</TableHead>
+                    <TableHead className="font-bold">Description</TableHead>
+                    <TableHead className="font-bold">Tag</TableHead>
+                    <TableHead className="font-bold">Created At</TableHead>
+                    <TableHead className="text-right font-bold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
