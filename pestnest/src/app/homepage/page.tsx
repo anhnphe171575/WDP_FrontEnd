@@ -491,7 +491,7 @@ export default function HomePage() {
                           <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
                           <div className="flex items-center justify-between mb-3">
                             <p className="text-sm text-gray-600">Đã bán: {product.totalSold}</p>
-                            <p className="text-xl font-bold text-gray-900">{product.minSellPrice.toLocaleString('vi-VN')}đ</p>
+                            <p className="text-xl font-bold text-gray-900">{product.minSellPrice}đ</p>
                           </div>
                         </div>
                       </Link>
