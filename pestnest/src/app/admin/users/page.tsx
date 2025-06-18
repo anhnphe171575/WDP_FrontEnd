@@ -238,6 +238,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="name"
                 value={formData.name}
+                disabled={user ? true : false}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
@@ -248,6 +249,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                 id="email"
                 type="email"
                 value={formData.email}
+                disabled={user ? true : false}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
               />
@@ -260,6 +262,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="password"
                 type="password"
+                disabled={user ? true : false}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required={!user}
@@ -273,6 +276,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="phone"
                 value={formData.phone}
+                disabled={user ? true : false}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
@@ -281,6 +285,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="dob"
                 type="date"
+                disabled={user ? true : false}
                 value={formData.dob}
                 onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
               />

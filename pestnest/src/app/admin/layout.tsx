@@ -67,9 +67,9 @@ const menuItems = [
     icon: Inbox,
   },
   {
-    title: "Calendar",
-    url: "/admin/calendar",
-    icon: Calendar,
+    title: "Order",
+    url: "/admin/order",
+    icon: CreditCard,
   },
   {
     title: "Banner",
@@ -77,12 +77,12 @@ const menuItems = [
     icon: Image,
   },
   {
-    title: "Manage Blog",
+    title: "Blog",
     url: "/admin/blog",
     icon: Image,
   },
   {
-    title: "Manage Review",
+    title: "Review",
     url: "/admin/review",
     icon: Image,
   },

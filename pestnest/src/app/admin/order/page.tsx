@@ -42,7 +42,7 @@ interface Order {
     price: number;
 }[];
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
   paymentMethod: string;
   voucher?: string[];
   createAt?: Date;
@@ -55,7 +55,7 @@ interface Order {
     price: number;
     image?: string;
   }[];
-  shippingAddress?: {
+  address?: {
     street: string;
     city: string;
     state: string;
@@ -68,7 +68,7 @@ const ORDER_STATUS = {
   PENDING: 'pending',
   PROCESSING: 'processing',
   SHIPPED: 'shipped',
-  DELIVERED: 'delivered',
+  COMPLETED: 'completed',
   CANCELLED: 'cancelled',
 } as const;
 
@@ -76,15 +76,10 @@ const ORDER_STATUS_COLORS = {
   pending: "bg-yellow-100 text-yellow-800",
   processing: "bg-blue-100 text-blue-800",
   shipped: "bg-purple-100 text-purple-800",
-  delivered: "bg-green-100 text-green-800",
+  completed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
 } as const;
 
-const PAYMENT_STATUS_COLORS = {
-  pending: "bg-yellow-100 text-yellow-800",
-  paid: "bg-green-100 text-green-800",
-  failed: "bg-red-100 text-red-800",
-} as const;
 
 interface OrderFormProps {
   order?: Order;
@@ -130,20 +125,47 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Order Status</Label>
+            <Label>Order Status </Label>
             <Select
               value={formData.status}
               onValueChange={(value) => setFormData({ ...formData, status: value as Order['status'] })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select status" />
+                <SelectValue>
+                  {formData.status.charAt(0).toUpperCase() + formData.status.slice(1)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ORDER_STATUS).map(([key, value]) => (
-                  <SelectItem key={value} value={value}>
-                    {key.charAt(0) + key.slice(1).toLowerCase()}
-                  </SelectItem>
-                ))}
+                {formData.status === 'pending' && (
+                  <>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                  </>
+                )}
+                {formData.status === 'processing' && (
+                  <>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                  </>
+                )}
+                {formData.status === 'shipped' && (
+                  <>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </>
+                )}
+                {formData.status === 'completed' && (
+                  <>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </>
+                )}
+                {formData.status === 'cancelled' && (
+                  <>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -276,6 +298,7 @@ export default function OrderPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>No</TableHead>
                   <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Total Amount</TableHead>
@@ -285,8 +308,9 @@ export default function OrderPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedOrders.map((order) => (
+                {paginatedOrders.map((order, index) => (
                   <TableRow key={order._id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell className="font-medium">{order._id}</TableCell>
                     <TableCell>{order.userId.name}</TableCell>
                     <TableCell>{order.total?.toFixed(2) || 'N/A'}VND</TableCell>
@@ -411,10 +435,10 @@ export default function OrderPage() {
               <div className="space-y-2">
                 <Label>Shipping Address</Label>
                 <div className="p-4 border rounded-lg">
-                  <p>{selectedOrder.shippingAddress?.street}</p>
-                  <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state}</p>
-                  <p>{selectedOrder.shippingAddress?.postalCode}</p>
-                  <p>{selectedOrder.shippingAddress?.country}</p>
+                  <p>{selectedOrder.address?.street}</p>
+                  <p>{selectedOrder.address?.city}, {selectedOrder.address?.state}</p>
+                  <p>{selectedOrder.address?.postalCode}</p>
+                  <p>{selectedOrder.address?.country}</p>
                 </div>
               </div>
 
