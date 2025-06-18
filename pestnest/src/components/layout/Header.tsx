@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { MessageCircle } from 'lucide-react'
+import { useLanguage } from '@/context/LanguageContext';
 
 import axios from 'axios'
 
@@ -118,16 +119,24 @@ function CartDropdown() {
 
         if (response.data.success && response.data.data) {
           const latestItem = response.data.data;
-          // Transform the data to match CartItem interface
-          const transformedItem: CartItem = {
-            _id: latestItem._id,
-            variantId: latestItem.product.selectedVariant._id,
-            name: latestItem.product.name,
-            price: latestItem.product.selectedVariant.price,
-            quantity: latestItem.quantity,
-            image: latestItem.product.selectedVariant.images[0]?.url || "/placeholder.svg"
-          };
-          setCartData([transformedItem]);
+          
+          // Check if the required properties exist before transforming
+          if (latestItem.product && latestItem.product.selectedVariant) {
+            // Transform the data to match CartItem interface
+            const transformedItem: CartItem = {
+              _id: latestItem._id || '',
+              variantId: latestItem.product.selectedVariant._id || '',
+              name: latestItem.product.name || 'Unknown Product',
+              price: latestItem.product.selectedVariant.price || 0,
+              quantity: latestItem.quantity || 1,
+              image: latestItem.product.selectedVariant.images?.[0]?.url || "/placeholder.svg"
+            };
+            setCartData([transformedItem]);
+          } else {
+            // If selectedVariant is missing, set empty cart
+            console.warn('Cart item missing selectedVariant:', latestItem);
+            setCartData([]);
+          }
         } else {
           setCartData([]);
         }
@@ -384,6 +393,7 @@ function UserDropdown() {
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = React.useState("")
+  const { lang, setLang } = useLanguage();
 
   return (
     <div className="border-b bg-white">
@@ -425,6 +435,11 @@ export default function Header() {
             {/* Wishlist */}
             <Button variant="ghost" size="sm" className="hidden sm:flex">
               <Heart className="h-5 w-5" />
+            </Button>
+
+            {/* Language Switcher */}
+            <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
+              {lang === 'vi' ? 'VI' : 'EN'}
             </Button>
 
             {/* Notifications */}

@@ -55,6 +55,11 @@ axiosInstance.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    if (error.response?.status === 403) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/not-found';
+      }
+    }
     
     if (error.response?.status === 500) {
       console.error('Server Error:', error.response.data);

@@ -300,7 +300,7 @@ export default function ProductsPage() {
       setSortBy("relevance");
 
       // Update URL with new category ID
-      router.push(`/products/${categoryId}`);
+      router.push(`/category/${categoryId}`);
 
       // Fetch new products from backend for the selected category
       const response = await api.get(`/products/productDetailsByCategory/${categoryId}`);

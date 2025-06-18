@@ -269,17 +269,8 @@ export default function ProductPage() {
                 </div>
               ))}
               <div className="flex items-center gap-4 mb-6">
-                <span className="text-4xl font-bold text-primary">{variant.sellPrice.toLocaleString('vi-VN')}đ</span>
-                {variant?.importBatches && variant.importBatches.length > 0 && variant.importBatches[0]?.costPrice && (
-                  <span className="text-xl text-muted-foreground line-through">
-                    {variant.importBatches[0].costPrice.toLocaleString('vi-VN')}đ
-                  </span>
-                )}
-                {discount > 0 && (
-                  <Badge variant="destructive" className="text-sm px-3 py-1">
-                    {discount}% OFF
-                  </Badge>
-                )}
+                <span className="text-4xl font-bold text-primary">{variant.sellPrice}đ</span>
+               
                 <span className="text-base text-muted-foreground ml-4">Còn lại: <b>{variant.totalQuantity}</b></span>
               </div>
             </div>
