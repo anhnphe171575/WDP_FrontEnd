@@ -67,7 +67,9 @@ export default function HomePage() {
       try {
         setIsLoading(true);
         const response = await api.get('/categories/popular');
-        setPopularCategories(response.data as Category[]);
+        // Ensure response.data is an array
+        const data = Array.isArray(response.data) ? response.data : [];
+        setPopularCategories(data as Category[]);
       } catch (err: unknown) {
         console.error('Error fetching popular categories:', err);
         if (err instanceof AxiosError) {
@@ -77,6 +79,8 @@ export default function HomePage() {
         } else {
           setError('An error occurred while fetching categories');
         }
+        // Set empty array on error to prevent map errors
+        setPopularCategories([]);
       } finally {
         setIsLoading(false);
       }
@@ -90,7 +94,10 @@ export default function HomePage() {
       try {
         setIsLoadingParents(true);
         const response = await api.get('/categories/parent');
-        setParentCategories(response.data as ParentCategory[]);
+        // Ensure response.data is an array
+        const data = Array.isArray(response.data.data) ? response.data.data : [];
+        
+        setParentCategories(data as ParentCategory[]);
       } catch (err: unknown) {
         console.error('Error fetching parent categories:', err);
         if (err instanceof AxiosError) {
@@ -100,6 +107,8 @@ export default function HomePage() {
         } else {
           setParentError('An error occurred while fetching parent categories');
         }
+        // Set empty array on error to prevent map errors
+        setParentCategories([]);
       } finally {
         setIsLoadingParents(false);
       }
@@ -113,19 +122,15 @@ export default function HomePage() {
       try {
         setIsLoadingBanners(true);
         const response = await api.get('/banners');
+        // Ensure response.data is an array
+        const bannersData = Array.isArray(response.data) ? response.data : [];
         // Filter active banners based on date
         const now = new Date();
-        const activeBanners = (response.data as Banner[]).filter(banner => {
+        const activeBanners = bannersData.filter(banner => {
           const startDate = new Date(banner.startDate);
           const endDate = new Date(banner.endDate);
           return now >= startDate && now <= endDate;
         });
-        console.log('Raw banners data:', response.data);
-        console.log('Active banners after date filter:', activeBanners);
-        console.log('Current banner index:', currentBannerIndex);
-        console.log('Current banner data:', activeBanners[currentBannerIndex]);
-        console.log('Current banner title:', activeBanners[currentBannerIndex]?.title);
-        console.log('Current banner description:', activeBanners[currentBannerIndex]?.description);
         setBanners(activeBanners);
       } catch (err: unknown) {
         console.error('Error fetching banners:', err);
@@ -136,6 +141,8 @@ export default function HomePage() {
         } else {
           setBannerError('An error occurred while fetching banners');
         }
+        // Set empty array on error to prevent map errors
+        setBanners([]);
       } finally {
         setIsLoadingBanners(false);
       }
@@ -150,7 +157,9 @@ export default function HomePage() {
         setIsLoadingTopSelling(true);
         const response = await api.get('/products/top-selling');
         if (response.data.success) {
-          setTopSellingProducts(response.data.data);
+          // Ensure response.data.data is an array
+          const productsData = Array.isArray(response.data.data) ? response.data.data : [];
+          setTopSellingProducts(productsData);
         } else {
           throw new Error('Failed to fetch top selling products');
         }
@@ -163,6 +172,8 @@ export default function HomePage() {
         } else {
           setTopSellingError('An error occurred while fetching top selling products');
         }
+        // Set empty array on error to prevent map errors
+        setTopSellingProducts([]);
       } finally {
         setIsLoadingTopSelling(false);
       }
@@ -192,7 +203,7 @@ export default function HomePage() {
           <>
             {/* Carousel Container */}
             <div className="relative w-full h-full">
-              {banners.map((banner, index) => (
+              {Array.isArray(banners) && banners.map((banner, index) => (
                 <motion.div
                   key={banner._id}
                   initial={{ opacity: 0, scale: 1.1 }}
@@ -286,7 +297,7 @@ export default function HomePage() {
 
             {/* Dots Indicator */}
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex space-x-3 z-10">
-              {banners.map((_, index) => (
+              {Array.isArray(banners) && banners.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentBannerIndex(index)}
@@ -386,39 +397,45 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popularCategories.map((category) => (
-                <motion.div
-                  key={category._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="group"
-                >
-                  <Link 
-                    href={`/categories/${category._id}`} 
-                    className="block bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+              {Array.isArray(popularCategories) && popularCategories.length > 0 ? (
+                popularCategories.map((category) => (
+                  <motion.div
+                    key={category._id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="group"
                   >
-                    <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
-                      <Image
-                        src={category.image || '/images/category-placeholder.jpg'}
-                        alt={category.name}
-                        fill
-                        className="object-cover"
-                      />
-                     
-                    </div>
-                    <div className="text-center">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-pink-600 transition-colors">
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                        {category.description}
-                      </p>
-                    
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+                    <Link 
+                      href={`/categories/${category._id}`} 
+                      className="block bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                    >
+                      <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
+                        <Image
+                          src={category.image || '/images/category-placeholder.jpg'}
+                          alt={category.name}
+                          fill
+                          className="object-cover"
+                        />
+                       
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-pink-600 transition-colors">
+                          {category.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                          {category.description}
+                        </p>
+                      
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-10">
+                  <p className="text-gray-600">Không có danh mục phổ biến nào để hiển thị</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -468,7 +485,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="flex space-x-8 pr-4">
-                  {topSellingProducts.map((product, index) => (
+                  {Array.isArray(topSellingProducts) && topSellingProducts.map((product, index) => (
                     <motion.div
                       key={product._id}
                       initial={{ opacity: 0, x: 30 }}
