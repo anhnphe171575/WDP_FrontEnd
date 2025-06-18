@@ -28,6 +28,8 @@ import { api } from "../../../utils/axios"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
+import { MessageCircle } from 'lucide-react'
+
 import axios from 'axios'
 
 
@@ -113,7 +115,7 @@ function CartDropdown() {
         setIsLoading(true);
         const response = await api.get('/cart/getlatestcartitem');
         console.log(response.data);
-        
+
         if (response.data.success && response.data.data) {
           const latestItem = response.data.data;
           // Transform the data to match CartItem interface
@@ -171,16 +173,16 @@ function CartDropdown() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.name}</p>
                       <div className="flex items-center space-x-2">
-                       
-                       
+
+
                       </div>
                     </div>
-                   
+
                   </div>
                 ))}
               </div>
               <Separator className="my-3" />
-            
+
               <div className="space-y-2">
                 <Button className="w-full" size="sm" asChild>
                   <Link href="/cart">View Cart</Link>
@@ -198,7 +200,11 @@ function NotificationDropdown() {
   const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
+
     <DropdownMenu>
+      <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md">
+        <MessageCircle className="h-4 w-4" />
+      </Link>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
