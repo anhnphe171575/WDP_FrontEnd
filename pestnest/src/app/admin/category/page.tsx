@@ -15,12 +15,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import NextImage from "next/image";
 
 interface Category {
   _id: string;
   name: string;
   description?: string;
-  image?: string;
+  image?: string;  // URL của ảnh sau khi upload
   parentCategory?: string;
   children?: Category[];
 }
@@ -39,6 +40,10 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
     image: category.image || '',
     parentCategory: category.parentCategory || null as string | null
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(category.image || null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submitRef = useRef(false);
@@ -49,8 +54,19 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
     if (!isOpen) {
       submitRef.current = false;
       setError(null);
+      setSelectedFile(null);
+      setImagePreview(category.image || null);
+      setUploadProgress(0);
     }
-  }, [isOpen]);
+  }, [isOpen, category.image]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,14 +85,21 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
         throw new Error('Name is required');
       }
 
-      const submitData = {
-        name: formData.name,
-        description: formData.description,
-        image: formData.image,
-        parentCategory: formData.parentCategory
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      if (formData.parentCategory) {
+        formDataToSend.append('parentCategory', formData.parentCategory);
+      }
+      if (selectedFile) {
+        formDataToSend.append('image', selectedFile);
+      }
 
-      const response = await request(() => api.put(`/categories/${category._id}`, submitData));
+      const response = await request(() => api.put(`/categories/${category._id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }));
 
       if (response.success) {
         onSave(response.data);
@@ -123,12 +146,35 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
+            <Label htmlFor="image">Category Image</Label>
             <Input
               id="image"
-              value={formData.image}
-              onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              disabled={isSubmitting}
             />
+            {isSubmitting && (
+              <div className="space-y-2">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
+              </div>
+            )}
+            {imagePreview && (
+              <div className="mt-2 relative w-full h-48">
+                <NextImage
+                  src={imagePreview}
+                  alt="Preview"
+                  fill
+                  className="object-contain rounded-md"
+                />
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -158,6 +204,10 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
     image: '',
     parentCategory: parentId || null as string | null
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submitRef = useRef(false);
@@ -174,8 +224,19 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
         image: '',
         parentCategory: parentId || null
       });
+      setSelectedFile(null);
+      setImagePreview(null);
+      setUploadProgress(0);
     }
   }, [isOpen, parentId]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,21 +255,30 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
         throw new Error('Name is required');
       }
 
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      if (formData.parentCategory) {
+        formDataToSend.append('parentCategory', formData.parentCategory);
+      }
+      if (selectedFile) {
+        formDataToSend.append('image', selectedFile);
+      }
+
       let response;
       if (parentId) {
         // If there's a parentId, use the createChildCategory endpoint
-        response = await request(() => api.post(`/categories/child-category/${parentId}`, {
-          name: formData.name,
-          description: formData.description || '',
-          image: formData.image || ''
+        response = await request(() => api.post(`/categories/child-category/${parentId}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         }));
       } else {
-        // If no parentId, use the regular createCategory endpoint
-        response = await request(() => api.post('/categories', {
-          name: formData.name,
-          description: formData.description || '',
-          image: formData.image || '',
-          parentCategory: null
+        // Otherwise use the regular createCategory endpoint
+        response = await request(() => api.post('/categories', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         }));
       }
 
@@ -257,12 +327,35 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Image URL</Label>
+            <Label htmlFor="image">Category Image</Label>
             <Input
               id="image"
-              value={formData.image}
-              onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              disabled={isSubmitting}
             />
+            {isSubmitting && (
+              <div className="space-y-2">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
+              </div>
+            )}
+            {imagePreview && (
+              <div className="mt-2 relative w-full h-48">
+                <NextImage
+                  src={imagePreview}
+                  alt="Preview"
+                  fill
+                  className="object-contain rounded-md"
+                />
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
@@ -608,7 +701,7 @@ export default function CategoryPage() {
 
     try {
       setIsDeleting(true);
-      const response = await request(() => api.delete(`/categories/${categoryToDelete}`));
+      const response = await request(() => api.delete( `/categories/${categoryToDelete}`));
       
       if (response.success) {
         // Refresh the categories list
@@ -770,7 +863,11 @@ export default function CategoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCategories.map(category => renderCategoryRow(category))}
+                {filteredCategories.map(category => (
+                  <React.Fragment key={category._id}>
+                    {renderCategoryRow(category)}
+                  </React.Fragment>
+                ))}
               </TableBody>
             </Table>
           )}
