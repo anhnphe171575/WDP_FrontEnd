@@ -9,6 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import Header from "@/components/layout/Header"
 import axiosInstance from "../../../utils/axios"
 import { useRouter } from "next/navigation"
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../utils/petPagesConfig.vi';
+import enConfig from '../../../utils/petPagesConfig.en';
 
 interface CartItem {
   _id: string
@@ -51,6 +54,9 @@ export default function ShoppingCart() {
   const [selectedItems, setSelectedItems] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
+  const cartConfig = config.cart;
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -150,7 +156,7 @@ export default function ShoppingCart() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">{cartConfig.error}</h2>
           <p className="text-gray-600">{error}</p>
         </div>
       </div>
@@ -164,16 +170,16 @@ export default function ShoppingCart() {
           <div className="flex items-center gap-4 mb-8">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Tiếp tục mua sắm
+              {cartConfig.continueShopping}
             </Button>
           </div>
 
           <Card className="text-center py-16">
             <CardContent>
               <ShoppingBag className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <h2 className="text-2xl font-semibold mb-2">Giỏ hàng trống</h2>
-              <p className="text-gray-600 mb-6">Bạn chưa có sản phẩm nào trong giỏ hàng</p>
-              <Button>Bắt đầu mua sắm</Button>
+              <h2 className="text-2xl font-semibold mb-2">{cartConfig.emptyTitle}</h2>
+              <p className="text-gray-600 mb-6">{cartConfig.emptyDesc}</p>
+              <Button>{cartConfig.startShopping}</Button>
             </CardContent>
           </Card>
         </div>
@@ -191,11 +197,11 @@ export default function ShoppingCart() {
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" className="hover:bg-gray-100">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Tiếp tục mua sắm
+              {cartConfig.continueShopping}
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900">Giỏ hàng</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{cartConfig.title}</h1>
             <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
-              {cartItems.length} sản phẩm
+              {cartConfig.productCount.replace('{count}', cartItems.length.toString())}
             </Badge>
           </div>
         </div>
@@ -213,13 +219,13 @@ export default function ShoppingCart() {
                     className="border-gray-300"
                   />
                   <label htmlFor="select-all" className="font-medium cursor-pointer text-gray-700">
-                    Chọn tất cả ({selectedItems.length}/{cartItems.length})
+                    {cartConfig.selectAll.replace('{selected}', selectedItems.length.toString()).replace('{total}', cartItems.length.toString())}
                   </label>
                 </div>
 
                 {selectedItems.length > 0 && (
                   <div className="text-right">
-                    <div className="text-sm text-gray-600">Tổng tiền đã chọn</div>
+                    <div className="text-sm text-gray-600">{cartConfig.selectedTotal}</div>
                     <div className="text-xl font-semibold text-blue-600">{formatPrice(calculateSelectedTotal())}</div>
                   </div>
                 )}
@@ -303,11 +309,11 @@ export default function ShoppingCart() {
                         >
                           {formatPrice(item.product.selectedVariant.price * item.quantity)}
                           {selectedItems.includes(item._id) && (
-                            <span className="text-xs text-blue-500 block mt-1">✓ Đã chọn</span>
+                            <span className="text-xs text-blue-500 block mt-1">{cartConfig.selected}</span>
                           )}
                         </div>
                         <div className="text-sm text-gray-600 mt-1">
-                          {formatPrice(item.product.selectedVariant.price)} / sản phẩm
+                          {cartConfig.pricePerProduct.replace('{price}', formatPrice(item.product.selectedVariant.price))}
                         </div>
                       </div>
                     </div>
@@ -324,18 +330,18 @@ export default function ShoppingCart() {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
           <div className="max-w-6xl mx-auto flex justify-between items-center">
             <div className="font-medium text-gray-900">
-              Đã chọn {selectedItems.length} sản phẩm
+              {cartConfig.selectedCount.replace('{count}', selectedItems.length.toString())}
               <span className="text-blue-600 font-semibold ml-2 text-xl">{formatPrice(calculateSelectedTotal())}</span>
             </div>
             <div className="flex gap-3">
               <Button variant="outline" className="border-gray-300 hover:bg-gray-100">
-                Thêm vào yêu thích
+                {cartConfig.addToFavorite}
               </Button>
               <Button 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                 onClick={handleBuyNow}
               >
-                Mua ngay ({selectedItems.length})
+                {cartConfig.buyNow.replace('{count}', selectedItems.length.toString())}
               </Button>
             </div>
           </div>

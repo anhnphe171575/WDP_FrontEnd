@@ -368,6 +368,109 @@ categoryPage: {
   }
 },
 
+productDetail: {
+  uncategorized: "Chưa phân loại",
+  quantity: "Số lượng",
+  addToCart: "Thêm vào giỏ hàng",
+  adding: "Đang thêm...",
+  outOfStock: "Sản phẩm hết hàng",
+  left: "Còn lại:",
+  freeShipping: "Miễn phí vận chuyển",
+  warranty: "Bảo hành 2 năm",
+  returns: "Đổi trả trong 30 ngày",
+  customerReviews: "Đánh giá của khách hàng",
+  ratingOverview: "Tổng quan đánh giá",
+  basedOnReviews: "Dựa trên {n} đánh giá",
+  verifiedPurchase: "Đã mua hàng",
+  reviewImageAlt: "Ảnh đánh giá",
+  userFallback: "Người dùng",
+  avatarFallback: "U",
+  productNotFound: "Không tìm thấy sản phẩm",
+  addToCartSuccess: "Thêm sản phẩm vào giỏ hàng thành công!",
+  addToCartFail: "Thêm sản phẩm vào giỏ hàng thất bại",
+  quantityGreaterThanZero: "Số lượng phải lớn hơn 0",
+  selectedVariantNotFound: "Không tìm thấy biến thể đã chọn",
+  loading: "Đang tải...",
+  errorFetching: "Lỗi khi tải sản phẩm:",
+  addToWishlist: "Thêm vào yêu thích"
+},
+bestSellingPage: {
+  breadcrumb: {
+    home: "Trang chủ",
+    products: "Sản phẩm"
+  },
+  sidebar: {
+    category: "Danh mục",
+    price: "Giá",
+    min: "Tối thiểu",
+    max: "Tối đa",
+    brand: "Thương hiệu",
+    findBrandPlaceholder: "Tìm thương hiệu",
+    showLess: "Ẩn bớt",
+    showMore: "+ {count} thêm",
+    customerRating: "Đánh giá khách hàng"
+  },
+  sort: {
+    results: "{count} kết quả",
+    sortBy: "Sắp xếp theo",
+    relevance: "Liên quan",
+    priceLow: "Giá: Thấp đến Cao",
+    priceHigh: "Giá: Cao đến Thấp",
+    rating: "Đánh giá khách hàng",
+    newest: "Mới nhất",
+    bestselling: "Bán chạy nhất"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  product: {
+    price: "{price}₫",
+    addToWishlist: "Thêm vào yêu thích"
+  },
+  loading: "Đang tải...",
+  error: {
+    fetch: "Không thể tải sản phẩm bán chạy",
+    general: "Đã xảy ra lỗi khi tải dữ liệu"
+  },
+  searchPlaceholder: "Tìm theo tên hoặc danh mục..."
+},
+searchPage: {
+  breadcrumb: {
+    home: "Trang chủ",
+    products: "Sản phẩm"
+  },
+  sidebar: {
+    category: "Danh mục",
+    all: "Tất cả",
+    price: "Giá",
+    min: "Tối thiểu",
+    max: "Tối đa",
+    brand: "Thương hiệu",
+    findBrandPlaceholder: "Tìm thương hiệu",
+    showLess: "Ẩn bớt",
+    showMore: "+ {count} thêm",
+    customerRating: "Đánh giá khách hàng"
+  },
+  sort: {
+    results: "{count} kết quả",
+    sortBy: "Sắp xếp theo",
+    relevance: "Liên quan",
+    priceLow: "Giá: Thấp đến Cao",
+    priceHigh: "Giá: Cao đến Thấp",
+    rating: "Đánh giá khách hàng",
+    newest: "Mới nhất",
+    bestselling: "Bán chạy nhất"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  product: {
+    price: "{price}₫",
+    addToWishlist: "Thêm vào yêu thích"
+  }
+}
 };
 
 export default pagesConfig;
