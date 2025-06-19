@@ -15,6 +15,9 @@ import { useParams, useRouter } from "next/navigation"
 import Header from '@/components/layout/Header';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext'
+import viConfig from '../../../../../utils/petPagesConfig.vi'
+import enConfig from '../../../../../utils/petPagesConfig.en'
     
 
 
@@ -138,6 +141,8 @@ export default function ProductsPage() {
   const paramId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [searchTerm, setSearchTerm] = useState<string>(paramId || "");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig.searchPage : enConfig.searchPage;
 
   const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
   const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
@@ -272,7 +277,7 @@ export default function ProductsPage() {
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
         >
-          Previous
+          {config.pagination.previous}
         </Button>
         
         <div className="flex items-center space-x-2">
@@ -293,7 +298,7 @@ export default function ProductsPage() {
           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
         >
-          Next
+          {config.pagination.next}
         </Button>
       </div>
     );
@@ -337,9 +342,9 @@ export default function ProductsPage() {
       <div className="bg-gray-50 py-3">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <button className="hover:text-blue-600">Home</button>
+            <button className="hover:text-blue-600">{config.breadcrumb.home}</button>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium">Products</span>
+            <span className="text-gray-900 font-medium">{config.breadcrumb.products}</span>
           </div>
         </div>
       </div>
@@ -353,7 +358,7 @@ export default function ProductsPage() {
               {/* Categories */}
               {categories?.children && categories.children.length > 0 && (
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <h3 className="font-bold text-lg mb-4 text-gray-900">Category</h3>
+                  <h3 className="font-bold text-lg mb-4 text-gray-900">{config.sidebar.category}</h3>
                   <div className="space-y-3">
                     {/* Nút Tất cả */}
                     <div className="flex items-center justify-between">
@@ -361,7 +366,7 @@ export default function ProductsPage() {
                         className={`text-left hover:underline text-sm text-blue-600 ${selectedCategory === null ? 'font-bold' : ''}`}
                         onClick={() => setSelectedCategory(null)}
                       >
-                        Tất cả
+                        {config.sidebar.all}
                       </button>
                     </div>
                     {categories.children.map((category: Category) => (
@@ -380,7 +385,7 @@ export default function ProductsPage() {
 
               {/* Price Range */}
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Price</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{config.sidebar.price}</h3>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Input
@@ -391,7 +396,7 @@ export default function ProductsPage() {
                         setPriceRange([e.target.value, priceRange[1]]);
                       }}
                       className="w-24"
-                      placeholder="Min"
+                      placeholder={config.sidebar.min}
                     />
                     <span className="mx-2">-</span>
                     <Input
@@ -402,7 +407,7 @@ export default function ProductsPage() {
                         setPriceRange([priceRange[0], e.target.value]);
                       }}
                       className="w-24"
-                      placeholder="Max"
+                      placeholder={config.sidebar.max}
                     />
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-600">
@@ -440,11 +445,11 @@ export default function ProductsPage() {
 
               {/* Brand Filter */}
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Brand</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{config.sidebar.brand}</h3>
                 <div className="relative mb-4">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
-                    placeholder="Find a brand"
+                    placeholder={config.sidebar.findBrandPlaceholder}
                     value={brandSearch}
                     onChange={(e) => setBrandSearch(e.target.value)}
                     className="pl-10 border-gray-300"
@@ -476,18 +481,19 @@ export default function ProductsPage() {
                   {showMoreBrands ? (
                     <>
                       <ChevronUp className="w-4 h-4 mr-1" />
-                      Show less
+                      {config.sidebar.showLess}
                     </>
                   ) : (
                     <>
-                      <ChevronDown className="w-4 h-4 mr-1" />+ {filteredBrands.length - 7} more
+                      <ChevronDown className="w-4 h-4 mr-1" />
+                      {config.sidebar.showMore.replace('{count}', (filteredBrands.length - 7).toString())}
                     </>
                   )}
                 </Button>
               </div>
 
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Customer Rating</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{config.sidebar.customerRating}</h3>
                 <div className="space-y-3">
                   {[4, 3, 2, 1].map((rating) => (
                     <div key={`rating-${rating}`} className="flex items-center justify-between">
@@ -519,21 +525,21 @@ export default function ProductsPage() {
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-lg border border-gray-200">
               <div className="flex items-center gap-3">
-                <p className="text-gray-700 font-medium">{products.length} Results</p>
+                <p className="text-gray-700 font-medium">{config.sort.results.replace('{count}', products.length.toString())}</p>
               </div>
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600 font-medium">Sort By</span>
+                <span className="text-sm text-gray-600 font-medium">{config.sort.sortBy}</span>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48 border-gray-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="relevance">Relevance</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="rating">Customer Rating</SelectItem>
-                    <SelectItem value="newest">Newest</SelectItem>
-                    <SelectItem value="bestselling">Best Selling</SelectItem>
+                    <SelectItem value="relevance">{config.sort.relevance}</SelectItem>
+                    <SelectItem value="price-low">{config.sort.priceLow}</SelectItem>
+                    <SelectItem value="price-high">{config.sort.priceHigh}</SelectItem>
+                    <SelectItem value="rating">{config.sort.rating}</SelectItem>
+                    <SelectItem value="newest">{config.sort.newest}</SelectItem>
+                    <SelectItem value="bestselling">{config.sort.bestselling}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -586,7 +592,9 @@ export default function ProductsPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
-                            <span className="font-bold text-lg text-red-600">{(product.variants?.[0]?.sellPrice || 0).toLocaleString()} ₫</span>
+                            <span className="font-bold text-lg text-red-600">
+                              {config.product.price.replace('{price}', (product.variants?.[0]?.sellPrice || 0).toLocaleString())}
+                            </span>
                           </div>
                         </div>
                       </CardContent>

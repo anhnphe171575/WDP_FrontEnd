@@ -332,6 +332,109 @@ const pagesConfig = {
         price: "${price}",
         addToWishlist: "Add to wishlist"
       }
+    },
+    productDetail: {
+      uncategorized: "Uncategorized",
+      quantity: "Quantity",
+      addToCart: "Add to Cart",
+      adding: "Adding...",
+      outOfStock: "Out of stock",
+      left: "Left:",
+      freeShipping: "Free Shipping",
+      warranty: "2 Year Warranty",
+      returns: "30 Day Returns",
+      customerReviews: "Customer Reviews",
+      ratingOverview: "Rating Overview",
+      basedOnReviews: "Based on {n} reviews",
+      verifiedPurchase: "Verified Purchase",
+      reviewImageAlt: "Review image",
+      userFallback: "User",
+      avatarFallback: "U",
+      productNotFound: "Product not found",
+      addToCartSuccess: "Product added to cart successfully!",
+      addToCartFail: "Failed to add product to cart",
+      quantityGreaterThanZero: "Quantity must be greater than 0",
+      selectedVariantNotFound: "Selected variant not found",
+      loading: "Loading...",
+      errorFetching: "Error fetching product:",
+      addToWishlist: "Add to wishlist"
+    },
+    bestSellingPage: {
+      breadcrumb: {
+        home: "Home",
+        products: "Products"
+      },
+      sidebar: {
+        category: "Category",
+        price: "Price",
+        min: "Min",
+        max: "Max",
+        brand: "Brand",
+        findBrandPlaceholder: "Find a brand",
+        showLess: "Show less",
+        showMore: "+ {count} more",
+        customerRating: "Customer Rating"
+      },
+      sort: {
+        results: "{count} Results",
+        sortBy: "Sort By",
+        relevance: "Relevance",
+        priceLow: "Price: Low to High",
+        priceHigh: "Price: High to Low",
+        rating: "Customer Rating",
+        newest: "Newest",
+        bestselling: "Best Selling"
+      },
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      },
+      product: {
+        price: "{price} ₫",
+        addToWishlist: "Add to wishlist"
+      },
+      loading: "Loading...",
+      error: {
+        fetch: "Failed to fetch best-selling products",
+        general: "An error occurred while fetching data"
+      },
+      searchPlaceholder: "Search by name or category..."
+    },
+    searchPage: {
+      breadcrumb: {
+        home: "Home",
+        products: "Products"
+      },
+      sidebar: {
+        category: "Category",
+        all: "All",
+        price: "Price",
+        min: "Min",
+        max: "Max",
+        brand: "Brand",
+        findBrandPlaceholder: "Find a brand",
+        showLess: "Show less",
+        showMore: "+ {count} more",
+        customerRating: "Customer Rating"
+      },
+      sort: {
+        results: "{count} Results",
+        sortBy: "Sort By",
+        relevance: "Relevance",
+        priceLow: "Price: Low to High",
+        priceHigh: "Price: High to Low",
+        rating: "Customer Rating",
+        newest: "Newest",
+        bestselling: "Best Selling"
+      },
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      },
+      product: {
+        price: "{price}₫",
+        addToWishlist: "Add to wishlist"
+      }
     }
   };
   

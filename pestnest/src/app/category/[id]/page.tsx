@@ -15,6 +15,9 @@ import { useParams, useRouter } from "next/navigation"
 import Header from '@/components/layout/Header';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
     
 
 
@@ -110,6 +113,9 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const { addToCart } = useCart();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
+  const categoryPage = config.categoryPage;
 
   // Tạo danh sách brand động từ allProducts
   const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
@@ -347,42 +353,6 @@ export default function ProductsPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
-  // Add pagination controls component
-  const PaginationControls = () => {
-    return (
-      <div className="flex items-center justify-center space-x-2 mt-8">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </Button>
-        
-        <div className="flex items-center space-x-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              onClick={() => setCurrentPage(page)}
-              className="w-10 h-10"
-            >
-              {page}
-            </Button>
-          ))}
-        </div>
-
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </Button>
-      </div>
-    );
-  };
-
   const handleAddToCart = (product: Product) => {
     const variant = product.variants?.[0];
     if (!variant) return;
@@ -406,19 +376,17 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-            <Header />
-
+      <Header />
       {/* Breadcrumb */}
       <div className="bg-gray-50 py-3">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <button className="hover:text-blue-600">Home</button>
+            <button className="hover:text-blue-600">{categoryPage.breadcrumb.home}</button>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium">Products</span>
+            <span className="text-gray-900 font-medium">{categoryPage.breadcrumb.products}</span>
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex gap-8">
@@ -427,7 +395,7 @@ export default function ProductsPage() {
             {/* Categories */}
             {categories?.children && categories.children.length > 0 && (
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Category</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.category}</h3>
                 <div className="space-y-3">
                   {categories.children.map((category: Category) => (
                     <div key={category._id} className="flex items-center justify-between">
@@ -437,10 +405,9 @@ export default function ProductsPage() {
                 </div>
               </div>
             )}
-
             {/* Price Range */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">Price</h3>
+              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.price}</h3>
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Input
@@ -471,7 +438,6 @@ export default function ProductsPage() {
                 </div>
               </div>
             </div>
-
             {/* Attributes */}
             {categories?.attributes?.map((attribute) => (
               <div key={attribute._id} className="bg-white p-4 rounded-lg border border-gray-200">
@@ -497,14 +463,13 @@ export default function ProductsPage() {
                 </div>
               </div>
             ))}
-
             {/* Brand Filter */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">Brand</h3>
+              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.brand}</h3>
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Find a brand"
+                  placeholder={categoryPage.sidebar.findBrandPlaceholder}
                   value={brandSearch}
                   onChange={(e) => setBrandSearch(e.target.value)}
                   className="pl-10 border-gray-300"
@@ -523,10 +488,6 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
-
-               {/* Customer Rating Filter */}
-            
-
               <Button
                 variant="link"
                 className="text-blue-600 p-0 h-auto mt-3 text-sm"
@@ -535,18 +496,19 @@ export default function ProductsPage() {
                 {showMoreBrands ? (
                   <>
                     <ChevronUp className="w-4 h-4 mr-1" />
-                    Show less
+                    {categoryPage.sidebar.showLess}
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="w-4 h-4 mr-1" />+ {filteredBrands.length - 7} more
+                    <ChevronDown className="w-4 h-4 mr-1" />
+                    {categoryPage.sidebar.showMore.replace('{count}', (filteredBrands.length - 7).toString())}
                   </>
                 )}
               </Button>
             </div>
-
+            {/* Customer Rating Filter */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">Customer Rating</h3>
+              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.customerRating}</h3>
               <div className="space-y-3">
                 {[4, 3, 2, 1].map((rating) => (
                   <div key={`rating-${rating}`} className="flex items-center justify-between">
@@ -571,30 +533,28 @@ export default function ProductsPage() {
               </div>
             </div>
           </div>
-
           {/* Product Grid */}
           <div className="flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-gray-700 font-medium">{products.length} Results</p>
+              <p className="text-gray-700 font-medium">{categoryPage.sort.results.replace('{count}', products.length.toString())}</p>
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600 font-medium">Sort By</span>
+                <span className="text-sm text-gray-600 font-medium">{categoryPage.sort.sortBy}</span>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48 border-gray-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="relevance">Relevance</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="rating">Customer Rating</SelectItem>
-                    <SelectItem value="newest">Newest</SelectItem>
-                    <SelectItem value="bestselling">Best Selling</SelectItem>
+                    <SelectItem value="relevance">{categoryPage.sort.relevance}</SelectItem>
+                    <SelectItem value="price-low">{categoryPage.sort.priceLow}</SelectItem>
+                    <SelectItem value="price-high">{categoryPage.sort.priceHigh}</SelectItem>
+                    <SelectItem value="rating">{categoryPage.sort.rating}</SelectItem>
+                    <SelectItem value="newest">{categoryPage.sort.newest}</SelectItem>
+                    <SelectItem value="bestselling">{categoryPage.sort.bestselling}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
             {/* Product Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loading ? (
@@ -635,11 +595,9 @@ export default function ProductsPage() {
                         <h3 className="font-medium text-sm mb-3 line-clamp-3 group-hover:text-blue-600 leading-relaxed">
                           {product.name}
                         </h3>
-
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                           {product.description}
                         </p>
-
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-lg text-red-600">{(product.variants?.[0]?.sellPrice || 0).toLocaleString()} ₫</span>
@@ -654,9 +612,35 @@ export default function ProductsPage() {
                 ))
               )}
             </div>
-
             {/* Add pagination controls */}
-            <PaginationControls />
+            <div className="flex items-center justify-center space-x-2 mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                {categoryPage.pagination.previous}
+              </Button>
+              <div className="flex items-center space-x-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className="w-10 h-10"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                {categoryPage.pagination.next}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
