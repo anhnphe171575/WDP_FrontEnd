@@ -283,7 +283,40 @@ const pagesConfig = {
       address: "Address",
       joinDate: "Join Date",
       save: "Save Changes"
+    },
+    header: {
+      brand: {
+        short: "P",
+        full: "Pet Nest"
+      },
+      search: {
+        placeholder: "Search for products, brands, and more...",
+        mobilePlaceholder: "Search for products..."
+      },
+      cart: {
+        title: "Cart ({count} items)",
+        empty: "Your cart is empty",
+        viewCart: "View cart"
+      },
+      notifications: {
+        title: "Notifications",
+        viewAll: "View all notifications"
+      },
+      user: {
+        login: "Login",
+        signup: "Sign Up",
+        myProfile: "My Profile",
+        myOrders: "My Orders",
+        wishlist: "Wishlist",
+        settings: "Settings",
+        logout: "Logout"
+      },
+      language: {
+        vi: "VI",
+        en: "EN"
+      }
     }
+    
   };
   
   export default pagesConfig;

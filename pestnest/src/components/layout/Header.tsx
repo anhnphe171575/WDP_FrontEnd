@@ -32,7 +32,8 @@ import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/context/LanguageContext';
 
 import axios from 'axios'
-
+import pagesConfigEn from '../../../utils/petPagesConfig.en.js';
+import pagesConfigVi from '../../../utils/petPagesConfig.vi.js';
 
 declare global {
   interface Window {
@@ -56,29 +57,7 @@ interface CartItem {
 }
 
 // Sample cart items
-const cartItems = [
-  {
-    id: 1,
-    name: "Wireless Headphones",
-    price: 99.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: 2,
-    name: "Smart Watch",
-    price: 299.99,
-    quantity: 2,
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: 3,
-    name: "Phone Case",
-    price: 19.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=60&width=60",
-  },
-]
+
 
 // Sample notifications
 const notifications = [
@@ -109,7 +88,8 @@ function CartDropdown() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
   const [isLoading, setIsLoading] = useState(true);
   const [cartData, setCartData] = useState<CartItem[]>([]);
-
+  const { lang, setLang } = useLanguage();
+  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
   useEffect(() => {
     const fetchCartData = async () => {
       try {
@@ -160,14 +140,14 @@ function CartDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="p-4">
-          <h3 className="font-semibold mb-3">Shopping Cart ({cartData.length} items)</h3>
+          <h3 className="font-semibold mb-3">{config.cart.title}</h3>
           {isLoading ? (
             <div className="flex justify-center items-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
           ) : cartData.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
-              Your cart is empty
+              {config.cart.empty}
             </div>
           ) : (
             <>
@@ -194,7 +174,7 @@ function CartDropdown() {
 
               <div className="space-y-2">
                 <Button className="w-full" size="sm" asChild>
-                  <Link href="/cart">View Cart</Link>
+                  <Link href="/cart">{config.cart.viewCart}</Link>
                 </Button>
               </div>
             </>
@@ -253,6 +233,9 @@ function NotificationDropdown() {
 }
 
 function UserDropdown() {
+  const { lang, setLang } = useLanguage();
+  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
+
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [user, setUser] = React.useState<{ name: string, email: string } | null>(null);
@@ -322,12 +305,12 @@ function UserDropdown() {
       setIsLoggedIn(false);
       setUser(null);
 
-      // Chuyển hướng về trang chủ
-      router.push('/homepage');
+      // Reload lại trang để cập nhật UI
+      window.location.reload();
     } catch (error) {
       console.error('Error during logout:', error);
-      // Vẫn chuyển hướng về trang chủ ngay cả khi có lỗi
-      router.push('/homepage');
+      // Dù có lỗi vẫn reload lại trang
+      window.location.reload();
     }
   }
 
@@ -335,10 +318,10 @@ function UserDropdown() {
     return (
       <div className="flex items-center space-x-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/login">Login</Link>
+          <Link href="/login">{config.user.login}</Link>
         </Button>
         <Button size="sm" asChild>
-          <Link href="/signup">Sign Up</Link>
+          <Link href="/signup">{config.user.signup}</Link>
         </Button>
       </div>
     )
@@ -364,27 +347,27 @@ function UserDropdown() {
         <DropdownMenuItem asChild>
           <Link href="/userProfile" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
-            My Profile
+            {config.user.myProfile}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/myorder" className="flex items-center">
             <Package className="mr-2 h-4 w-4" />
-            My Orders
+            {config.user.myOrders}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        {/* <DropdownMenuItem>
           <Heart className="mr-2 h-4 w-4" />
           Wishlist
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
           Settings
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          {config.user.logout}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -396,6 +379,29 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const { lang, setLang } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Lấy config theo ngôn ngữ
+  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
+
+  // State để kiểm tra đăng nhập
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          setIsLoggedIn(false);
+          return;
+        }
+        // Có thể xác thực thêm với API nếu muốn chắc chắn
+        setIsLoggedIn(true);
+      } catch {
+        setIsLoggedIn(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Nếu initialSearchTerm thay đổi (khi chuyển trang search), đồng bộ input
   React.useEffect(() => {
@@ -418,9 +424,9 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           <Link href='/homepage'>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">P</span>
+                <span className="text-primary-foreground font-bold text-lg">{config.brand.short}</span>
               </div>
-              <span className="text-xl font-bold">Pet Nest</span>
+              <span className="text-xl font-bold">{config.brand.full}</span>
             </div>
           </Link>
 
@@ -429,7 +435,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             <form className="relative" onSubmit={handleSearch}>
               <Input
                 type="text"
-                placeholder="Search for products, brands and more..."
+                placeholder={config.search.placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4 pr-12 py-2 w-full"
@@ -454,14 +460,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
 
             {/* Language Switcher */}
             <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
-              {lang === 'vi' ? 'VI' : 'EN'}
+              {lang === 'vi' ? config.language.vi : config.language.en}
             </Button>
 
-            {/* Notifications */}
-            <NotificationDropdown />
+            {/* Notifications và Chat chỉ hiển thị nếu đã đăng nhập */}
+            {isLoggedIn && <NotificationDropdown />}
 
-            {/* Cart */}
-            <CartDropdown />
+            {/* Cart chỉ hiển thị nếu đã đăng nhập */}
+            {isLoggedIn && <CartDropdown />}
 
             {/* User Account */}
             <UserDropdown />
@@ -474,7 +480,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         <form className="relative" onSubmit={handleSearch}>
           <Input
             type="text"
-            placeholder="Search products..."
+            placeholder={config.search.mobilePlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-4 pr-12 py-2 w-full"

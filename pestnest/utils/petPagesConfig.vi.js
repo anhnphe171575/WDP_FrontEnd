@@ -285,6 +285,38 @@ userProfilePage: {
   address: "Địa chỉ",
   joinDate: "Ngày tham gia",
   save: "Lưu thay đổi"
+},
+header: {
+  brand: {
+    short: "P",
+    full: "Pet Nest"
+  },
+  search: {
+    placeholder: "Tìm kiếm sản phẩm, thương hiệu và nhiều hơn nữa...",
+    mobilePlaceholder: "Tìm kiếm sản phẩm..."
+  },
+  cart: {
+    title: "Sản phẩm mới nhất",
+    empty: "Giỏ hàng của bạn đang trống",
+    viewCart: "Xem giỏ hàng"
+  },
+  notifications: {
+    title: "Thông báo",
+    viewAll: "Xem tất cả thông báo"
+  },
+  user: {
+    login: "Đăng nhập",
+    signup: "Đăng ký",
+    myProfile: "Trang cá nhân",
+    myOrders: "Đơn hàng của tôi",
+    wishlist: "Yêu thích",
+    settings: "Cài đặt",
+    logout: "Đăng xuất"
+  },
+  language: {
+    vi: "VI",
+    en: "EN"
+  }
 }
 };
 
