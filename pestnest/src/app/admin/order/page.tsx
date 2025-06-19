@@ -17,6 +17,7 @@ interface OrderItem {
   productId: string;
   quantity: number;
   price: number;
+  status:string
 }
 
 interface Order {
@@ -40,6 +41,7 @@ interface Order {
     }
     quantity: number;
     price: number;
+    status:string
 }[];
   total: number;
   status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
@@ -195,6 +197,8 @@ export default function OrderPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [selectedReturnItem, setSelectedReturnItem] = useState<any>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -315,9 +319,23 @@ export default function OrderPage() {
                     <TableCell>{order.userId.name}</TableCell>
                     <TableCell>{order.total?.toFixed(2) || 'N/A'}VND</TableCell>
                     <TableCell>
-                      <Badge className={ORDER_STATUS_COLORS[order.status]}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={ORDER_STATUS_COLORS[order.status]}>
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </Badge>
+                        {order.OrderItems && order.OrderItems.some(item => item.status === 'returned-requested') && (
+                          <span
+                            className="flex items-center text-yellow-600 text-xs gap-1 cursor-pointer underline"
+                            onClick={() => {
+                              const returnItem = order.OrderItems.find(item => item.status === 'returned-requested');
+                              setSelectedReturnItem(returnItem);
+                              setIsReturnDialogOpen(true);
+                            }}
+                          >
+                            <span role="img" aria-label="Returned">⚠️</span> Có yêu cầu trả hàng
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {order.createAt ? new Date(order.createAt).toLocaleDateString() : 'N/A'}
@@ -484,6 +502,55 @@ export default function OrderPage() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chi tiết yêu cầu trả hàng</DialogTitle>
+          </DialogHeader>
+          {selectedReturnItem && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                {selectedReturnItem.productVariant?.images?.[0]?.url && (
+                  <div className="relative w-20 h-20">
+                    <NextImage
+                      src={selectedReturnItem.productVariant.images[0].url}
+                      alt={selectedReturnItem.productId?.name || 'Product'}
+                      fill
+                      className="object-cover rounded-md"
+                    />
+                  </div>
+                )}
+                <div>
+                  <div><b>Sản phẩm:</b> {selectedReturnItem.productId?.name}</div>
+                  <div><b>Số lượng:</b> {selectedReturnItem.quantity}</div>
+                  <div><b>Lý do:</b> {selectedReturnItem.reason || 'Không có lý do'}</div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
+                  Từ chối
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await api.put(`/orders/${selectedOrder?._id}/orderItem/${selectedReturnItem._id}/returned`, {
+                        quantity: selectedReturnItem.quantity,
+                      });
+                      setIsReturnDialogOpen(false);
+                      fetchOrders();
+                    } catch (err) {
+                      alert('Có lỗi xảy ra khi xác nhận trả hàng!');
+                    }
+                  }}
+                >
+                  Chấp nhận
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
