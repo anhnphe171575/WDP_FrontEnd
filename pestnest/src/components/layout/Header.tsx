@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { MessageCircle } from 'lucide-react'
@@ -391,9 +391,24 @@ function UserDropdown() {
   )
 }
 
-export default function Header() {
-  const [searchQuery, setSearchQuery] = React.useState("")
+export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?: string }) {
+  const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
   const { lang, setLang } = useLanguage();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Nếu initialSearchTerm thay đổi (khi chuyển trang search), đồng bộ input
+  React.useEffect(() => {
+    setSearchQuery(initialSearchTerm);
+  }, [initialSearchTerm]);
+
+  // Xử lý tìm kiếm khi nhấn nút hoặc Enter
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <div className="border-b bg-white">
@@ -411,7 +426,7 @@ export default function Header() {
 
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
-            <div className="relative">
+            <form className="relative" onSubmit={handleSearch}>
               <Input
                 type="text"
                 placeholder="Search for products, brands and more..."
@@ -419,10 +434,10 @@ export default function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4 pr-12 py-2 w-full"
               />
-              <Button size="sm" className="absolute right-1 top-1 h-8">
+              <Button size="sm" className="absolute right-1 top-1 h-8" type="submit">
                 <Search className="h-4 w-4" />
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Right side actions */}
@@ -456,7 +471,7 @@ export default function Header() {
 
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
-        <div className="relative">
+        <form className="relative" onSubmit={handleSearch}>
           <Input
             type="text"
             placeholder="Search products..."
@@ -464,10 +479,10 @@ export default function Header() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-4 pr-12 py-2 w-full"
           />
-          <Button size="sm" className="absolute right-1 top-1 h-8">
+          <Button size="sm" className="absolute right-1 top-1 h-8" type="submit">
             <Search className="h-4 w-4" />
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   )
