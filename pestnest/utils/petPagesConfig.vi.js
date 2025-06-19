@@ -285,6 +285,55 @@ userProfilePage: {
   address: "Địa chỉ",
   joinDate: "Ngày tham gia",
   save: "Lưu thay đổi"
+},
+cart: {
+  continueShopping: "Tiếp tục mua sắm",
+  emptyTitle: "Giỏ hàng trống",
+  emptyDesc: "Bạn chưa có sản phẩm nào trong giỏ hàng",
+  startShopping: "Bắt đầu mua sắm",
+  title: "Giỏ hàng",
+  productCount: "{count} sản phẩm",
+  selectAll: "Chọn tất cả ({selected}/{total})",
+  selectedTotal: "Tổng tiền đã chọn",
+  selected: "✓ Đã chọn",
+  pricePerProduct: "{price} / sản phẩm",
+  selectedCount: "Đã chọn {count} sản phẩm",
+  addToFavorite: "Thêm vào yêu thích",
+  buyNow: "Mua ngay ({count})",
+  error: "Lỗi"
+},
+categoryPage: {
+  breadcrumb: {
+    home: "Trang chủ",
+    products: "Sản phẩm"
+  },
+  sidebar: {
+    category: "Danh mục",
+    price: "Giá",
+    brand: "Thương hiệu",
+    findBrandPlaceholder: "Tìm thương hiệu",
+    showLess: "Ẩn bớt",
+    showMore: "+ {count} thêm",
+    customerRating: "Đánh giá khách hàng"
+  },
+  sort: {
+    results: "{count} kết quả",
+    sortBy: "Sắp xếp theo",
+    relevance: "Liên quan",
+    priceLow: "Giá: Thấp đến Cao",
+    priceHigh: "Giá: Cao đến Thấp",
+    rating: "Đánh giá khách hàng",
+    newest: "Mới nhất",
+    bestselling: "Bán chạy nhất"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  product: {
+    price: "{price}₫",
+    addToWishlist: "Thêm vào yêu thích"
+  }
 }
 };
 
