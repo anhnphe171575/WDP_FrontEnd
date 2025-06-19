@@ -5,6 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { api } from '../../../../utils/axios';
 import Header from '@/components/layout/Header';
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface BlogImage {
   url: string;
@@ -26,6 +29,9 @@ interface BlogPost {
 }
 
 export default function BlogDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const blogDetailConfig = pagesConfig.blogdetail;
   const resolvedParams = use(params);
   const [post, setPost] = useState<BlogPost | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
@@ -68,7 +74,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-green-700"></div>
-          <p className="mt-4 text-gray-700 font-medium">Loading post...</p>
+          <p className="mt-4 text-gray-700 font-medium">{blogDetailConfig.loading}</p>
         </div>
       </div>
     );
@@ -83,7 +89,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Oops! An error occurred</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">{blogDetailConfig.error.notFound}</h2>
           <p className="text-gray-600 mb-6">{error || 'Post not found'}</p>
           <Link
             href="/blog"
@@ -92,7 +98,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Blog
+            {blogDetailConfig.backToBlog}
           </Link>
         </div>
       </div>
@@ -117,7 +123,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Blog
+            {blogDetailConfig.backToBlog}
           </Link>
         </div>
 
@@ -152,7 +158,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ id: strin
           {/* Related Blogs Section */}
           {relatedPosts.length > 0 && (
             <div className="mt-16">
-              <h3 className="text-2xl font-bold text-orange-900 mb-8">Suggested Reading</h3>
+              <h3 className="text-2xl font-bold text-orange-900 mb-8">{blogDetailConfig.suggestedReading}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {relatedPosts.map((relatedPost) => (
                   <Link 
