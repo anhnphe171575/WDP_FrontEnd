@@ -1,4 +1,3 @@
-// pestnest/src/components/chatbox/Messages.tsx
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react'

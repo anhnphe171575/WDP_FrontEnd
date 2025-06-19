@@ -78,6 +78,21 @@ const menuItems = [
     url: "/marketing/content",
     icon: FileText,
   },
+  {
+    title: "Manage Blog",
+    url: "/marketing/blog",
+    icon: FileText,
+  },
+  {
+    title: "Manage Banner",
+    url: "/marketing/banner",
+    icon: FileText,
+  },
+  {
+    title: "Manage Review",
+    url: "/marketing/review",
+    icon: FileText,
+  },
 ]
 
 const settingsItems = [

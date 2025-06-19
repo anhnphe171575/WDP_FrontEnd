@@ -21,6 +21,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLanguage } from '@/context/LanguageContext';
+import pagesConfigEn from '../../../../utils/petPagesConfig.en';
+import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
 
 interface ReviewStats {
   productId: string;
@@ -48,6 +51,8 @@ interface PaginationProps {
 }
 
 function Pagination({ filteredReviews, itemsPerPage, currentPage, setCurrentPage }: PaginationProps) {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.reviewManagement : pagesConfigVi.reviewManagement;
   const totalPages = Math.ceil(filteredReviews.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, filteredReviews.length);
@@ -55,7 +60,10 @@ function Pagination({ filteredReviews, itemsPerPage, currentPage, setCurrentPage
   return (
     <div className="flex items-center justify-between mt-4">
       <div className="text-sm text-gray-500">
-        Showing {startIndex + 1} to {endIndex} of {filteredReviews.length} products
+        {config.pagination.showing
+          .replace('{start}', (startIndex + 1).toString())
+          .replace('{end}', endIndex.toString())
+          .replace('{total}', filteredReviews.length.toString())}
       </div>
       <div className="flex gap-2">
         <Button
@@ -64,7 +72,7 @@ function Pagination({ filteredReviews, itemsPerPage, currentPage, setCurrentPage
           onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
         >
-          Previous
+          {config.pagination.previous}
         </Button>
         <div className="flex items-center gap-1">
           {[...Array(totalPages)].map((_, index) => (
@@ -84,7 +92,7 @@ function Pagination({ filteredReviews, itemsPerPage, currentPage, setCurrentPage
           onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}
         >
-          Next
+          {config.pagination.next}
         </Button>
       </div>
     </div>
@@ -92,6 +100,8 @@ function Pagination({ filteredReviews, itemsPerPage, currentPage, setCurrentPage
 }
 
 export default function ReviewManagement() {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.reviewManagement : pagesConfigVi.reviewManagement;
   const [reviews, setReviews] = useState<ReviewStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProductComments, setSelectedProductComments] = useState<Comment[]>([]);
@@ -216,12 +226,12 @@ export default function ReviewManagement() {
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
-            <CardTitle>Review Management</CardTitle>
+            <CardTitle>{config.title}</CardTitle>
             <div className="flex items-center gap-4">
               <div className="relative w-72">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search products..."
+                  placeholder={config.search.placeholder}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -238,14 +248,14 @@ export default function ReviewManagement() {
                 }}
               >
                 <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Filter by rating" />
+                  <SelectValue placeholder={config.search.ratingPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Ratings</SelectItem>
-                  <SelectItem value="4+">4+ Stars</SelectItem>
-                  <SelectItem value="3+">3+ Stars</SelectItem>
-                  <SelectItem value="2+">2+ Stars</SelectItem>
-                  <SelectItem value="1+">1+ Stars</SelectItem>
+                  <SelectItem value="all">{config.commentsDialog.ratingFilter.all}</SelectItem>
+                  <SelectItem value="4+">4+ {config.commentsDialog.ratingFilter.four}</SelectItem>
+                  <SelectItem value="3+">3+ {config.commentsDialog.ratingFilter.three}</SelectItem>
+                  <SelectItem value="2+">2+ {config.commentsDialog.ratingFilter.two}</SelectItem>
+                  <SelectItem value="1+">1+ {config.commentsDialog.ratingFilter.one}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -261,9 +271,9 @@ export default function ReviewManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Average Rating</TableHead>
-                    <TableHead>Total Comments</TableHead>
+                    <TableHead>{config.table.headers.productName}</TableHead>
+                    <TableHead>{config.table.headers.averageRating}</TableHead>
+                    <TableHead>{config.table.headers.totalComments}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -288,7 +298,7 @@ export default function ReviewManagement() {
                           </DialogTrigger>
                           <DialogContent className="max-w-2xl">
                             <DialogHeader>
-                              <DialogTitle>Comments for {selectedProductName}</DialogTitle>
+                              <DialogTitle>{config.commentsDialog.title} {selectedProductName}</DialogTitle>
                             </DialogHeader>
                             <div className="mb-4">
                               <Select
@@ -296,15 +306,15 @@ export default function ReviewManagement() {
                                 onValueChange={setCommentRatingFilter}
                               >
                                 <SelectTrigger className="w-[120px]">
-                                  <SelectValue placeholder="Filter by rating" />
+                                  <SelectValue placeholder={config.search.ratingPlaceholder} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="all">All Ratings</SelectItem>
-                                  <SelectItem value="5">5 Stars</SelectItem>
-                                  <SelectItem value="4">4 Stars</SelectItem>
-                                  <SelectItem value="3">3 Stars</SelectItem>
-                                  <SelectItem value="2">2 Stars</SelectItem>
-                                  <SelectItem value="1">1 Star</SelectItem>
+                                  <SelectItem value="all">{config.commentsDialog.ratingFilter.all}</SelectItem>
+                                  <SelectItem value="5">{config.commentsDialog.ratingFilter.five}</SelectItem>
+                                  <SelectItem value="4">{config.commentsDialog.ratingFilter.four}</SelectItem>
+                                  <SelectItem value="3">{config.commentsDialog.ratingFilter.three}</SelectItem>
+                                  <SelectItem value="2">{config.commentsDialog.ratingFilter.two}</SelectItem>
+                                  <SelectItem value="1">{config.commentsDialog.ratingFilter.one}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -336,7 +346,6 @@ export default function ReviewManagement() {
                   ))}
                 </TableBody>
               </Table>
-              
               <Pagination
                 filteredReviews={filteredReviews}
                 itemsPerPage={itemsPerPage}

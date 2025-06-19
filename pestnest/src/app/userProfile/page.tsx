@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Header from '@/components/layout/Header';
 import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../utils/petPagesConfig.vi';
+import enConfig from '../../../utils/petPagesConfig.en';
 
 interface UserProfile {
     name: string;
@@ -31,6 +34,9 @@ interface ApiResponse {
 
 const UserProfilePage = () => {
     const router = useRouter();
+    const { lang } = useLanguage();
+    const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+    const config = pagesConfig.userProfilePage;
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -47,7 +53,7 @@ const UserProfilePage = () => {
             try {
                 const token = sessionStorage.getItem('token');
                 if (!token) {
-                    throw new Error('Không tìm thấy token');
+                    throw new Error(config.notFoundToken);
                 }
 
                 const response = await axios.get<ApiResponse>('http://localhost:5000/api/auth/myprofile', {
@@ -62,15 +68,15 @@ const UserProfilePage = () => {
                         name: profileData.name,
                         email: profileData.email,
                         phone: profileData.phone,
-                        address: profileData.address || 'Chưa cập nhật địa chỉ',
-                        joinDate: new Date(profileData.createdAt).toLocaleDateString('vi-VN', {
+                        address: profileData.address || config.notUpdatedAddress,
+                        joinDate: new Date(profileData.createdAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', {
                             month: 'long',
                             year: 'numeric'
                         })
                     });
                 }
             } catch (err) {
-                setError('Không thể tải thông tin profile. Vui lòng thử lại sau.');
+                setError(config.fetchError);
                 console.error('Error fetching profile:', err);
             } finally {
                 setLoading(false);
@@ -78,7 +84,7 @@ const UserProfilePage = () => {
         };
 
         fetchProfile();
-    }, []);
+    }, [lang]);
 
     const handleEdit = () => {
         setIsEditing(!isEditing);
@@ -110,7 +116,7 @@ const UserProfilePage = () => {
                         onClick={() => window.location.reload()} 
                         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                     >
-                        Thử lại
+                        {config.retry}
                     </button>
                 </div>
             </div>
@@ -131,7 +137,7 @@ const UserProfilePage = () => {
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold text-gray-800">{userData.name}</h1>
-                                    <p className="text-gray-500">Thành viên từ {userData.joinDate}</p>
+                                    <p className="text-gray-500">{config.memberSince.replace('{joinDate}', userData.joinDate || '')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-3">
@@ -140,7 +146,7 @@ const UserProfilePage = () => {
                                     className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2"
                                 >
                                     <Lock className="w-4 h-4" />
-                                    <span>Thay đổi mật khẩu</span>
+                                    <span>{config.changePassword}</span>
                                 </button>
                                 <button
                                     onClick={handleEdit}
@@ -150,7 +156,7 @@ const UserProfilePage = () => {
                                             : 'bg-blue-500 text-white hover:bg-blue-600'
                                     }`}
                                 >
-                                    {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+                                    {isEditing ? config.cancel : config.edit}
                                 </button>
                             </div>
                         </div>
@@ -165,7 +171,7 @@ const UserProfilePage = () => {
                                     <User className="w-6 h-6 text-blue-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{config.name}</label>
                                     {isEditing ? (
                                         <input
                                             type="text"
@@ -185,7 +191,7 @@ const UserProfilePage = () => {
                                     <Mail className="w-6 h-6 text-green-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{config.email}</label>
                                     {isEditing ? (
                                         <input
                                             type="email"
@@ -205,7 +211,7 @@ const UserProfilePage = () => {
                                     <Phone className="w-6 h-6 text-purple-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{config.phone}</label>
                                     {isEditing ? (
                                         <input
                                             type="tel"
@@ -225,7 +231,7 @@ const UserProfilePage = () => {
                                     <MapPin className="w-6 h-6 text-orange-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{config.address}</label>
                                     {isEditing ? (
                                         <input
                                             type="text"
@@ -245,7 +251,7 @@ const UserProfilePage = () => {
                                     <Calendar className="w-6 h-6 text-pink-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Ngày tham gia</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{config.joinDate}</label>
                                     <p className="text-gray-900 text-lg">{userData.joinDate}</p>
                                 </div>
                             </div>
@@ -257,7 +263,7 @@ const UserProfilePage = () => {
                                     onClick={handleUpdate}
                                     className="w-full px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-lg"
                                 >
-                                    Lưu thay đổi
+                                    {config.save}
                                 </button>
                             </div>
                         )}

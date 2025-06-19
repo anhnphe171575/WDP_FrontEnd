@@ -270,8 +270,11 @@ export default function ProductPage() {
               ))}
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-4xl font-bold text-primary">{variant.sellPrice}đ</span>
-               
-                <span className="text-base text-muted-foreground ml-4">Còn lại: <b>{variant.totalQuantity}</b></span>
+                {variant.totalQuantity === 0 ? (
+                  <span className="text-base text-red-500 ml-4 font-semibold">Sản phẩm hết hàng</span>
+                ) : (
+                  <span className="text-base text-muted-foreground ml-4">Còn lại: <b>{variant.totalQuantity}</b></span>
+                )}
               </div>
             </div>
 
@@ -281,21 +284,23 @@ export default function ProductPage() {
               </p>
 
               {/* Quantity */}
-              <div className="space-y-3">
-                <Label className="text-base font-medium">Quantity</Label>
-                <Select value={quantity.toString()} onValueChange={(value) => setQuantity(parseInt(value))}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {variant.totalQuantity > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Quantity</Label>
+                  <Select value={quantity.toString()} onValueChange={(value) => setQuantity(parseInt(value))}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-6">
@@ -303,7 +308,7 @@ export default function ProductPage() {
                   size="lg" 
                   className="flex-1 h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
                   onClick={handleAddToCart}
-                  disabled={addingToCart}
+                  disabled={addingToCart || variant.totalQuantity === 0}
                 >
                   {addingToCart ? (
                     <div className="flex items-center">
@@ -388,20 +393,19 @@ export default function ProductPage() {
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={product.reviewUsers?.[index]?.avatar || "/placeholder.svg"} alt={product.reviewUsers?.[index]?.name || 'User'} />
+                          <AvatarImage src={"/placeholder.svg"} alt={review.user?.name || 'User'} />
                           <AvatarFallback>
-                            {product.reviewUsers?.[index]?.name
+                            {review.user?.name
                               ?.split(" ")
                               .map((n: string) => n[0])
                               .join("") || 'U'}
                           </AvatarFallback>
                         </Avatar>
-
                         <div className="flex-1 space-y-4">
                           <div className="flex items-center justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-lg">{product.reviewUsers?.[index]?.name}</span>
+                                <span className="font-medium text-lg">{review.user?.name}</span>
                                 <Badge variant="secondary" className="text-xs">
                                   Verified Purchase
                                 </Badge>
@@ -419,23 +423,21 @@ export default function ProductPage() {
                                     />
                                   ))}
                                 </div>
-                                <span className="text-sm text-muted-foreground">{new Date(review.date).toLocaleDateString()}</span>
+                                <span className="text-sm text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</span>
                               </div>
                             </div>
                           </div>
-
                           <div>
-                            <h4 className="font-medium text-lg mb-2">{review.title}</h4>
-                            <p className="text-muted-foreground leading-relaxed">{review.content}</p>
+                            {review.title && <h4 className="font-medium text-lg mb-2">{review.title}</h4>}
+                            <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
                           </div>
-
-                          {review.images && (
+                          {review.images && review.images.length > 0 && (
                             <div className="flex gap-3">
-                              {review.images.map((image: string, index: number) => (
-                                <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-muted shadow-sm hover:shadow-md transition-shadow">
+                              {review.images.map((img: any, idx: any) => (
+                                <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden bg-muted shadow-sm hover:shadow-md transition-shadow">
                                   <Image
-                                    src={image || "/placeholder.svg"}
-                                    alt={`Review image ${index + 1}`}
+                                    src={img.url || "/placeholder.svg"}
+                                    alt={`Review image ${idx + 1}`}
                                     width={80}
                                     height={80}
                                     className="w-full h-full object-cover"
@@ -444,13 +446,7 @@ export default function ProductPage() {
                               ))}
                             </div>
                           )}
-
-                          <div className="flex items-center gap-4 pt-2">
-                            <Button variant="ghost" size="sm" className="h-9 px-3 hover:bg-muted">
-                              <ThumbsUp className="w-4 h-4 mr-2" />
-                              Helpful ({review.helpful || 0})
-                            </Button>
-                          </div>
+                         
                         </div>
                       </div>
                     </CardContent>

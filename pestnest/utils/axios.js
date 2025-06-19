@@ -3,9 +3,7 @@ import axios from 'axios';
 import { useState } from 'react';
 
 // Debug log để kiểm tra env
-console.log('🔍 Checking environment variables:');
-console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-console.log('NODE_ENV:', process.env.NODE_ENV);
+
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -25,7 +23,7 @@ axiosInstance.interceptors.request.use(
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 Request:', config.method?.toUpperCase(), config.url);
+    
     }
     
     return config;
@@ -39,13 +37,12 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Response:', response.status, response.config.url);
+      
     }
     return response;
   },
   (error) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('❌ Error:', error.response?.status, error.config?.url);
     }
     
     // Xử lý lỗi chung
