@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Edit, Eye, Image, Trash2 } from "lucide-react";
 import NextImage from "next/image";
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface Banner {
   _id: string;
@@ -34,11 +37,14 @@ interface BannerFormProps {
 }
 
 function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const bannerManagementConfig = pagesConfig.bannerManagement;
   const [formData, setFormData] = useState({
     _id: banner?._id || '',
     title: banner?.title || '',
     description: banner?.description || '',
-    image: banner?.image || '', // Chuyển đổi File sang string tạm thời
+    image: banner?.image || '',
     status: banner?.status || 'active',
     startDate: banner?.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     endDate: banner?.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
@@ -49,53 +55,51 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
- const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (file) {
-    setSelectedFile(file); // selectedFile: File | null
-    setImagePreview(URL.createObjectURL(file)); // Nếu bạn muốn preview
-  }
-};
-
-
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsUploading(true);
-
-  try {
-    if (!selectedFile && !banner) {
-      throw new Error('Please select an image');
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setImagePreview(URL.createObjectURL(file));
     }
+  };
 
-    const bannerData: Omit<Banner, '_id'> = {
-      title: formData.title,
-      description: formData.description,
-      status: formData.status as 'active' | 'inactive',
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      link: formData.link,
-      image: selectedFile || undefined
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUploading(true);
 
-    await onSubmit(bannerData);
-    onClose();
-  } catch (error) {
-    console.error('Error saving banner:', error);
-  } finally {
-    setIsUploading(false);
-  }
-};
+    try {
+      if (!selectedFile && !banner) {
+        throw new Error('Please select an image');
+      }
 
+      const bannerData: Omit<Banner, '_id'> = {
+        title: formData.title,
+        description: formData.description,
+        status: formData.status as 'active' | 'inactive',
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        link: formData.link,
+        image: selectedFile || undefined
+      };
+
+      await onSubmit(bannerData);
+      onClose();
+    } catch (error) {
+      console.error('Error saving banner:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="xl:max-w-[1000px] w-full max-h-screen overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{banner ? 'Edit Banner' : 'Add New Banner'}</DialogTitle>
+          <DialogTitle>{banner ? bannerManagementConfig.form.editTitle : bannerManagementConfig.form.addTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+            <Label htmlFor="title">{bannerManagementConfig.form.fields.title} <span className="text-red-500">*</span></Label>
             <Input
               id="title"
               value={formData.title}
@@ -104,7 +108,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{bannerManagementConfig.form.fields.description}</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -112,7 +116,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Banner Image <span className="text-red-500">*</span></Label>
+            <Label htmlFor="image">{bannerManagementConfig.form.fields.image} <span className="text-red-500">*</span></Label>
             <Input
               id="image"
               type="file"
@@ -129,7 +133,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
+                <p className="text-sm text-gray-500">{bannerManagementConfig.uploadingProgress}{uploadProgress}%</p>
               </div>
             )}
             {imagePreview && (
@@ -144,13 +148,13 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
+            <Label htmlFor="status">{bannerManagementConfig.form.fields.status} <span className="text-red-500">*</span></Label>
             <Select
               value={formData.status}
               onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select status" />
+                <SelectValue placeholder={bannerManagementConfig.search.statusPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
@@ -160,7 +164,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
+              <Label htmlFor="startDate">{bannerManagementConfig.form.fields.startDate}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -169,7 +173,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
+              <Label htmlFor="endDate">{bannerManagementConfig.form.fields.endDate}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -179,7 +183,7 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="link">Link</Label>
+            <Label htmlFor="link">{bannerManagementConfig.form.fields.link}</Label>
             <Input
               id="link"
               type="url"
@@ -190,10 +194,10 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {bannerManagementConfig.form.buttons.cancel}
             </Button>
             <Button type="submit" disabled={isUploading}>
-              {isUploading ? `Uploading ${uploadProgress}%` : banner ? 'Save Changes' : 'Add Banner'}
+              {isUploading ? `${bannerManagementConfig.uploadingProgress}${uploadProgress}%` : banner ? bannerManagementConfig.form.buttons.save : bannerManagementConfig.form.buttons.add}
             </Button>
           </div>
         </form>
@@ -209,52 +213,56 @@ interface BannerDetailProps {
 }
 
 function BannerDetail({ banner, isOpen, onClose }: BannerDetailProps) {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const bannerManagementConfig = pagesConfig.bannerManagement;
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Banner Details</DialogTitle>
+          <DialogTitle>{bannerManagementConfig.detail.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Title</Label>
+            <Label>{bannerManagementConfig.form.fields.title}</Label>
             <p className="text-sm text-gray-700">{banner.title}</p>
           </div>
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{bannerManagementConfig.form.fields.description}</Label>
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{banner.description}</p>
           </div>
           <div className="space-y-2">
-            <Label>Image</Label>
+            <Label>{bannerManagementConfig.form.fields.image}</Label>
             <img src={banner.imageUrl} alt="Banner" width={600} height={600} />
           </div>
           <div className="space-y-2">
-            <Label>Status</Label>
+            <Label>{bannerManagementConfig.form.fields.status}</Label>
             <Badge variant={banner.status === 'active' ? 'default' : 'secondary'}>
               {banner.status}
             </Badge>
           </div>
           <div className="space-y-2">
-            <Label>Start Date</Label>
+            <Label>{bannerManagementConfig.form.fields.startDate}</Label>
             <p className="text-sm text-gray-700">
               {new Date(banner.startDate).toLocaleDateString()}
             </p>
           </div>
           <div className="space-y-2">
-            <Label>End Date</Label>
+            <Label>{bannerManagementConfig.form.fields.endDate}</Label>
             <p className="text-sm text-gray-700">
               {banner.endDate ? new Date(banner.endDate).toLocaleDateString() : 'N/A'}
             </p>
           </div>
           <div className="space-y-2">
-            <Label>Link</Label>
+            <Label>{bannerManagementConfig.form.fields.link}</Label>
             <p className="text-sm text-gray-700">
               {banner.link || 'N/A'}
             </p>
           </div>
           <div className="flex justify-end">
             <Button variant="outline" onClick={onClose}>
-              Close
+              {bannerManagementConfig.detail.closeButton}
             </Button>
           </div>
         </div>
@@ -263,8 +271,10 @@ function BannerDetail({ banner, isOpen, onClose }: BannerDetailProps) {
   );
 }
 
-
 export default function BannerPage() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const bannerManagementConfig = pagesConfig.bannerManagement;
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -273,22 +283,24 @@ export default function BannerPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState<Banner | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5); // Số item trên mỗi trang
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
     fetchBanners();
   }, []);
+
   const fetchBanners = async () => {
     try {
       const data = await api.get('/banners');
       setBanners(data.data);
-     console.log(data);
+      console.log(data);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
   const filteredBanners = banners.filter(banner =>
     banner.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     banner.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -312,13 +324,12 @@ export default function BannerPage() {
         formData.append('image', data.image);
       }
 
-      const response = await api.post('/banners', formData, {
+      await api.post('/banners', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      setBanners([...banners]);
       fetchBanners();
     } catch (err: any) {
       setError(err.message);
@@ -346,12 +357,10 @@ export default function BannerPage() {
         },
       });
 
-      // Cập nhật lại danh sách banner
       setBanners(banners.map(banner => 
         banner._id === selectedBanner._id ? response.data : banner
       ));
       
-      // Đóng form và reset selectedBanner
       setIsFormOpen(false);
       setSelectedBanner(undefined);
     } catch (err: any) {
@@ -373,24 +382,24 @@ export default function BannerPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Banner Management</CardTitle>
+            <CardTitle>{bannerManagementConfig.title}</CardTitle>
             <Button onClick={() => {
               setSelectedBanner(undefined);
               setIsFormOpen(true);
-            }}>Add New Banner</Button>
+            }}>{bannerManagementConfig.addNewButton}</Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search banners..."
+              placeholder={bannerManagementConfig.search.placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
             <Select>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={bannerManagementConfig.search.statusPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -401,22 +410,22 @@ export default function BannerPage() {
           </div>
 
           {loading ? (
-            <div>Loading...</div>
+            <div>{bannerManagementConfig.loading}</div>
           ) : error ? (
             <div className="text-red-500">Error: {error}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{bannerManagementConfig.table.headers.no}</TableHead>
+                  <TableHead>{bannerManagementConfig.table.headers.title}</TableHead>
+                  <TableHead>{bannerManagementConfig.table.headers.description}</TableHead>
+                  <TableHead>{bannerManagementConfig.table.headers.status}</TableHead>
+                  <TableHead>{bannerManagementConfig.table.headers.startDate}</TableHead>
+                  <TableHead className="text-right">{bannerManagementConfig.table.headers.actions}</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className="table-banner">
+              <TableBody>
                 {paginatedBanners.map((banner, index) => (
                   <TableRow key={banner._id}>
                     <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
@@ -470,27 +479,26 @@ export default function BannerPage() {
               </TableBody>
             </Table>
           )}
+
+          <Pagination 
+            filteredBanners={filteredBanners}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            setItemsPerPage={setItemsPerPage}
+            setCurrentPage={setCurrentPage}
+          />
         </CardContent>
       </Card>
 
-      <Dialog open={isFormOpen} onOpenChange={() => setIsFormOpen(false)}>
-        <DialogContent className="xl:max-w-[1000px]">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedBanner ? 'Edit Banner' : 'Add New Banner'}
-            </DialogTitle>
-          </DialogHeader>
-          <BannerForm
-            banner={selectedBanner}
-            isOpen={isFormOpen}
-            onClose={() => {
-              setIsFormOpen(false);
-              setSelectedBanner(undefined);
-            }}
-            onSubmit={selectedBanner ? handleEditBanner : handleAddBanner}
-          />
-        </DialogContent>
-      </Dialog>
+      <BannerForm
+        banner={selectedBanner}
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedBanner(undefined);
+        }}
+        onSubmit={selectedBanner ? handleEditBanner : handleAddBanner}
+      />
 
       {selectedBanner && (
         <BannerDetail
@@ -502,14 +510,6 @@ export default function BannerPage() {
           }}
         />
       )}
-
-      <Pagination 
-        filteredBanners={filteredBanners}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        setItemsPerPage={setItemsPerPage}
-        setCurrentPage={setCurrentPage}
-      />
     </div>
   );
 }
@@ -521,12 +521,15 @@ interface PaginationProps {
   setItemsPerPage: (value: number) => void;
   setCurrentPage: (value: number) => void;
 }
+
 function Pagination({ filteredBanners, itemsPerPage, currentPage, setItemsPerPage, setCurrentPage }: PaginationProps) {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const bannerManagementConfig = pagesConfig.bannerManagement;
   const totalPages = Math.ceil(filteredBanners.length / itemsPerPage);
 
   return (
     <div className="flex items-center justify-between px-2 py-4">
-      
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
@@ -534,7 +537,7 @@ function Pagination({ filteredBanners, itemsPerPage, currentPage, setItemsPerPag
           onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
         >
-          Previous
+          {bannerManagementConfig.pagination.previous}
         </Button>
         <div className="flex items-center gap-1">
           {[...Array(totalPages)].map((_, index) => (
@@ -554,7 +557,7 @@ function Pagination({ filteredBanners, itemsPerPage, currentPage, setItemsPerPag
           onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}
         >
-          Next
+          {bannerManagementConfig.pagination.next}
         </Button>
       </div>
     </div>

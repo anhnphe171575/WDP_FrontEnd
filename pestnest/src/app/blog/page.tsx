@@ -6,6 +6,9 @@ import { useEffect, useState } from 'react';
 import { api } from '../../../utils/axios';
 import './blog.css';
 import Header from '@/components/layout/Header';
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../utils/petPagesConfig.vi';
+import enConfig from '../../../utils/petPagesConfig.en';
 
 interface BlogImage {
   url: string;
@@ -27,6 +30,9 @@ interface BlogPost {
 }
 
 export default function BlogPage() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const blogConfig = pagesConfig.blog;
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +84,7 @@ export default function BlogPage() {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
-            Back to Home
+            {blogConfig.backToHome}
           </Link>
         </div>
 
@@ -87,7 +93,7 @@ export default function BlogPage() {
           <div className="blog-search-container">
             <input
               type="text"
-              placeholder="Search posts..."
+              placeholder={blogConfig.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="blog-search-input"
@@ -151,7 +157,7 @@ export default function BlogPage() {
                     href={`/blog/${post._id}`}
                     className="blog-card-link"
                   >
-                    Read more
+                    {blogConfig.readMore}
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                     </svg>

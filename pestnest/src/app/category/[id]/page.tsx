@@ -15,21 +15,12 @@ import { useParams, useRouter } from "next/navigation"
 import Header from '@/components/layout/Header';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
     
 
 
-const brands = [
-  { name: "By Chewy", count: 181 },
-  { name: "360 Pet Nutrition", count: 4 },
-  { name: "A Better Treat", count: 6 },
-  { name: "ACANA", count: 93 },
-  { name: "Addiction", count: 26 },
-  { name: "Against the Grain", count: 4 },
-  { name: "Almo Nature", count: 20 },
-  { name: "American Journey", count: 156 },
-  { name: "Blue Buffalo", count: 312 },
-  { name: "Hill's Science Diet", count: 89 },
-]
 
 interface Product {
   _id: string;
@@ -50,6 +41,7 @@ interface Product {
     sellPrice: number;
     totalQuantity: number;
   }[];
+  brand: string;
 }
 
 interface Category {
@@ -113,7 +105,7 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [brandSearch, setBrandSearch] = useState("")
   const [showMoreBrands, setShowMoreBrands] = useState(false)
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000])
+  const [priceRange, setPriceRange] = useState<[string, string]>(["", ""])
   const [sortBy, setSortBy] = useState("relevance")
   const [categories, setCategories] = useState<CategoryResponse | null>(null);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
@@ -121,6 +113,15 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const { addToCart } = useCart();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
+  const categoryPage = config.categoryPage;
+
+  // Tạo danh sách brand động từ allProducts
+  const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
+
+  const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
+  const displayedBrands = showMoreBrands ? filteredBrands : filteredBrands.slice(0, 7)
 
   const fetchFilteredProducts = async (filterParams: FilterParams) => {
     try {
@@ -142,32 +143,44 @@ export default function ProductsPage() {
       let filteredProducts = [...allProducts];
 
       // Filter by price range
-      if (filterParams.priceRange) {
+      if (filterParams.priceRange && (filterParams.priceRange[0] || filterParams.priceRange[1])) {
         filteredProducts = filteredProducts.filter(product => {
           if (!product.variants || product.variants.length === 0) return false;
           const hasMatchingPrice = product.variants.some(variant => {
             const price = variant.sellPrice || 0;
-            const isInRange = price >= filterParams.priceRange![0] && price <= filterParams.priceRange![1];
-            return isInRange;
+            const min = filterParams.priceRange![0] ? Number(filterParams.priceRange![0]) : undefined;
+            const max = filterParams.priceRange![1] ? Number(filterParams.priceRange![1]) : undefined;
+            if (min !== undefined && max !== undefined) {
+              return price >= min && price <= max;
+            } else if (min !== undefined) {
+              return price >= min;
+            } else if (max !== undefined) {
+              return price <= max;
+            }
+            return true;
           });
           return hasMatchingPrice;
         });
       }
-
+          console.log(filterParams.attributes);
+          console.log(filteredProducts);
       // Filter by attributes
       if (filterParams.attributes && Object.keys(filterParams.attributes).length > 0) {
+    
         filteredProducts = filteredProducts.filter(product => {
+          console.log(product.variants);
+          console.log(categories?.attributes);
           if (!product.variants || product.variants.length === 0) return false;
           const matchesAttributes = Object.entries(filterParams.attributes!).every(([attributeId, childIds]) => {
             if (childIds.length === 0) return true;
             const hasMatchingAttribute = product.variants.some(variant => 
               variant.attribute.some(attr => {
-                // Find the matching child attribute by _id
+                console.log(attr);
                 const matchingChild = categories?.attributes
                   ?.find(a => a._id === attributeId)
-                  ?.children.find(c => c._id === attr.Attribute_id);
+                  ?.children.find(c => c._id === attr.toString());
                 
-                const matches = matchingChild && childIds.includes(attr.Attribute_id);
+                const matches = matchingChild && childIds.includes(attr.toString());
                 return matches;
               })
             );
@@ -262,9 +275,14 @@ export default function ProductsPage() {
   // Add effect to refetch products when filters change
   useEffect(() => {
     if (params.id) {
+      // Convert priceRange from [string, string] to [number, number]
+      const parsedPriceRange: [number, number] = [
+        priceRange[0] ? Number(priceRange[0]) : 0,
+        priceRange[1] ? Number(priceRange[1]) : 0
+      ];
       fetchFilteredProducts({
         categoryId: params.id as string,
-        priceRange,
+        priceRange: (priceRange[0] || priceRange[1]) ? parsedPriceRange : undefined,
         attributes: selectedAttributes,
         rating: selectedRating || undefined,
         sortBy
@@ -286,9 +304,6 @@ export default function ProductsPage() {
     });
   };
 
-  const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
-  const displayedBrands = showMoreBrands ? filteredBrands : filteredBrands.slice(0, 7)
-
   const handleCategoryClick = async (categoryId: string) => {
     try {
       setLoading(true);
@@ -296,11 +311,11 @@ export default function ProductsPage() {
       setSelectedAttributes({});
       setSelectedRating(null);
       setBrandSearch("");
-      setPriceRange([0, 1000]);
+      setPriceRange(["", ""]);
       setSortBy("relevance");
 
       // Update URL with new category ID
-      router.push(`/products/${categoryId}`);
+      router.push(`/category/${categoryId}`);
 
       // Fetch new products from backend for the selected category
       const response = await api.get(`/products/productDetailsByCategory/${categoryId}`);
@@ -338,42 +353,6 @@ export default function ProductsPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
-  // Add pagination controls component
-  const PaginationControls = () => {
-    return (
-      <div className="flex items-center justify-center space-x-2 mt-8">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </Button>
-        
-        <div className="flex items-center space-x-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              onClick={() => setCurrentPage(page)}
-              className="w-10 h-10"
-            >
-              {page}
-            </Button>
-          ))}
-        </div>
-
-        <Button
-          variant="outline"
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </Button>
-      </div>
-    );
-  };
-
   const handleAddToCart = (product: Product) => {
     const variant = product.variants?.[0];
     if (!variant) return;
@@ -397,19 +376,17 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-            <Header />
-
+      <Header />
       {/* Breadcrumb */}
       <div className="bg-gray-50 py-3">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <button className="hover:text-blue-600">Home</button>
+            <button className="hover:text-blue-600">{categoryPage.breadcrumb.home}</button>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium">Products</span>
+            <span className="text-gray-900 font-medium">{categoryPage.breadcrumb.products}</span>
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex gap-8">
@@ -418,7 +395,7 @@ export default function ProductsPage() {
             {/* Categories */}
             {categories?.children && categories.children.length > 0 && (
               <div className="bg-white p-4 rounded-lg border border-gray-200">
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Category</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.category}</h3>
                 <div className="space-y-3">
                   {categories.children.map((category: Category) => (
                     <div key={category._id} className="flex items-center justify-between">
@@ -428,25 +405,39 @@ export default function ProductsPage() {
                 </div>
               </div>
             )}
-
             {/* Price Range */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">Price</h3>
+              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.price}</h3>
               <div className="space-y-4">
-                <Slider 
-                  value={priceRange} 
-                  onValueChange={(value) => setPriceRange(value as [number, number])} 
-                  max={1000000} 
-                  step={10} 
-                  className="w-full" 
-                />
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={priceRange[0]}
+                    onChange={e => {
+                      setPriceRange([e.target.value, priceRange[1]]);
+                    }}
+                    className="w-24"
+                    placeholder="Min"
+                  />
+                  <span className="mx-2">-</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={priceRange[1]}
+                    onChange={e => {
+                      setPriceRange([priceRange[0], e.target.value]);
+                    }}
+                    className="w-24"
+                    placeholder="Max"
+                  />
+                </div>
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>${priceRange[0]}</span>
-                  <span>${priceRange[1]}+</span>
+                  <span>{priceRange[0] ? Number(priceRange[0]).toLocaleString() + ' ₫' : ''}</span>
+                  <span>{priceRange[1] ? Number(priceRange[1]).toLocaleString() + ' ₫+' : ''}</span>
                 </div>
               </div>
             </div>
-
             {/* Attributes */}
             {categories?.attributes?.map((attribute) => (
               <div key={attribute._id} className="bg-white p-4 rounded-lg border border-gray-200">
@@ -472,14 +463,13 @@ export default function ProductsPage() {
                 </div>
               </div>
             ))}
-
             {/* Brand Filter */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">Brand</h3>
+              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.brand}</h3>
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Find a brand"
+                  placeholder={categoryPage.sidebar.findBrandPlaceholder}
                   value={brandSearch}
                   onChange={(e) => setBrandSearch(e.target.value)}
                   className="pl-10 border-gray-300"
@@ -498,10 +488,6 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
-
-               {/* Customer Rating Filter */}
-            
-
               <Button
                 variant="link"
                 className="text-blue-600 p-0 h-auto mt-3 text-sm"
@@ -510,18 +496,19 @@ export default function ProductsPage() {
                 {showMoreBrands ? (
                   <>
                     <ChevronUp className="w-4 h-4 mr-1" />
-                    Show less
+                    {categoryPage.sidebar.showLess}
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="w-4 h-4 mr-1" />+ {filteredBrands.length - 7} more
+                    <ChevronDown className="w-4 h-4 mr-1" />
+                    {categoryPage.sidebar.showMore.replace('{count}', (filteredBrands.length - 7).toString())}
                   </>
                 )}
               </Button>
             </div>
-
+            {/* Customer Rating Filter */}
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">Customer Rating</h3>
+              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.customerRating}</h3>
               <div className="space-y-3">
                 {[4, 3, 2, 1].map((rating) => (
                   <div key={`rating-${rating}`} className="flex items-center justify-between">
@@ -546,30 +533,28 @@ export default function ProductsPage() {
               </div>
             </div>
           </div>
-
           {/* Product Grid */}
           <div className="flex-1">
             {/* Results Header */}
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-gray-700 font-medium">{products.length} Results</p>
+              <p className="text-gray-700 font-medium">{categoryPage.sort.results.replace('{count}', products.length.toString())}</p>
               <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600 font-medium">Sort By</span>
+                <span className="text-sm text-gray-600 font-medium">{categoryPage.sort.sortBy}</span>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48 border-gray-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="relevance">Relevance</SelectItem>
-                    <SelectItem value="price-low">Price: Low to High</SelectItem>
-                    <SelectItem value="price-high">Price: High to Low</SelectItem>
-                    <SelectItem value="rating">Customer Rating</SelectItem>
-                    <SelectItem value="newest">Newest</SelectItem>
-                    <SelectItem value="bestselling">Best Selling</SelectItem>
+                    <SelectItem value="relevance">{categoryPage.sort.relevance}</SelectItem>
+                    <SelectItem value="price-low">{categoryPage.sort.priceLow}</SelectItem>
+                    <SelectItem value="price-high">{categoryPage.sort.priceHigh}</SelectItem>
+                    <SelectItem value="rating">{categoryPage.sort.rating}</SelectItem>
+                    <SelectItem value="newest">{categoryPage.sort.newest}</SelectItem>
+                    <SelectItem value="bestselling">{categoryPage.sort.bestselling}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
             {/* Product Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {loading ? (
@@ -605,19 +590,21 @@ export default function ProductsPage() {
                             className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
-
+                        {/* Hiển thị brand */}
+                        <div className="mb-1 text-xs text-gray-500 font-semibold uppercase tracking-wide">{product.brand}</div>
                         <h3 className="font-medium text-sm mb-3 line-clamp-3 group-hover:text-blue-600 leading-relaxed">
                           {product.name}
                         </h3>
-
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                           {product.description}
                         </p>
-
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
-                            <span className="font-bold text-lg text-red-600">${product.variants?.[0]?.sellPrice || 0}</span>
+                            <span className="font-bold text-lg text-red-600">{(product.variants?.[0]?.sellPrice || 0).toLocaleString()} ₫</span>
                           </div>
+                          {product.variants?.[0]?.totalQuantity === 0 && (
+                            <div className="text-xs text-white bg-red-500 rounded px-2 py-1 inline-block mt-2">Sản phẩm hết hàng</div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -625,9 +612,35 @@ export default function ProductsPage() {
                 ))
               )}
             </div>
-
             {/* Add pagination controls */}
-            <PaginationControls />
+            <div className="flex items-center justify-center space-x-2 mt-8">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                {categoryPage.pagination.previous}
+              </Button>
+              <div className="flex items-center space-x-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    onClick={() => setCurrentPage(page)}
+                    className="w-10 h-10"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                {categoryPage.pagination.next}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

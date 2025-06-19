@@ -25,13 +25,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { MessageCircle } from 'lucide-react'
+import { useLanguage } from '@/context/LanguageContext';
 
 import axios from 'axios'
-
+import pagesConfigEn from '../../../utils/petPagesConfig.en.js';
+import pagesConfigVi from '../../../utils/petPagesConfig.vi.js';
 
 declare global {
   interface Window {
@@ -55,29 +57,7 @@ interface CartItem {
 }
 
 // Sample cart items
-const cartItems = [
-  {
-    id: 1,
-    name: "Wireless Headphones",
-    price: 99.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: 2,
-    name: "Smart Watch",
-    price: 299.99,
-    quantity: 2,
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: 3,
-    name: "Phone Case",
-    price: 19.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=60&width=60",
-  },
-]
+
 
 // Sample notifications
 const notifications = [
@@ -108,7 +88,8 @@ function CartDropdown() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
   const [isLoading, setIsLoading] = useState(true);
   const [cartData, setCartData] = useState<CartItem[]>([]);
-
+  const { lang, setLang } = useLanguage();
+  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
   useEffect(() => {
     const fetchCartData = async () => {
       try {
@@ -118,16 +99,24 @@ function CartDropdown() {
 
         if (response.data.success && response.data.data) {
           const latestItem = response.data.data;
-          // Transform the data to match CartItem interface
-          const transformedItem: CartItem = {
-            _id: latestItem._id,
-            variantId: latestItem.product.selectedVariant._id,
-            name: latestItem.product.name,
-            price: latestItem.product.selectedVariant.price,
-            quantity: latestItem.quantity,
-            image: latestItem.product.selectedVariant.images[0]?.url || "/placeholder.svg"
-          };
-          setCartData([transformedItem]);
+
+          // Check if the required properties exist before transforming
+          if (latestItem.product && latestItem.product.selectedVariant) {
+            // Transform the data to match CartItem interface
+            const transformedItem: CartItem = {
+              _id: latestItem._id || '',
+              variantId: latestItem.product.selectedVariant._id || '',
+              name: latestItem.product.name || 'Unknown Product',
+              price: latestItem.product.selectedVariant.price || 0,
+              quantity: latestItem.quantity || 1,
+              image: latestItem.product.selectedVariant.images?.[0]?.url || "/placeholder.svg"
+            };
+            setCartData([transformedItem]);
+          } else {
+            // If selectedVariant is missing, set empty cart
+            console.warn('Cart item missing selectedVariant:', latestItem);
+            setCartData([]);
+          }
         } else {
           setCartData([]);
         }
@@ -151,14 +140,14 @@ function CartDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="p-4">
-          <h3 className="font-semibold mb-3">Shopping Cart ({cartData.length} items)</h3>
+          <h3 className="font-semibold mb-3">{config.cart.title}</h3>
           {isLoading ? (
             <div className="flex justify-center items-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
           ) : cartData.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
-              Your cart is empty
+              {config.cart.empty}
             </div>
           ) : (
             <>
@@ -185,7 +174,7 @@ function CartDropdown() {
 
               <div className="space-y-2">
                 <Button className="w-full" size="sm" asChild>
-                  <Link href="/cart">View Cart</Link>
+                  <Link href="/cart">{config.cart.viewCart}</Link>
                 </Button>
               </div>
             </>
@@ -202,9 +191,6 @@ function NotificationDropdown() {
   return (
 
     <DropdownMenu>
-      <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md">
-        <MessageCircle className="h-4 w-4" />
-      </Link>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
@@ -244,6 +230,9 @@ function NotificationDropdown() {
 }
 
 function UserDropdown() {
+  const { lang, setLang } = useLanguage();
+  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
+
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [user, setUser] = React.useState<{ name: string, email: string } | null>(null);
@@ -313,12 +302,12 @@ function UserDropdown() {
       setIsLoggedIn(false);
       setUser(null);
 
-      // Chuyển hướng về trang chủ
-      router.push('/homepage');
+      // Reload lại trang để cập nhật UI
+      window.location.reload();
     } catch (error) {
       console.error('Error during logout:', error);
-      // Vẫn chuyển hướng về trang chủ ngay cả khi có lỗi
-      router.push('/homepage');
+      // Dù có lỗi vẫn reload lại trang
+      window.location.reload();
     }
   }
 
@@ -326,10 +315,10 @@ function UserDropdown() {
     return (
       <div className="flex items-center space-x-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/login">Login</Link>
+          <Link href="/login">{config.user.login}</Link>
         </Button>
         <Button size="sm" asChild>
-          <Link href="/signup">Sign Up</Link>
+          <Link href="/signup">{config.user.signup}</Link>
         </Button>
       </div>
     )
@@ -355,35 +344,83 @@ function UserDropdown() {
         <DropdownMenuItem asChild>
           <Link href="/userProfile" className="flex items-center">
             <User className="mr-2 h-4 w-4" />
-            My Profile
+            {config.user.myProfile}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/myorder" className="flex items-center">
             <Package className="mr-2 h-4 w-4" />
-            My Orders
+            {config.user.myOrders}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        {/* <DropdownMenuItem>
           <Heart className="mr-2 h-4 w-4" />
           Wishlist
         </DropdownMenuItem>
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
           Settings
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          {config.user.logout}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-export default function Header() {
-  const [searchQuery, setSearchQuery] = React.useState("")
+export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?: string }) {
+  const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
+  const { lang, setLang } = useLanguage();
+  const router = useRouter();
+  const [showContacting, setShowContacting] = useState(false);
+
+  // Xử lý khi click vào nút chat
+  const handleContactChatbot = () => {
+    setShowContacting(true);
+    setTimeout(() => {
+      setShowContacting(false);
+      router.push('/messages');
+    }, 1500);
+  const pathname = usePathname();
+
+  // Lấy config theo ngôn ngữ
+  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
+
+  // State để kiểm tra đăng nhập
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          setIsLoggedIn(false);
+          return;
+        }
+        // Có thể xác thực thêm với API nếu muốn chắc chắn
+        setIsLoggedIn(true);
+      } catch {
+        setIsLoggedIn(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  // Nếu initialSearchTerm thay đổi (khi chuyển trang search), đồng bộ input
+  React.useEffect(() => {
+    setSearchQuery(initialSearchTerm);
+  }, [initialSearchTerm]);
+
+  // Xử lý tìm kiếm khi nhấn nút hoặc Enter
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <div className="border-b bg-white">
@@ -393,26 +430,26 @@ export default function Header() {
           <Link href='/homepage'>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">P</span>
+                <span className="text-primary-foreground font-bold text-lg">{config.brand.short}</span>
               </div>
-              <span className="text-xl font-bold">Pet Nest</span>
+              <span className="text-xl font-bold">{config.brand.full}</span>
             </div>
           </Link>
 
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
-            <div className="relative">
+            <form className="relative" onSubmit={handleSearch}>
               <Input
                 type="text"
-                placeholder="Search for products, brands and more..."
+                placeholder={config.search.placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4 pr-12 py-2 w-full"
               />
-              <Button size="sm" className="absolute right-1 top-1 h-8">
+              <Button size="sm" className="absolute right-1 top-1 h-8" type="submit">
                 <Search className="h-4 w-4" />
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Right side actions */}
@@ -427,11 +464,26 @@ export default function Header() {
               <Heart className="h-5 w-5" />
             </Button>
 
-            {/* Notifications */}
-            <NotificationDropdown />
+            {/* Language Switcher */}
+            <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
+              {lang === 'vi' ? config.language.vi : config.language.en}
+            </Button>
+            {/* Nút Chatbot */}
+            <Button
+              onClick={handleContactChatbot}
+              variant="ghost"
+              size="sm"
+              className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
+              title="Chat với CSKH"
+            >
+              <MessageCircle className="h-5 w-5 mx-auto" />
+            </Button>
 
-            {/* Cart */}
-            <CartDropdown />
+            {/* Notifications và Chat chỉ hiển thị nếu đã đăng nhập */}
+            {isLoggedIn && <NotificationDropdown />}
+
+            {/* Cart chỉ hiển thị nếu đã đăng nhập */}
+            {isLoggedIn && <CartDropdown />}
 
             {/* User Account */}
             <UserDropdown />
@@ -439,20 +491,32 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Modal thông báo liên hệ CSKH */}
+      {showContacting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg px-8 py-6 text-center animate-fade-in">
+            <p className="text-lg font-semibold text-blue-600 mb-1">Đang liên hệ tới nhân viên chăm sóc khách hàng...</p>
+            <div className="flex justify-center mt-2">
+              <span className="inline-block w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
-        <div className="relative">
+        <form className="relative" onSubmit={handleSearch}>
           <Input
             type="text"
-            placeholder="Search products..."
+            placeholder={config.search.mobilePlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-4 pr-12 py-2 w-full"
           />
-          <Button size="sm" className="absolute right-1 top-1 h-8">
+          <Button size="sm" className="absolute right-1 top-1 h-8" type="submit">
             <Search className="h-4 w-4" />
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   )

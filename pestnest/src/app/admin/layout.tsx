@@ -17,6 +17,10 @@ import {
   User,
   ChevronUp,
   Image,
+  Languages,
+  Star,
+  Package,
+  ListTree,
 } from "lucide-react"
 
 import {
@@ -43,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useLanguage } from "@/context/LanguageContext";
 
 // Menu items for the sidebar
 const menuItems = [
@@ -67,24 +72,14 @@ const menuItems = [
     icon: Inbox,
   },
   {
-    title: "Order",
-    url: "/admin/order",
-    icon: CreditCard,
+    title: "Manage Product",
+    url: "/admin/product",
+    icon: Package,
   },
   {
-    title: "Banner",
-    url: "/admin/banner",
-    icon: Image,
-  },
-  {
-    title: "Blog",
-    url: "/admin/blog",
-    icon: Image,
-  },
-  {
-    title: "Review",
-    url: "/admin/review",
-    icon: Image,
+    title: "Manage Category",
+    url: "/admin/category",
+    icon: ListTree,
   },
 ]
 
@@ -102,6 +97,12 @@ const settingsItems = [
 ]
 
 function AppSidebar() {
+  const { lang, setLang } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLang(lang === 'vi' ? 'en' : 'vi');
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -153,6 +154,12 @@ function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={toggleLanguage}>
+                  <Languages />
+                  <span>{lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
