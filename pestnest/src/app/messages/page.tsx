@@ -11,6 +11,7 @@ export default function MessagesPage() {
       <div className="pt-20">
         <Messages />
       </div>
+      <br/>
     </div>
   )
 }
