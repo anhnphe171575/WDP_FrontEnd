@@ -18,18 +18,6 @@ import Link from 'next/link';
     
 
 
-const brands = [
-  { name: "By Chewy", count: 181 },
-  { name: "360 Pet Nutrition", count: 4 },
-  { name: "A Better Treat", count: 6 },
-  { name: "ACANA", count: 93 },
-  { name: "Addiction", count: 26 },
-  { name: "Against the Grain", count: 4 },
-  { name: "Almo Nature", count: 20 },
-  { name: "American Journey", count: 156 },
-  { name: "Blue Buffalo", count: 312 },
-  { name: "Hill's Science Diet", count: 89 },
-]
 
 interface Product {
   _id: string;
@@ -50,6 +38,7 @@ interface Product {
     sellPrice: number;
     totalQuantity: number;
   }[];
+  brand: string;
 }
 
 interface Category {
@@ -113,7 +102,7 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [brandSearch, setBrandSearch] = useState("")
   const [showMoreBrands, setShowMoreBrands] = useState(false)
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000])
+  const [priceRange, setPriceRange] = useState<[string, string]>(["", ""])
   const [sortBy, setSortBy] = useState("relevance")
   const [categories, setCategories] = useState<CategoryResponse | null>(null);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
@@ -121,6 +110,12 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const { addToCart } = useCart();
+
+  // Tạo danh sách brand động từ allProducts
+  const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
+
+  const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
+  const displayedBrands = showMoreBrands ? filteredBrands : filteredBrands.slice(0, 7)
 
   const fetchFilteredProducts = async (filterParams: FilterParams) => {
     try {
@@ -142,32 +137,44 @@ export default function ProductsPage() {
       let filteredProducts = [...allProducts];
 
       // Filter by price range
-      if (filterParams.priceRange) {
+      if (filterParams.priceRange && (filterParams.priceRange[0] || filterParams.priceRange[1])) {
         filteredProducts = filteredProducts.filter(product => {
           if (!product.variants || product.variants.length === 0) return false;
           const hasMatchingPrice = product.variants.some(variant => {
             const price = variant.sellPrice || 0;
-            const isInRange = price >= filterParams.priceRange![0] && price <= filterParams.priceRange![1];
-            return isInRange;
+            const min = filterParams.priceRange![0] ? Number(filterParams.priceRange![0]) : undefined;
+            const max = filterParams.priceRange![1] ? Number(filterParams.priceRange![1]) : undefined;
+            if (min !== undefined && max !== undefined) {
+              return price >= min && price <= max;
+            } else if (min !== undefined) {
+              return price >= min;
+            } else if (max !== undefined) {
+              return price <= max;
+            }
+            return true;
           });
           return hasMatchingPrice;
         });
       }
-
+          console.log(filterParams.attributes);
+          console.log(filteredProducts);
       // Filter by attributes
       if (filterParams.attributes && Object.keys(filterParams.attributes).length > 0) {
+    
         filteredProducts = filteredProducts.filter(product => {
+          console.log(product.variants);
+          console.log(categories?.attributes);
           if (!product.variants || product.variants.length === 0) return false;
           const matchesAttributes = Object.entries(filterParams.attributes!).every(([attributeId, childIds]) => {
             if (childIds.length === 0) return true;
             const hasMatchingAttribute = product.variants.some(variant => 
               variant.attribute.some(attr => {
-                // Find the matching child attribute by _id
+                console.log(attr);
                 const matchingChild = categories?.attributes
                   ?.find(a => a._id === attributeId)
-                  ?.children.find(c => c._id === attr.Attribute_id);
+                  ?.children.find(c => c._id === attr.toString());
                 
-                const matches = matchingChild && childIds.includes(attr.Attribute_id);
+                const matches = matchingChild && childIds.includes(attr.toString());
                 return matches;
               })
             );
@@ -262,9 +269,14 @@ export default function ProductsPage() {
   // Add effect to refetch products when filters change
   useEffect(() => {
     if (params.id) {
+      // Convert priceRange from [string, string] to [number, number]
+      const parsedPriceRange: [number, number] = [
+        priceRange[0] ? Number(priceRange[0]) : 0,
+        priceRange[1] ? Number(priceRange[1]) : 0
+      ];
       fetchFilteredProducts({
         categoryId: params.id as string,
-        priceRange,
+        priceRange: (priceRange[0] || priceRange[1]) ? parsedPriceRange : undefined,
         attributes: selectedAttributes,
         rating: selectedRating || undefined,
         sortBy
@@ -286,9 +298,6 @@ export default function ProductsPage() {
     });
   };
 
-  const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
-  const displayedBrands = showMoreBrands ? filteredBrands : filteredBrands.slice(0, 7)
-
   const handleCategoryClick = async (categoryId: string) => {
     try {
       setLoading(true);
@@ -296,7 +305,7 @@ export default function ProductsPage() {
       setSelectedAttributes({});
       setSelectedRating(null);
       setBrandSearch("");
-      setPriceRange([0, 1000]);
+      setPriceRange(["", ""]);
       setSortBy("relevance");
 
       // Update URL with new category ID
@@ -433,16 +442,32 @@ export default function ProductsPage() {
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <h3 className="font-bold text-lg mb-4 text-gray-900">Price</h3>
               <div className="space-y-4">
-                <Slider 
-                  value={priceRange} 
-                  onValueChange={(value) => setPriceRange(value as [number, number])} 
-                  max={1000000} 
-                  step={10} 
-                  className="w-full" 
-                />
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    value={priceRange[0]}
+                    onChange={e => {
+                      setPriceRange([e.target.value, priceRange[1]]);
+                    }}
+                    className="w-24"
+                    placeholder="Min"
+                  />
+                  <span className="mx-2">-</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={priceRange[1]}
+                    onChange={e => {
+                      setPriceRange([priceRange[0], e.target.value]);
+                    }}
+                    className="w-24"
+                    placeholder="Max"
+                  />
+                </div>
                 <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>${priceRange[0]}</span>
-                  <span>${priceRange[1]}+</span>
+                  <span>{priceRange[0] ? Number(priceRange[0]).toLocaleString() + ' ₫' : ''}</span>
+                  <span>{priceRange[1] ? Number(priceRange[1]).toLocaleString() + ' ₫+' : ''}</span>
                 </div>
               </div>
             </div>
@@ -605,7 +630,8 @@ export default function ProductsPage() {
                             className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
-
+                        {/* Hiển thị brand */}
+                        <div className="mb-1 text-xs text-gray-500 font-semibold uppercase tracking-wide">{product.brand}</div>
                         <h3 className="font-medium text-sm mb-3 line-clamp-3 group-hover:text-blue-600 leading-relaxed">
                           {product.name}
                         </h3>
@@ -616,8 +642,11 @@ export default function ProductsPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
-                            <span className="font-bold text-lg text-red-600">${product.variants?.[0]?.sellPrice || 0}</span>
+                            <span className="font-bold text-lg text-red-600">{(product.variants?.[0]?.sellPrice || 0).toLocaleString()} ₫</span>
                           </div>
+                          {product.variants?.[0]?.totalQuantity === 0 && (
+                            <div className="text-xs text-white bg-red-500 rounded px-2 py-1 inline-block mt-2">Sản phẩm hết hàng</div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
