@@ -315,6 +315,55 @@ const pagesConfig = {
         vi: "VI",
         en: "EN"
       }
+    },
+    cart: {
+      continueShopping: "Continue shopping",
+      emptyTitle: "Cart is empty",
+      emptyDesc: "You have no items in your cart",
+      startShopping: "Start shopping",
+      title: "Shopping Cart",
+      productCount: "{count} items",
+      selectAll: "Select all ({selected}/{total})",
+      selectedTotal: "Selected total",
+      selected: "✓ Selected",
+      pricePerProduct: "{price} / item",
+      selectedCount: "{count} items selected",
+      addToFavorite: "Add to favorites",
+      buyNow: "Buy now ({count})",
+      error: "Error"
+    },
+    categoryPage: {
+      breadcrumb: {
+        home: "Home",
+        products: "Products"
+      },
+      sidebar: {
+        category: "Category",
+        price: "Price",
+        brand: "Brand",
+        findBrandPlaceholder: "Find a brand",
+        showLess: "Show less",
+        showMore: "+ {count} more",
+        customerRating: "Customer Rating"
+      },
+      sort: {
+        results: "{count} Results",
+        sortBy: "Sort By",
+        relevance: "Relevance",
+        priceLow: "Price: Low to High",
+        priceHigh: "Price: High to Low",
+        rating: "Customer Rating",
+        newest: "Newest",
+        bestselling: "Best Selling"
+      },
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      },
+      product: {
+        price: "${price}",
+        addToWishlist: "Add to wishlist"
+      }
     }
     
   };

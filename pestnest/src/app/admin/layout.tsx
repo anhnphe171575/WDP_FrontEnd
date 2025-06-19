@@ -18,6 +18,9 @@ import {
   ChevronUp,
   Image,
   Languages,
+  Star,
+  Package,
+  ListTree,
 } from "lucide-react"
 
 import {
@@ -74,6 +77,31 @@ const menuItems = [
     icon: Calendar,
   },
   
+  {
+    title: "Banner",
+    url: "/admin/banner",
+    icon: Image,
+  },
+  {
+    title: "Manage Blog",
+    url: "/admin/blog",
+    icon: FileText,
+  },
+  {
+    title: "Manage Review",
+    url: "/admin/review",
+    icon: Star,
+  },
+  {
+    title: "Manage Product",
+    url: "/admin/product",
+    icon: Package,
+  },
+  {
+    title: "Manage Category",
+    url: "/admin/category",
+    icon: ListTree,
+  },
 ]
 
 const settingsItems = [
