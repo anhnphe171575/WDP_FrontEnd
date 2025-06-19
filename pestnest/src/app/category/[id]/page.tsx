@@ -144,6 +144,7 @@ export default function ProductsPage() {
       // Filter by price range
       if (filterParams.priceRange) {
         filteredProducts = filteredProducts.filter(product => {
+          if (!product.variants || product.variants.length === 0) return false;
           const hasMatchingPrice = product.variants.some(variant => {
             const price = variant.sellPrice || 0;
             const isInRange = price >= filterParams.priceRange![0] && price <= filterParams.priceRange![1];
@@ -156,6 +157,7 @@ export default function ProductsPage() {
       // Filter by attributes
       if (filterParams.attributes && Object.keys(filterParams.attributes).length > 0) {
         filteredProducts = filteredProducts.filter(product => {
+          if (!product.variants || product.variants.length === 0) return false;
           const matchesAttributes = Object.entries(filterParams.attributes!).every(([attributeId, childIds]) => {
             if (childIds.length === 0) return true;
             const hasMatchingAttribute = product.variants.some(variant => 
@@ -298,7 +300,7 @@ export default function ProductsPage() {
       setSortBy("relevance");
 
       // Update URL with new category ID
-      router.push(`/products/${categoryId}`);
+      router.push(`/category/${categoryId}`);
 
       // Fetch new products from backend for the selected category
       const response = await api.get(`/products/productDetailsByCategory/${categoryId}`);
@@ -373,14 +375,14 @@ export default function ProductsPage() {
   };
 
   const handleAddToCart = (product: Product) => {
-    const variant = product.variants[0];
+    const variant = product.variants?.[0];
     if (!variant) return;
 
     addToCart({
       _id: product._id,
       name: product.name,
       price: variant.sellPrice,
-      image: variant.images[0]?.url || "/placeholder.svg",
+      image: variant.images?.[0]?.url || "/placeholder.svg",
       variantId: variant._id
     });
   };
@@ -596,7 +598,7 @@ export default function ProductsPage() {
                             <Heart className="w-4 h-4" />
                           </Button>
                           <Image
-                            src={product.variants[0]?.images[0]?.url || "/placeholder.svg"}
+                            src={product.variants?.[0]?.images?.[0]?.url || "/placeholder.svg"}
                             alt={product.name}
                             width={300}
                             height={300}
@@ -614,7 +616,7 @@ export default function ProductsPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2">
-                            <span className="font-bold text-lg text-red-600">${product.variants[0]?.sellPrice}</span>
+                            <span className="font-bold text-lg text-red-600">${product.variants?.[0]?.sellPrice || 0}</span>
                           </div>
                         </div>
                       </CardContent>

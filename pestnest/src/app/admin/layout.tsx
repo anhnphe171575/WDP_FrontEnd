@@ -17,6 +17,9 @@ import {
   User,
   ChevronUp,
   Image,
+  Star,
+  Package,
+  ListTree,
 } from "lucide-react"
 
 import {
@@ -79,12 +82,22 @@ const menuItems = [
   {
     title: "Manage Blog",
     url: "/admin/blog",
-    icon: Image,
+    icon: FileText,
   },
   {
     title: "Manage Review",
     url: "/admin/review",
-    icon: Image,
+    icon: Star,
+  },
+  {
+    title: "Manage Product",
+    url: "/admin/product",
+    icon: Package,
+  },
+  {
+    title: "Manage Category",
+    url: "/admin/category",
+    icon: ListTree,
   },
 ]
 

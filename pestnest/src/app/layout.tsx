@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from "react-hot-toast";
 
 import { CartProvider } from '@/context/CartContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 
 const geistSans = Geist({
@@ -39,12 +40,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CartProvider>
-          <GoogleOAuthProvider clientId={clientId || ''}>
-            {children}
-            <Toaster />
-          </GoogleOAuthProvider>
-        </CartProvider>
+        <LanguageProvider>
+          <CartProvider>
+            <GoogleOAuthProvider clientId={clientId || ''}>
+              {children}
+              <Toaster />
+            </GoogleOAuthProvider>
+          </CartProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
