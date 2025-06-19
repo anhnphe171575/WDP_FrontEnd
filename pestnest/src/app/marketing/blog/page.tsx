@@ -17,6 +17,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Edit, Eye, Image, Trash2 } from "lucide-react";
 import NextImage from "next/image";
 import { log } from "console";
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 
 interface Blog {
@@ -48,6 +51,8 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<{ url: string }[]>([]);
   const { request } = useApi();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
 
   // Reset form when dialog opens/closes or blog changes
   useEffect(() => {
@@ -139,11 +144,11 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{blog ? 'Edit Blog' : 'Add New Blog'}</DialogTitle>
+          <DialogTitle>{blog ? config.blogManagement.form.editTitle : config.blogManagement.form.addTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+            <Label htmlFor="title">{config.blogManagement.form.fields.title} <span className="text-red-500">*</span></Label>
             <Input
               id="title"
               value={formData.title}
@@ -152,7 +157,7 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+            <Label htmlFor="description">{config.blogManagement.form.fields.description} <span className="text-red-500">*</span></Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -161,7 +166,7 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tag">Tag <span className="text-red-500">*</span></Label>
+            <Label htmlFor="tag">{config.blogManagement.form.fields.tag} <span className="text-red-500">*</span></Label>
             <Input
               id="tag"
               value={formData.tag}
@@ -170,7 +175,7 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="images">Blog Images</Label>
+            <Label htmlFor="images">{config.blogManagement.form.fields.images}</Label>
             <Input
               id="images"
               type="file"
@@ -187,7 +192,7 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
+                <p className="text-sm text-gray-500">{config.blogManagement.form.uploading}: {uploadProgress}%</p>
               </div>
             )}
             {imagePreview.length > 0 && (
@@ -214,10 +219,10 @@ function BlogForm({ blog, onSubmit, isOpen, onClose, uploadProgress, setUploadPr
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {config.blogManagement.form.buttons.cancel}
             </Button>
             <Button type="submit" disabled={isUploading}>
-              {isUploading ? `Uploading ${uploadProgress}%` : blog ? 'Save Changes' : 'Add Blog'}
+              {isUploading ? `${config.blogManagement.form.uploading} ${uploadProgress}%` : blog ? config.blogManagement.form.buttons.save : config.blogManagement.form.buttons.add}
             </Button>
           </div>
         </form>
@@ -233,33 +238,35 @@ interface BlogDetailProps {
 }
 
 function BlogDetail({ blog, isOpen, onClose }: BlogDetailProps) {
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Blog Details</DialogTitle>
+          <DialogTitle>{config.blogManagement.detail.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Title</Label>
+            <Label>{config.blogManagement.detail.fields.title}</Label>
             <p className="text-sm text-gray-700">{blog.title}</p>
           </div>
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{config.blogManagement.detail.fields.description}</Label>
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{blog.description}</p>
           </div>
           <div className="space-y-2">
-            <Label>Tag</Label>
+            <Label>{config.blogManagement.detail.fields.tag}</Label>
             <Badge variant="secondary">{blog.tag}</Badge>
           </div>
           <div className="space-y-2">
-            <Label>Created At</Label>
+            <Label>{config.blogManagement.detail.fields.createdAt}</Label>
             <p className="text-sm text-gray-700">
               {new Date(blog.createdAt).toLocaleDateString()}
             </p>
           </div>
           <div className="space-y-2">
-            <Label>Images</Label>
+            <Label>{config.blogManagement.detail.fields.images}</Label>
             <div className="grid grid-cols-2 gap-2">
               {blog.images.map((image, index) => (
                 <div key={index} className="relative w-full h-32">
@@ -275,7 +282,7 @@ function BlogDetail({ blog, isOpen, onClose }: BlogDetailProps) {
           </div>
           <div className="flex justify-end">
             <Button variant="outline" onClick={onClose}>
-              Close
+              {config.blogManagement.detail.closeButton}
             </Button>
           </div>
         </div>
@@ -292,6 +299,8 @@ interface PaginationProps {
 }
 
 function Pagination({ filteredBlogs, itemsPerPage, currentPage, setCurrentPage }: PaginationProps) {
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -306,7 +315,7 @@ function Pagination({ filteredBlogs, itemsPerPage, currentPage, setCurrentPage }
           onClick={() => setCurrentPage(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          Previous
+          {config.blogManagement.pagination.previous}
         </Button>
         <div className="flex items-center gap-1">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -326,7 +335,7 @@ function Pagination({ filteredBlogs, itemsPerPage, currentPage, setCurrentPage }
           onClick={() => setCurrentPage(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          Next
+          {config.blogManagement.pagination.next}
         </Button>
       </div>
     </div>
@@ -346,6 +355,8 @@ export default function BlogPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const { request } = useApi();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig : enConfig;
 
   const fetchBlogs = async () => {
     try {
@@ -468,11 +479,11 @@ export default function BlogPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Blog Management</CardTitle>
+            <CardTitle>{config.blogManagement.title}</CardTitle>
             <Button onClick={() => {
               setSelectedBlog(undefined);
               setIsFormOpen(true);
-            }}>Add New Blog</Button>
+            }}>{config.blogManagement.addNewButton}</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -488,7 +499,7 @@ export default function BlogPage() {
           )}
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search blogs..."
+              placeholder={config.blogManagement.search.placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -504,12 +515,12 @@ export default function BlogPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-bold">No.</TableHead>
-                    <TableHead className="font-bold">Title</TableHead>
-                    <TableHead className="font-bold">Description</TableHead>
-                    <TableHead className="font-bold">Tag</TableHead>
-                    <TableHead className="font-bold">Created At</TableHead>
-                    <TableHead className="text-right font-bold">Actions</TableHead>
+                    <TableHead className="font-bold">{config.blogManagement.table.headers.no}</TableHead>
+                    <TableHead className="font-bold">{config.blogManagement.table.headers.title}</TableHead>
+                    <TableHead className="font-bold">{config.blogManagement.table.headers.description}</TableHead>
+                    <TableHead className="font-bold">{config.blogManagement.table.headers.tag}</TableHead>
+                    <TableHead className="font-bold">{config.blogManagement.table.headers.createdAt}</TableHead>
+                    <TableHead className="text-right font-bold">{config.blogManagement.table.headers.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -530,7 +541,7 @@ export default function BlogPage() {
                             variant="ghost" 
                             size="sm" 
                             className="h-8 w-8 p-0" 
-                            title="View Details"
+                            title={config.blogManagement.detail.title}
                             onClick={() => {
                               setSelectedBlog(blog);
                               setIsDetailOpen(true);
@@ -542,7 +553,7 @@ export default function BlogPage() {
                             variant="ghost" 
                             size="sm" 
                             className="h-8 w-8 p-0" 
-                            title="Edit Blog" 
+                            title={config.blogManagement.form.editTitle}
                             onClick={() => {
                               setSelectedBlog(blog);
                               setIsFormOpen(true);
@@ -554,7 +565,7 @@ export default function BlogPage() {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Delete Blog"
+                            title={config.blogManagement.table.headers.actions}
                             onClick={() => handleDeleteBlog(blog._id)}
                           >
                             <Trash2 className="h-4 w-4" />
