@@ -72,27 +72,6 @@ const menuItems = [
     icon: Inbox,
   },
   {
-    title: "Calendar",
-    url: "/admin/calendar",
-    icon: Calendar,
-  },
-  
-  {
-    title: "Banner",
-    url: "/admin/banner",
-    icon: Image,
-  },
-  {
-    title: "Manage Blog",
-    url: "/admin/blog",
-    icon: FileText,
-  },
-  {
-    title: "Manage Review",
-    url: "/admin/review",
-    icon: Star,
-  },
-  {
     title: "Manage Product",
     url: "/admin/product",
     icon: Package,
