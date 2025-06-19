@@ -619,7 +619,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
   const handleUpdateVariant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVariant) return;
-    if (newVariant.images.length === 0 || newVariant.images.some(img => !img.file)) {
+    if (newVariant.images.length === 0 || newVariant.images.every(img => !img.file && !img.url)) {
       setError('Please add at least one image');
       return;
     }
@@ -640,6 +640,8 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
       newVariant.images.forEach((img) => {
         if (img.file) {
           formData.append('images', img.file);
+        } else if (img.url) {
+          formData.append('existingImages', img.url); // gửi url ảnh cũ
         }
       });
       newVariant.attributes.forEach(attrId => {
@@ -840,7 +842,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                             type="file"
                             accept="image/*"
                             onChange={e => handleImageChange(index, e.target.files?.[0] || null)}
-                            required={index === 0}
+                            required={!image.url && !image.file} // Chỉ required nếu không có url và không có file
                             disabled={isAddingVariant}
                           />
                           {image.url && (
@@ -1537,114 +1539,112 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
               </div>
             )}
             {isAddVariantFormOpen && (
-              <div className="border rounded-lg p-6 bg-white shadow-md">
-                <form onSubmit={handleAddVariant} className="space-y-6">
-                  {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md font-semibold text-center">
-                      {error}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <Label className="font-semibold">Images <span className="text-red-500">*</span></Label>
-                      <div className="space-y-2">
-                        {newVariant.images.map((image, index) => (
-                          <div key={`image-${index}`} className="flex gap-2 items-center">
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={e => handleImageChange(index, e.target.files?.[0] || null)}
-                              required={index === 0}
-                              disabled={isAddingVariantAddProduct}
-                            />
-                            {image.url && (
-                              <img src={image.url} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveImage(index)}
-                              disabled={newVariant.images.length === 1 || isAddingVariantAddProduct}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAddImage}
-                          disabled={isAddingVariantAddProduct}
-                        >
-                          Add Image
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <Label className="font-semibold">Attributes <span className="text-red-500">*</span></Label>
-                      <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
-                        <div>
-                          <Label className="font-semibold">Parent Attributes</Label>
-                          <div className="space-y-2 mt-2">
-                            {attributes.parentAttributes.map((attr) => (
-                              <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`parent-${attr._id}`}
-                                  name="parentAttribute"
-                                  checked={selectedParentAttribute === attr._id}
-                                  onChange={() => handleParentAttributeChange(attr._id)}
-                                  required
-                                  disabled={isAddingVariantAddProduct}
-                                />
-                                <Label htmlFor={`parent-${attr._id}`}>{attr.value}</Label>
-                              </div>
-                            ))}
-                          </div>
+              <div className="border rounded-lg p-6 bg-white shadow-md space-y-6">
+                {error && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md font-semibold text-center">
+                    {error}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <Label className="font-semibold">Images <span className="text-red-500">*</span></Label>
+                    <div className="space-y-2">
+                      {newVariant.images.map((image, index) => (
+                        <div key={`image-${index}`} className="flex gap-2 items-center">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={e => handleImageChange(index, e.target.files?.[0] || null)}
+                            required={index === 0}
+                            disabled={isAddingVariantAddProduct}
+                          />
+                          {image.url && (
+                            <img src={image.url} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveImage(index)}
+                            disabled={newVariant.images.length === 1 || isAddingVariantAddProduct}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <div>
-                          <Label className="font-semibold">Child Attributes</Label>
-                          <div className="space-y-2 mt-2">
-                            {attributes.childAttributes.map((attr) => (
-                              <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id={`child-${attr._id}`}
-                                  name="childAttribute"
-                                  checked={selectedChildAttribute === attr._id}
-                                  onChange={() => handleChildAttributeChange(attr._id)}
-                                  disabled={!selectedParentAttribute || isAddingVariantAddProduct}
-                                  required
-                                />
-                                <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
-                              </div>
-                            ))}
-                          </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddImage}
+                        disabled={isAddingVariantAddProduct}
+                      >
+                        Add Image
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <Label className="font-semibold">Attributes <span className="text-red-500">*</span></Label>
+                    <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
+                      <div>
+                        <Label className="font-semibold">Parent Attributes</Label>
+                        <div className="space-y-2 mt-2">
+                          {attributes.parentAttributes.map((attr) => (
+                            <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`parent-${attr._id}`}
+                                name="parentAttribute"
+                                checked={selectedParentAttribute === attr._id}
+                                onChange={() => handleParentAttributeChange(attr._id)}
+                                required
+                                disabled={isAddingVariantAddProduct}
+                              />
+                              <Label htmlFor={`parent-${attr._id}`}>{attr.value}</Label>
+                            </div>
+                          ))}
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="price" className="font-semibold">Price <span className="text-red-500">*</span></Label>
-                        <Input id="price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required className="mt-1" />
-                      </div>
-                      <div className="flex justify-end gap-2 mt-4">
-                        <Button type="button" variant="outline" onClick={() => {
-                          setIsAddVariantFormOpen(false);
-                          setNewVariant({ images: [{ file: null, url: '' }], attributes: [], sellPrice: 0 });
-                          setSelectedParentAttribute(null);
-                          setSelectedChildAttribute(null);
-                          setError(null);
-                        }} disabled={isAddingVariantAddProduct}>
-                          Cancel
-                        </Button>
-                        <Button type="submit" disabled={isAddingVariantAddProduct}>
-                          {isAddingVariantAddProduct ? 'Adding...' : 'Add Variant'}
-                        </Button>
+                        <Label className="font-semibold">Child Attributes</Label>
+                        <div className="space-y-2 mt-2">
+                          {attributes.childAttributes.map((attr) => (
+                            <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`child-${attr._id}`}
+                                name="childAttribute"
+                                checked={selectedChildAttribute === attr._id}
+                                onChange={() => handleChildAttributeChange(attr._id)}
+                                disabled={!selectedParentAttribute || isAddingVariantAddProduct}
+                                required
+                              />
+                              <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                    <div>
+                      <Label htmlFor="price" className="font-semibold">Price <span className="text-red-500">*</span></Label>
+                      <Input id="price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required className="mt-1" />
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button type="button" variant="outline" onClick={() => {
+                        setIsAddVariantFormOpen(false);
+                        setNewVariant({ images: [{ file: null, url: '' }], attributes: [], sellPrice: 0 });
+                        setSelectedParentAttribute(null);
+                        setSelectedChildAttribute(null);
+                        setError(null);
+                      }} disabled={isAddingVariantAddProduct}>
+                        Cancel
+                      </Button>
+                      <Button type="button" onClick={handleAddVariant} disabled={isAddingVariantAddProduct}>
+                        {isAddingVariantAddProduct ? 'Adding...' : 'Add Variant'}
+                      </Button>
+                    </div>
                   </div>
-                </form>
+                </div>
               </div>
             )}
           </div>
