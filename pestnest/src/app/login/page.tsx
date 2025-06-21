@@ -53,10 +53,10 @@ export default function LoginPage() {
               router.push('/admin/dashboard');
               break;
             case 2: // ORDER_MANAGER
-              router.push('/admin/order');
+              router.push('/order');
               break;
             case 4: // MARKETING_MANAGER
-              router.push('/admin/marketing');
+              router.push('/marketing');
               break;
             case 1: // CUSTOMER
             default:
@@ -144,10 +144,10 @@ export default function LoginPage() {
               router.push('/admin/dashboard');
               break;
             case 2: // ORDER_MANAGER
-              router.push('/admin/order');
+              router.push('/order');
               break;
             case 4: // MARKETING_MANAGER
-              router.push('/admin/marketing');
+              router.push('/marketing');
               break;
             case 1: // CUSTOMER
             default:

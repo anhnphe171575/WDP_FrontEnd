@@ -16,6 +16,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Header from "@/components/layout/Header"
 import { api } from "../../../../utils/axios"
+import { useLanguage } from '@/context/LanguageContext'
+import viConfig from '../../../../utils/petPagesConfig.vi'
+import enConfig from '../../../../utils/petPagesConfig.en'
 
 interface Product {
   _id: string;
@@ -73,6 +76,8 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
   const [addToCartError, setAddToCartError] = useState<string | null>(null);
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig.productDetail : enConfig.productDetail;
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -130,7 +135,7 @@ export default function ProductPage() {
         <Header />
         <div className="container mx-auto px-4 py-12">
           <div className="text-center text-red-600">
-            {error || 'Product not found'}
+            {error || config.productNotFound}
           </div>
         </div>
       </div>
@@ -167,17 +172,17 @@ export default function ProductPage() {
 
   const handleAddToCart = async () => {
     if (!product) {
-      setAddToCartError('Product not found');
+      setAddToCartError(config.productNotFound);
       return;
     }
 
     if (!product.variants[selectedVariant]) {
-      setAddToCartError('Selected variant not found');
+      setAddToCartError(config.selectedVariantNotFound);
       return;
     }
 
     if (quantity <= 0) {
-      setAddToCartError('Quantity must be greater than 0');
+      setAddToCartError(config.quantityGreaterThanZero);
       return;
     }
     
@@ -192,13 +197,13 @@ export default function ProductPage() {
 
       if (response.data.success) {
         // Show success message
-        alert('Product added to cart successfully!');
+        alert(config.addToCartSuccess);
       } else {
-        throw new Error(response.data.message || 'Failed to add product to cart');
+        throw new Error(response.data.message || config.addToCartFail);
       }
     } catch (err) {
       console.error('Error adding to cart:', err);
-      setAddToCartError(err instanceof Error ? err.message : 'Failed to add product to cart');
+      setAddToCartError(err instanceof Error ? err.message : config.addToCartFail);
     } finally {
       setAddingToCart(false);
     }
@@ -243,7 +248,7 @@ export default function ProductPage() {
           <div className="space-y-8">
             <div>
               <Badge variant="secondary" className="mb-3 text-sm px-3 py-1">
-                {product.category?.[0]?.name || 'Uncategorized'}
+                {product.category?.[0]?.name || config.uncategorized}
               </Badge>
               <h1 className="text-4xl font-bold mb-3">{product.name}</h1>
               {Object.entries(attributeOptions).map(([parentId, options]) => (
@@ -271,9 +276,9 @@ export default function ProductPage() {
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-4xl font-bold text-primary">{variant.sellPrice}đ</span>
                 {variant.totalQuantity === 0 ? (
-                  <span className="text-base text-red-500 ml-4 font-semibold">Sản phẩm hết hàng</span>
+                  <span className="text-base text-red-500 ml-4 font-semibold">{config.outOfStock}</span>
                 ) : (
-                  <span className="text-base text-muted-foreground ml-4">Còn lại: <b>{variant.totalQuantity}</b></span>
+                  <span className="text-base text-muted-foreground ml-4">{config.left} <b>{variant.totalQuantity}</b></span>
                 )}
               </div>
             </div>
@@ -286,7 +291,7 @@ export default function ProductPage() {
               {/* Quantity */}
               {variant.totalQuantity > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-base font-medium">Quantity</Label>
+                  <Label className="text-base font-medium">{config.quantity}</Label>
                   <Select value={quantity.toString()} onValueChange={(value) => setQuantity(parseInt(value))}>
                     <SelectTrigger className="w-24">
                       <SelectValue />
@@ -313,12 +318,12 @@ export default function ProductPage() {
                   {addingToCart ? (
                     <div className="flex items-center">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Adding...
+                      {config.adding}
                     </div>
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5 mr-2" />
-                      Add to Cart
+                      {config.addToCart}
                     </>
                   )}
                 </Button>
@@ -336,15 +341,15 @@ export default function ProductPage() {
               <div className="grid grid-cols-3 gap-6 pt-8 border-t">
                 <div className="flex items-center gap-3 text-sm bg-muted/50 p-4 rounded-lg">
                   <Truck className="w-5 h-5 text-primary" />
-                  <span className="font-medium">Free Shipping</span>
+                  <span className="font-medium">{config.freeShipping}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm bg-muted/50 p-4 rounded-lg">
                   <Shield className="w-5 h-5 text-primary" />
-                  <span className="font-medium">2 Year Warranty</span>
+                  <span className="font-medium">{config.warranty}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm bg-muted/50 p-4 rounded-lg">
                   <RotateCcw className="w-5 h-5 text-primary" />
-                  <span className="font-medium">30 Day Returns</span>
+                  <span className="font-medium">{config.returns}</span>
                 </div>
               </div>
             </div>
@@ -354,14 +359,14 @@ export default function ProductPage() {
         {/* Reviews Section */}
         {product.reviews.length > 0 && (
           <div className="space-y-10">
-            <h2 className="text-3xl font-bold">Customer Reviews</h2>
+            <h2 className="text-3xl font-bold">{config.customerReviews}</h2>
 
             <div className="grid lg:grid-cols-3 gap-10">
               {/* Rating Overview */}
               <div className="lg:col-span-1">
                 <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle className="text-xl">Rating Overview</CardTitle>
+                    <CardTitle className="text-xl">{config.ratingOverview}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="text-center">
@@ -380,7 +385,7 @@ export default function ProductPage() {
                           />
                         ))}
                       </div>
-                      <div className="text-sm text-muted-foreground">Based on {product.totalReviews} reviews</div>
+                      <div className="text-sm text-muted-foreground">{config.basedOnReviews.replace('{n}', String(product.totalReviews))}</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -393,12 +398,12 @@ export default function ProductPage() {
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="w-12 h-12">
-                          <AvatarImage src={"/placeholder.svg"} alt={review.user?.name || 'User'} />
+                          <AvatarImage src={"/placeholder.svg"} alt={review.user?.name || config.userFallback} />
                           <AvatarFallback>
                             {review.user?.name
                               ?.split(" ")
                               .map((n: string) => n[0])
-                              .join("") || 'U'}
+                              .join("") || config.avatarFallback}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-4">
@@ -407,7 +412,7 @@ export default function ProductPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-lg">{review.user?.name}</span>
                                 <Badge variant="secondary" className="text-xs">
-                                  Verified Purchase
+                                  {config.verifiedPurchase}
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-3 mt-2">
@@ -437,7 +442,7 @@ export default function ProductPage() {
                                 <div key={idx} className="w-20 h-20 rounded-lg overflow-hidden bg-muted shadow-sm hover:shadow-md transition-shadow">
                                   <Image
                                     src={img.url || "/placeholder.svg"}
-                                    alt={`Review image ${idx + 1}`}
+                                    alt={`${config.reviewImageAlt} ${idx + 1}`}
                                     width={80}
                                     height={80}
                                     className="w-full h-full object-cover"

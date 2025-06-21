@@ -70,6 +70,7 @@ export default function CheckoutPage() {
   const [addresses, setAddresses] = useState<Address[]>([])
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -190,6 +191,38 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Error saving address:', error);
       // You might want to add error handling UI here
+    }
+  }
+
+  const handlePlaceOrder = async () => {
+    if (!selectedAddress) {
+      alert('Vui lòng chọn địa chỉ giao hàng!')
+      return
+    }
+    setIsPlacingOrder(true)
+    try {
+      // Prepare payload as needed by your backend
+      const payload = {
+        addressId: selectedAddress,
+        shippingMethod,
+        paymentMethod,
+        items: cartItems.map(item => ({
+          cartItemId: item._id,
+          quantity: item.quantity,
+        })),
+        amount: total,
+      }
+      const response = await axiosInstance.post('/payment/create-payment', payload)
+      if (response.data && response.data.error === 0 && response.data.url) {
+        window.location.href = response.data.url
+      } else {
+        alert('Không thể tạo thanh toán. Vui lòng thử lại!')
+      }
+    } catch (error) {
+      alert('Có lỗi xảy ra khi đặt hàng!')
+      console.error(error)
+    } finally {
+      setIsPlacingOrder(false)
     }
   }
 
@@ -458,8 +491,8 @@ export default function CheckoutPage() {
               </RadioGroup>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" size="lg">
-                Đặt hàng
+              <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
+                {isPlacingOrder ? 'Đang xử lý...' : 'Đặt hàng'}
               </Button>
             </CardFooter>
           </Card>
