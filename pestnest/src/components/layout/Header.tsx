@@ -99,7 +99,7 @@ function CartDropdown() {
 
         if (response.data.success && response.data.data) {
           const latestItem = response.data.data;
-          
+
           // Check if the required properties exist before transforming
           if (latestItem.product && latestItem.product.selectedVariant) {
             // Transform the data to match CartItem interface
@@ -191,9 +191,6 @@ function NotificationDropdown() {
   return (
 
     <DropdownMenu>
-      <Link href="/messages" className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md">
-        <MessageCircle className="h-4 w-4" />
-      </Link>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
@@ -378,6 +375,15 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
   const { lang, setLang } = useLanguage();
   const router = useRouter();
+  const [showContacting, setShowContacting] = useState(false);
+
+  // Xử lý khi click vào nút chat
+  const handleContactChatbot = () => {
+    setShowContacting(true);
+    setTimeout(() => {
+      setShowContacting(false);
+      router.push('/messages');
+    }, 1500);
   const pathname = usePathname();
 
   // Lấy config theo ngôn ngữ
@@ -462,6 +468,16 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
               {lang === 'vi' ? config.language.vi : config.language.en}
             </Button>
+            {/* Nút Chatbot */}
+            <Button
+              onClick={handleContactChatbot}
+              variant="ghost"
+              size="sm"
+              className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
+              title="Chat với CSKH"
+            >
+              <MessageCircle className="h-5 w-5 mx-auto" />
+            </Button>
 
             {/* Notifications và Chat chỉ hiển thị nếu đã đăng nhập */}
             {isLoggedIn && <NotificationDropdown />}
@@ -474,6 +490,18 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           </div>
         </div>
       </div>
+
+      {/* Modal thông báo liên hệ CSKH */}
+      {showContacting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg px-8 py-6 text-center animate-fade-in">
+            <p className="text-lg font-semibold text-blue-600 mb-1">Đang liên hệ tới nhân viên chăm sóc khách hàng...</p>
+            <div className="flex justify-center mt-2">
+              <span className="inline-block w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
