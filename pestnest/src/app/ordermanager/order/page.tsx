@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Edit, Eye, Trash2 } from "lucide-react";
 import NextImage from "next/image";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface OrderItem {
   productId: string;
@@ -199,6 +200,9 @@ export default function OrderPage() {
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [selectedReturnItem, setSelectedReturnItem] = useState<any>(null);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState<string>("")
+
 
   useEffect(() => {
     fetchOrders();
@@ -244,6 +248,61 @@ export default function OrderPage() {
   const handleViewDetail = (order: Order) => {
     setSelectedOrder(order);
     setIsDetailOpen(true);
+  };
+   // Handle select all checkbox
+   const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Select all orders on current page
+      setSelectedOrders(paginatedOrders.map((order) => order._id).filter((id): id is string => !!id));
+    } else {
+      // Deselect all orders
+      setSelectedOrders([])
+    }
+  }
+
+  // Handle individual order selection
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedOrders((prev) => [...prev, orderId])
+    } else {
+      setSelectedOrders((prev) => prev.filter((id) => id !== orderId))
+    }
+  }
+
+  // Determine header checkbox state
+  const getHeaderCheckboxState = () => {
+    const currentPageOrderIds = paginatedOrders.map((order) => order._id)
+    const selectedOnCurrentPage = selectedOrders.filter((id) => currentPageOrderIds.includes(id))
+
+    if (selectedOnCurrentPage.length === 0) {
+      return false
+    } else if (selectedOnCurrentPage.length === currentPageOrderIds.length) {
+      return true
+    } else {
+      return "indeterminate"
+    }
+  }
+
+  const handleBulkUpdate = async () => {
+    if (selectedOrders.length === 0 || !bulkStatus) {
+      return;
+    }
+    try {
+      await api.put('/orders/bulk-update-status', {
+        orderIds: selectedOrders,
+        status: bulkStatus,
+      });
+      await fetchOrders();
+      setSelectedOrders([]);
+      setBulkStatus("");
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message);
+    }
+  };
+
+  const handleEditOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setIsFormOpen(true);
   };
 
   const filteredOrders = orders.filter(order => {
@@ -292,6 +351,23 @@ export default function OrderPage() {
                 ))}
               </SelectContent>
             </Select>
+            {selectedOrders.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Update status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ORDER_STATUS).map(([key, value]) => (
+                      <SelectItem key={value} value={value}>
+                        {key.charAt(0) + key.slice(1).toLowerCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleBulkUpdate}>Update Selected</Button>
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -300,84 +376,92 @@ export default function OrderPage() {
             <div className="text-red-500">Error: {error}</div>
           ) : (
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No</TableHead>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <Checkbox
+                    ref={(el) => {
+                      if (el) {
+                        el.indeterminate = getHeaderCheckboxState() === "indeterminate";
+                      }
+                    }}
+                    checked={getHeaderCheckboxState() === true}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                </TableHead>
+                <TableHead>No</TableHead>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Total Amount</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedOrders.map((order, index) => (
+                <TableRow key={order._id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={!!order._id && selectedOrders.includes(order._id)}
+                      onChange={(e) => {
+                        if (order._id) {
+                          handleSelectOrder(order._id, e.target.checked)
+                        }
+                      }}
+                      disabled={!order._id}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
+                  <TableCell className="font-medium">{order._id}</TableCell>
+                  <TableCell>{order.userId.name}</TableCell>
+                  <TableCell>{order.total?.toFixed(2) || "N/A"} VND</TableCell>
+                  <TableCell>
+                    <Badge className={ORDER_STATUS_COLORS[order.status]}>
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{order.createAt ? new Date(order.createAt).toLocaleDateString() : "N/A"}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        title="View Details"
+                        onClick={() => handleViewDetail(order)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        title="Edit Order"
+                        onClick={() => handleEditOrder(order)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Delete Order"
+                        onClick={() => {
+                          if (order._id) {
+                            handleDeleteOrder(order._id)
+                          }
+                        }}
+                        disabled={!order._id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedOrders.map((order, index) => (
-                  <TableRow key={order._id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-medium">{order._id}</TableCell>
-                    <TableCell>{order.userId.name}</TableCell>
-                    <TableCell>{order.total?.toFixed(2) || 'N/A'}VND</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge className={ORDER_STATUS_COLORS[order.status]}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                        {order.OrderItems && order.OrderItems.some(item => item.status === 'returned-requested') && (
-                          <span
-                            className="flex items-center text-yellow-600 text-xs gap-1 cursor-pointer underline"
-                            onClick={() => {
-                              const returnItem = order.OrderItems.find(item => item.status === 'returned-requested');
-                              setSelectedReturnItem(returnItem);
-                              setIsReturnDialogOpen(true);
-                            }}
-                          >
-                            <span role="img" aria-label="Returned">⚠️</span> Có yêu cầu trả hàng
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {order.createAt ? new Date(order.createAt).toLocaleDateString() : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          title="View Details"
-                          onClick={() => handleViewDetail(order)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          title="Edit Order"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setIsFormOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Delete Order"
-                          onClick={() => handleDeleteOrder(order._id!)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              ))}
+            </TableBody>
+          </Table>
           )}
         </CardContent>
       </Card>
@@ -523,7 +607,7 @@ export default function OrderPage() {
                 )}
                 <div>
                   <div><b>Sản phẩm:</b> {selectedReturnItem.productId?.name}</div>
-                  <div><b>Số lượng:</b> {selectedReturnItem.quantity}</div>
+                  <div><b>Số lượng:</b> {selectedReturnItem.returnQuantity}</div>
                   <div><b>Lý do:</b> {selectedReturnItem.reason || 'Không có lý do'}</div>
                 </div>
               </div>
@@ -535,7 +619,7 @@ export default function OrderPage() {
                   onClick={async () => {
                     try {
                       await api.put(`/orders/${selectedOrder?._id}/orderItem/${selectedReturnItem._id}/returned`, {
-                        quantity: selectedReturnItem.quantity,
+                        quantity: selectedReturnItem.returnQuantity,
                       });
                       setIsReturnDialogOpen(false);
                       fetchOrders();
