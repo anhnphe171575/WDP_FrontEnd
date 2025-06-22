@@ -1,5 +1,5 @@
 'use client';
-
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState, useRef } from "react";
 import { useApi } from "../../../../utils/axios";
@@ -578,10 +578,6 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
       setError('Please select a child attribute');
       return;
     }
-    if (newVariant.sellPrice <= 0) {
-      setError('Please enter a valid price');
-      return;
-    }
     try {
       setIsAddingVariant(true);
       const formData = new FormData();
@@ -593,7 +589,6 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
       newVariant.attributes.forEach(attrId => {
         formData.append('attributes', attrId);
       });
-      formData.append('sellPrice', String(newVariant.sellPrice));
       const response = await request(() =>
         api.post(`/products/${product._id}/variant`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -755,8 +750,8 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                   <Label>Attributes <span className="text-red-500">*</span></Label>
                   <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
                     <div>
-                      <Label>Parent Attributes</Label>
-                      <div className="space-y-2">
+                      <Label className="font-semibold">Parent Attributes</Label>
+                      <div className="space-y-2 mt-2">
                         {attributes.parentAttributes.map((attr) => (
                           <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
                             <input
@@ -766,6 +761,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                               checked={selectedParentAttribute === attr._id}
                               onChange={() => handleParentAttributeChange(attr._id)}
                               required
+                              disabled={isAddingVariant}
                             />
                             <Label htmlFor={`parent-${attr._id}`}>{attr.value}</Label>
                           </div>
@@ -773,29 +769,31 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       </div>
                     </div>
                     <div>
-                      <Label>Child Attributes</Label>
-                      <div className="space-y-2">
-                        {attributes.childAttributes.map((attr) => (
-                          <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id={`child-${attr._id}`}
-                              name="childAttribute"
-                              checked={selectedChildAttribute === attr._id}
-                              onChange={() => handleChildAttributeChange(attr._id)}
-                              disabled={!selectedParentAttribute}
-                              required
-                            />
-                            <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
-                          </div>
-                        ))}
+                      <Label className="font-semibold">Child Attributes</Label>
+                      <div className="space-y-2 mt-2">
+                        {selectedParentAttribute && attributes.childAttributes
+                          .filter(attr => attr.parentId && attr.parentId._id === selectedParentAttribute)
+                          .map((attr) => (
+                            <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`child-${attr._id}`}
+                                name="childAttribute"
+                                checked={selectedChildAttribute === attr._id}
+                                onChange={() => handleChildAttributeChange(attr._id)}
+                                disabled={!selectedParentAttribute || isAddingVariant}
+                                required
+                              />
+                              <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
+                            </div>
+                          ))}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="price">Price <span className="text-red-500">*</span></Label>
+                {/* <div>
+                  <Label htmlFor="price">Sell Price <span className="text-red-500">*</span></Label>
                   <Input
                     id="price"
                     type="number"
@@ -804,7 +802,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                     min={0}
                     required
                   />
-                </div>
+                </div> */}
 
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => {
@@ -821,7 +819,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                   </Button>
                 </div>
               </form>
-            </div>
+            </div> 
           )}
 
           {isEditFormOpen && selectedVariant && (
@@ -895,25 +893,27 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       <div>
                         <Label className="font-semibold">Child Attributes</Label>
                         <div className="space-y-2 mt-2">
-                          {attributes.childAttributes.map((attr) => (
-                            <div key={`edit-child-attr-${attr._id}`} className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id={`edit-child-${attr._id}`}
-                                name="childAttribute"
-                                checked={selectedChildAttribute === attr._id}
-                                onChange={() => handleChildAttributeChange(attr._id)}
-                                disabled={!selectedParentAttribute || isAddingVariant}
-                                required
-                              />
-                              <Label htmlFor={`edit-child-${attr._id}`}>{attr.value}</Label>
-                            </div>
-                          ))}
+                          {selectedParentAttribute && attributes.childAttributes
+                            .filter(attr => attr.parentId && attr.parentId._id === selectedParentAttribute)
+                            .map((attr) => (
+                              <div key={`edit-child-attr-${attr._id}`} className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  id={`edit-child-${attr._id}`}
+                                  name="childAttribute"
+                                  checked={selectedChildAttribute === attr._id}
+                                  onChange={() => handleChildAttributeChange(attr._id)}
+                                  disabled={!selectedParentAttribute || isAddingVariant}
+                                  required
+                                />
+                                <Label htmlFor={`edit-child-${attr._id}`}>{attr.value}</Label>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="edit-price" className="font-semibold">Price <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="edit-price" className="font-semibold">Sell Price <span className="text-red-500">*</span></Label>
                       <Input id="edit-price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required className="mt-1" />
                     </div>
                     <div className="flex justify-end gap-2 mt-4">
@@ -954,7 +954,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                   <TableRow>
                     <TableHead className="w-[50px]">No.</TableHead>
                     <TableHead className="min-w-[200px]">Attributes</TableHead>
-                    <TableHead className="w-[120px]">Price</TableHead>
+                    <TableHead className="w-[120px]">Sell Price</TableHead>
                     <TableHead className="w-[120px]">Total Quantity</TableHead>
                     <TableHead className="min-w-[150px]">Images</TableHead>
                     <TableHead className="w-[100px] text-right">Actions</TableHead>
@@ -1360,10 +1360,6 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       setError('Please select a child attribute');
       return;
     }
-    if (newVariant.sellPrice <= 0) {
-      setError('Please enter a valid price');
-      return;
-    }
     setIsAddingVariantAddProduct(true);
     setVariants([
       ...variants,
@@ -1529,7 +1525,6 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                 {variants.map((variant, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
                     <div className="flex items-center space-x-4">
-                      <div className="text-sm"><span className="font-medium">Price:</span> ${variant.sellPrice}</div>
                       <div className="text-sm"><span className="font-medium">Images:</span> {variant.images.length}</div>
                       <div className="text-sm"><span className="font-medium">Attributes:</span> {variant.attributes.length}</div>
                     </div>
@@ -1608,27 +1603,29 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                       <div>
                         <Label className="font-semibold">Child Attributes</Label>
                         <div className="space-y-2 mt-2">
-                          {attributes.childAttributes.map((attr) => (
-                            <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id={`child-${attr._id}`}
-                                name="childAttribute"
-                                checked={selectedChildAttribute === attr._id}
-                                onChange={() => handleChildAttributeChange(attr._id)}
-                                disabled={!selectedParentAttribute || isAddingVariantAddProduct}
-                                required
-                              />
-                              <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
-                            </div>
-                          ))}
+                          {selectedParentAttribute && attributes.childAttributes
+                            .filter(attr => attr.parentId && attr.parentId._id === selectedParentAttribute)
+                            .map((attr) => (
+                              <div key={`child-attr-${attr._id}`} className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  id={`child-${attr._id}`}
+                                  name="childAttribute"
+                                  checked={selectedChildAttribute === attr._id}
+                                  onChange={() => handleChildAttributeChange(attr._id)}
+                                  disabled={!selectedParentAttribute || isAddingVariantAddProduct}
+                                  required
+                                />
+                                <Label htmlFor={`child-${attr._id}`}>{attr.value}</Label>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     </div>
-                    <div>
+                    {/* <div>
                       <Label htmlFor="price" className="font-semibold">Price <span className="text-red-500">*</span></Label>
                       <Input id="price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required className="mt-1" />
-                    </div>
+                    </div> */}
                     <div className="flex justify-end gap-2 mt-4">
                       <Button type="button" variant="outline" onClick={() => {
                         setIsAddVariantFormOpen(false);
@@ -2161,6 +2158,43 @@ export default function ProductPage() {
   const { request } = useApi();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  // Sorting handler
+  const handleSort = (key: string) => {
+    setSortConfig(prev => {
+      if (prev && prev.key === key) {
+        // Toggle direction
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  // Sort products
+  const sortedProducts = React.useMemo(() => {
+    let sortable = [...products];
+    if (sortConfig) {
+      sortable.sort((a, b) => {
+        let aValue: any = a[sortConfig.key as keyof Product];
+        let bValue: any = b[sortConfig.key as keyof Product];
+        // Special handling for category
+        if (sortConfig.key === 'category') {
+          aValue = a.category[0]?.name || '';
+          bValue = b.category[0]?.name || '';
+        }
+        // Fallback to string comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === 'asc'
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        }
+        return 0;
+      });
+    }
+    return sortable;
+  }, [products, sortConfig]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -2177,7 +2211,7 @@ export default function ProductPage() {
     fetchProducts();
   }, []);
 
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = sortedProducts.filter(product =>
     product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.brand?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -2319,10 +2353,18 @@ export default function ProductPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>No.</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Brand</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Categories</TableHead>
+                  <TableHead onClick={() => handleSort('name')} className="cursor-pointer select-none">
+                    Name {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                  </TableHead>
+                  <TableHead onClick={() => handleSort('brand')} className="cursor-pointer select-none">
+                    Brand {sortConfig?.key === 'brand' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                  </TableHead>
+                  <TableHead onClick={() => handleSort('description')} className="cursor-pointer select-none">
+                    Description {sortConfig?.key === 'description' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                  </TableHead>
+                  <TableHead onClick={() => handleSort('category')} className="cursor-pointer select-none">
+                    Categories {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -2368,7 +2410,7 @@ export default function ProductPage() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {/* <Button
+                        <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -2376,7 +2418,7 @@ export default function ProductPage() {
                           onClick={() => handleDeleteProduct(product._id)}
                         >
                           <Trash2 className="h-4 w-4" />
-                        </Button> */}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
