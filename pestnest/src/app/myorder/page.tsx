@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Header from '@/components/layout/Header';
 import { Package, Eye, Search, Filter, X } from 'lucide-react';
@@ -15,9 +15,18 @@ interface Order {
     paymentMethod: string;
     createAt: string;
     items: {
+        _id: string;
         productName: string;
         quantity: number;
         price: number;
+        status: string;
+        images: {
+            url: string;
+        }[];
+        attributes: [
+            string]
+
+
     }[];
 }
 
@@ -47,8 +56,16 @@ const MyOrderPage = () => {
         startDate: '',
         endDate: ''
     });
+    const [cancelOrder, setCancelOrder] = useState<Order | null>(null);
+    const [cancelReason, setCancelReason] = useState('');
+    const [isChecked, setIsChecked] = useState(false);
 
-    useEffect(() => {
+    // State for return dialog
+    const [returnOrder, setReturnOrder] = useState<Order | null>(null);
+    const [returnReason, setReturnReason] = useState('');
+    const [returnItems, setReturnItems] = useState<Map<string, number>>(new Map());
+
+    const fetchOrders = useCallback(async () => {
         const token = sessionStorage.getItem('token');
         if (!token) {
             setShowLoginMessage(true);
@@ -59,28 +76,30 @@ const MyOrderPage = () => {
             return;
         }
 
-        const fetchOrders = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/users/orders', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.data.success) {
-                    setOrders(response.data.data);
-                    setFilteredOrders(response.data.data);
+        setLoading(true);
+        try {
+            const response = await axios.get('http://localhost:5000/api/users/orders', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-            } catch (err) {
-                setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
-                console.error('Error fetching orders:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
+            });
 
-        fetchOrders();
+            if (response.data.success) {
+                setOrders(response.data.data);
+                console.log('Fetched orders:', response.data.data);
+                setFilteredOrders(response.data.data);
+            }
+        } catch (err) {
+            setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
+            console.error('Error fetching orders:', err);
+        } finally {
+            setLoading(false);
+        }
     }, [router]);
+
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
 
     useEffect(() => {
         let result = [...orders];
@@ -128,6 +147,98 @@ const MyOrderPage = () => {
             ...prev,
             [name]: value
         }));
+    };
+
+    const handleCancelClick = (order: Order) => {
+        setCancelOrder(order);
+    };
+
+    const handleConfirmCancel = async () => {
+        if (!cancelOrder) return;
+        setLoading(true);
+        const token = sessionStorage.getItem('token');
+        try {
+            // Assuming cancellation applies to the whole order and all items
+            const requests = cancelOrder.items.map(item => {
+                const url = `http://localhost:5000/api/orders/${cancelOrder._id}/orderItem/${item._id}/request-return`;
+                return axios.put(url, { reason: cancelReason }, { headers: { 'Authorization': `Bearer ${token}` } });
+            });
+            await Promise.all(requests);
+
+            await fetchOrders();
+
+        } catch (err) {
+            setError('Không thể hủy đơn hàng. Vui lòng thử lại.');
+            console.error('Error cancelling order:', err);
+        } finally {
+            setCancelOrder(null);
+            setCancelReason('');
+            setLoading(false);
+        }
+    };
+
+    // Handlers for return functionality
+    const handleReturnClick = (order: Order) => {
+        setReturnOrder(order);
+        setReturnItems(new Map());
+        setReturnReason('');
+    };
+
+    const handleToggleReturnItem = (itemId: string) => {
+        console.log(itemId);
+
+        setReturnItems(prev => {
+            const newMap = new Map(prev);
+            if (newMap.has(itemId)) {
+                newMap.delete(itemId);
+            } else {
+                newMap.set(itemId, 1); // Default to 1 when checked
+            }
+            return newMap;
+        });
+    };
+
+    const handleReturnQuantityChange = (itemId: string, newQuantity: number, maxQuantity: number) => {
+        if (newQuantity >= 1 && newQuantity <= maxQuantity) {
+            setReturnItems(prev => {
+                const newMap = new Map(prev);
+                newMap.set(itemId, newQuantity);
+                return newMap;
+            });
+        }
+    };
+
+    const handleConfirmReturn = async () => {
+        if (!returnOrder || returnItems.size === 0) {
+            alert("Vui lòng chọn ít nhất một sản phẩm để trả hàng.");
+            return;
+        }
+
+        setLoading(true);
+        const token = sessionStorage.getItem('token');
+
+        const itemsToReturn = Array.from(returnItems.entries()).map(([itemId, quantity]) => ({
+            orderItemId: itemId,
+            returnQuantity: quantity,
+        }));
+
+        const requestBody = {
+            reason: returnReason,
+            items: itemsToReturn,
+        };
+
+        const url = `http://localhost:5000/api/orders/${returnOrder._id}/orderItem/request-return`;
+
+        try {
+            await axios.put(url, requestBody, { headers: { 'Authorization': `Bearer ${token}` } });
+            await fetchOrders();
+        } catch (err) {
+            setError('Không thể gửi yêu cầu trả hàng. Vui lòng thử lại.');
+            console.error('Error requesting return:', err);
+        } finally {
+            setReturnOrder(null);
+            setLoading(false);
+        }
     };
 
     const resetFilters = () => {
@@ -367,6 +478,9 @@ const MyOrderPage = () => {
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Thao tác
                                             </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Hành động
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -397,7 +511,9 @@ const MyOrderPage = () => {
                                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                                                         {order.status === 'cancelled' ? 'Đã hủy' :
                                                             order.status === 'completed' ? 'Hoàn thành' :
-                                                                order.status === 'processing' ? 'Đang xử lý' : 'Chờ xử lý'}
+                                                                order.status === 'processing' ? 'Đang xử lý' :
+                                                                order.status ==='pending'? 'Chờ xử lý':
+                                                                order.status === 'returned' ? 'Hoàn hàng' : "Đang chờ xử lý"}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -414,6 +530,27 @@ const MyOrderPage = () => {
                                                         Xem chi tiết
                                                     </button>
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-y-2">
+                                                    {order.items.every((o) => o.status === 'returned-requested') ? (
+                                                        <p className="text-gray-400 text-xs">Đã yêu cầu trả hàng</p>
+                                                    ) : order.items.every((o) => o.status === 'cancelled-requested') ? (
+                                                        <p className="text-gray-400 text-xs">Đã yêu cầu hủy</p>
+                                                    ) : order.status === 'completed' ? (
+                                                        <button
+                                                            onClick={() => handleReturnClick(order)}
+                                                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                                        >
+                                                            Trả hàng
+                                                        </button>
+                                                    ) : order.status === 'pending' ? (
+                                                        <button
+                                                            onClick={() => handleCancelClick(order)}
+                                                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                                                        >
+                                                            Hủy đơn
+                                                        </button>
+                                                    ) : null}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -423,6 +560,138 @@ const MyOrderPage = () => {
                     </div>
                 </div>
             </main>
+            {cancelOrder && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h2 className="text-xl font-bold mb-4">Hủy đơn hàng</h2>
+                        <p className="mb-4">Bạn có chắc chắn muốn hủy đơn hàng #{cancelOrder._id.slice(-6)}?</p>
+
+                        <div className="border-t border-b py-4 my-4">
+                            <h3 className="font-semibold mb-2">Sản phẩm trong đơn hàng:</h3>
+                            <ul className="space-y-3">
+                                {cancelOrder.items.map((item, index) => (
+                                    <li key={index} className="flex items-center gap-4 text-sm">
+                                        <img src={item.images[0]?.url || '/placeholder.svg'} alt={item.productName} className="w-12 h-12 object-cover rounded-md" />
+                                        <span>{item.productName} (Số lượng: {item.quantity})</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="mb-4">
+                            <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-700 mb-1">
+                                Lý do hủy
+                            </label>
+                            <textarea
+                                id="cancelReason"
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                                rows={3}
+                                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Nhập lý do hủy đơn hàng..."
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setCancelOrder(null)}
+                                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                            >
+                                Đóng
+                            </button>
+                            <button
+                                onClick={handleConfirmCancel}
+                                className="px-4 py-2 border rounded-lg bg-red-600 text-white hover:bg-red-700"
+                            >
+                                Xác nhận hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Return Order Dialog */}
+            {returnOrder && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
+                        <h2 className="text-xl font-bold mb-4">Yêu cầu trả hàng</h2>
+                        <p className="mb-4 text-sm">Chọn sản phẩm bạn muốn trả cho đơn hàng #{returnOrder._id.slice(-6)}.</p>
+
+                        <div className="border-t border-b py-4 my-4 flex-grow overflow-y-auto">
+                            <h3 className="font-semibold mb-2">Chọn sản phẩm:</h3>
+                            <ul className="space-y-3">
+                                {returnOrder.items.map((item) => {
+                                    console.log("Rendering item:", item, "Checked:", returnItems.has(item._id));
+
+                                    return (
+                                        <li key={item._id} className="flex items-start gap-4 text-sm p-2 rounded-lg hover:bg-gray-50">
+                                            <input
+                                                type="checkbox"
+                                                className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                checked={returnItems.has(item._id)}
+                                                onChange={() => handleToggleReturnItem(item._id)}
+                                            />
+                                            <img src={item.images[0]?.url || '/placeholder.svg'} alt={item.productName} className="w-16 h-16 object-cover rounded-md" />
+                                            <div className='flex-grow'>
+                                                <p className="font-medium">{item.productName}</p>
+                                                <p className="text-sm text-gray-600">Giá: {formatCurrency(item.price)}</p>
+                                                <p className="text-sm text-gray-600">Tổng: {formatCurrency(item.price * item.quantity)}</p>
+                                                <p className="text-xs text-gray-500">Loại sản phẩm: {item.attributes.join(', ')}</p>
+                                                <p className="text-xs text-gray-500">Số lượng trong đơn: {item.quantity}</p>
+                                                {returnItems.has(item._id) && (
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <label className="text-xs">Số lượng trả:</label>
+                                                        <button
+                                                            onClick={() => handleReturnQuantityChange(item._id, (returnItems.get(item._id) || 1) - 1, item.quantity)}
+                                                            className="px-2 py-0.5 border rounded-md"
+                                                        >-</button>
+                                                        <span>{returnItems.get(item._id)}</span>
+                                                        <button
+                                                            onClick={() => handleReturnQuantityChange(item._id, (returnItems.get(item._id) || 1) + 1, item.quantity)}
+                                                            className="px-2 py-0.5 border rounded-md"
+                                                        >+</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </li>
+                                    )
+                                }
+                                )}
+                            </ul>
+                        </div>
+
+                        <div className="mb-4">
+                            <label htmlFor="returnReason" className="block text-sm font-medium text-gray-700 mb-1">
+                                Lý do trả hàng (bắt buộc)
+                            </label>
+                            <textarea
+                                id="returnReason"
+                                value={returnReason}
+                                onChange={(e) => setReturnReason(e.target.value)}
+                                rows={3}
+                                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Nhập lý do bạn muốn trả hàng..."
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setReturnOrder(null)}
+                                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                            >
+                                Đóng
+                            </button>
+                            <button
+                                onClick={handleConfirmReturn}
+                                className="px-4 py-2 border rounded-lg bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-400"
+                                disabled={returnItems.size === 0 || !returnReason}
+                            >
+                                Gửi yêu cầu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
