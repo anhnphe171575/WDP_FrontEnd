@@ -30,6 +30,29 @@ interface ErrorResponse {
     message: string;
 }
 
+const passwordRules = [
+    {
+        label: 'Ít nhất 8 ký tự',
+        test: (pw: string) => pw.length >= 8,
+    },
+    {
+        label: 'Ít nhất 1 chữ cái in hoa (A-Z)',
+        test: (pw: string) => /[A-Z]/.test(pw),
+    },
+    {
+        label: 'Ít nhất 1 chữ cái thường (a-z)',
+        test: (pw: string) => /[a-z]/.test(pw),
+    },
+    {
+        label: 'Ít nhất 1 số (0-9)',
+        test: (pw: string) => /[0-9]/.test(pw),
+    },
+    {
+        label: 'Ít nhất 1 ký tự đặc biệt (!@#$...)',
+        test: (pw: string) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pw),
+    },
+];
+
 export default function ChangePasswordPage() {
     const { lang } = useLanguage()
     const changepassConfig = (lang === 'vi' ? viConfig : enConfig).changepass
@@ -48,6 +71,9 @@ export default function ChangePasswordPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
 
+    // Kiểm tra tất cả rule đều đúng
+    const isStrongPassword = passwordRules.every(rule => rule.test(formData.newPassword));
+
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {}
 
@@ -56,11 +82,9 @@ export default function ChangePasswordPage() {
         }
 
         if (!formData.newPassword) {
-            newErrors.newPassword = changepassConfig.errors.requiredNew
-        } else if (formData.newPassword.length < 8) {
-            newErrors.newPassword = changepassConfig.errors.minLength
-        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.newPassword)) {
-            newErrors.newPassword = changepassConfig.errors.pattern
+            newErrors.newPassword = 'Vui lòng nhập mật khẩu mới'
+        } else if (!isStrongPassword) {
+            newErrors.newPassword = 'Mật khẩu chưa đủ mạnh theo yêu cầu'
         }
 
         if (!formData.confirmPassword) {
@@ -127,9 +151,9 @@ export default function ChangePasswordPage() {
 
         } catch (error: unknown) {
             console.error('Error changing password:', error)
-            
+
             const axiosError = error as AxiosError<ErrorResponse>
-            
+
             // Xử lý các loại lỗi khác nhau
             if (axiosError.response?.status === 401) {
                 setErrors({ currentPassword: changepassConfig.errors.wrongCurrent })
@@ -147,7 +171,7 @@ export default function ChangePasswordPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            <Header />
+            <Header/>
             <div className="flex items-center justify-center p-4 pt-20">
                 <Card className="w-full max-w-md">
                     <CardHeader className="text-center">
@@ -222,6 +246,57 @@ export default function ChangePasswordPage() {
                                         )}
                                     </Button>
                                 </div>
+
+                                {/* Confirm Password */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="confirmPassword">Xác nhận mật khẩu mới</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="confirmPassword"
+                                            type={showPasswords.confirm ? 'text' : 'password'}
+                                            placeholder="Nhập lại mật khẩu mới"
+                                            value={formData.confirmPassword}
+                                            onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                                            className={errors.confirmPassword ? 'border-destructive' : ''}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                                            onClick={() => togglePasswordVisibility('confirm')}
+                                        >
+                                            {showPasswords.confirm ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </Button>
+                                    </div>
+                                    {errors.confirmPassword && (
+                                        <div className="flex items-center gap-2 text-sm text-destructive">
+                                            <AlertCircle className="h-4 w-4" />
+                                            {errors.confirmPassword}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Hiển thị điều kiện password */}
+                                <ul className="mt-2 space-y-1">
+                                    {passwordRules.map((rule, idx) => {
+                                        const passed = rule.test(formData.newPassword);
+                                        return (
+                                            <li key={idx} className="flex items-center gap-2 text-sm">
+                                                {passed ? (
+                                                    <span className="text-green-600 font-bold">✔</span>
+                                                ) : (
+                                                    <span className="text-red-500 font-bold">✘</span>
+                                                )}
+                                                <span className={passed ? 'text-green-700' : 'text-gray-700'}>{rule.label}</span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
                                 {errors.newPassword && (
                                     <div className="flex items-center gap-2 text-sm text-destructive">
                                         <AlertCircle className="h-4 w-4" />
@@ -230,39 +305,7 @@ export default function ChangePasswordPage() {
                                 )}
                             </div>
 
-                            {/* Confirm Password */}
-                            <div className="space-y-2">
-                                <Label htmlFor="confirmPassword">{changepassConfig.fields.confirmPassword.label}</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="confirmPassword"
-                                        type={showPasswords.confirm ? 'text' : 'password'}
-                                        placeholder={changepassConfig.fields.confirmPassword.placeholder}
-                                        value={formData.confirmPassword}
-                                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                        className={errors.confirmPassword ? 'border-destructive' : ''}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                                        onClick={() => togglePasswordVisibility('confirm')}
-                                    >
-                                        {showPasswords.confirm ? (
-                                            <EyeOff className="h-4 w-4" />
-                                        ) : (
-                                            <Eye className="h-4 w-4" />
-                                        )}
-                                    </Button>
-                                </div>
-                                {errors.confirmPassword && (
-                                    <div className="flex items-center gap-2 text-sm text-destructive">
-                                        <AlertCircle className="h-4 w-4" />
-                                        {errors.confirmPassword}
-                                    </div>
-                                )}
-                            </div>
+
 
                             {/* Success Message */}
                             {isSuccess && (

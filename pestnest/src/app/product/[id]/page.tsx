@@ -78,6 +78,8 @@ export default function ProductPage() {
   const [addToCartError, setAddToCartError] = useState<string | null>(null);
   const { lang } = useLanguage();
   const config = lang === 'vi' ? viConfig.productDetail : enConfig.productDetail;
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -101,6 +103,19 @@ export default function ProductPage() {
       fetchProduct();
     }
   }, [params.id]);
+
+  // Kiểm tra sản phẩm đã trong wishlist chưa
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const res = await api.get('/wishlist');
+        if (res.data.success && res.data.products) {
+          setIsWishlisted(res.data.products.some((p: any) => p._id === product?._id));
+        }
+      } catch {}
+    };
+    if (product?._id) fetchWishlist();
+  }, [product?._id]);
 
   if (loading) {
     return (
@@ -207,6 +222,21 @@ export default function ProductPage() {
     } finally {
       setAddingToCart(false);
     }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!product) return;
+    setWishlistLoading(true);
+    try {
+      if (isWishlisted) {
+        await api.post('/wishlist/remove', { productId: product._id });
+        setIsWishlisted(false);
+      } else {
+        await api.post('/wishlist/add', { productId: product._id });
+        setIsWishlisted(true);
+      }
+    } catch {}
+    setWishlistLoading(false);
   };
 
   return (
@@ -332,8 +362,8 @@ export default function ProductPage() {
                     {addToCartError}
                   </div>
                 )}
-                <Button size="lg" variant="outline" className="h-12 w-12 shadow-md hover:shadow-lg transition-shadow">
-                  <Heart className="w-5 h-5" />
+                <Button size="lg" variant={isWishlisted ? "default" : "outline"} className="h-12 w-12 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center" onClick={handleToggleWishlist} disabled={wishlistLoading} aria-label="Yêu thích">
+                  <Heart className={"w-5 h-5 " + (isWishlisted ? "fill-red-500 text-red-500" : "")}/>
                 </Button>
               </div>
 
