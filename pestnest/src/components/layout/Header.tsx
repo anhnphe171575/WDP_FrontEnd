@@ -437,8 +437,10 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             </Button>
 
             {/* Wishlist */}
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              <Heart className="h-5 w-5" />
+            <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
+              <Link href="/wishlist" aria-label="Yêu thích">
+                <Heart className="h-5 w-5" />
+              </Link>
             </Button>
 
             {/* Language Switcher */}

@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 
 import { CartProvider } from '@/context/CartContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import Footer from '@/components/layout/Footer';
 
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
           <CartProvider>
             <GoogleOAuthProvider clientId={clientId || ''}>
               {children}
+              <Footer />
               <Toaster />
             </GoogleOAuthProvider>
           </CartProvider>

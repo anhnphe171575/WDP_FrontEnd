@@ -10,6 +10,7 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { AxiosError } from 'axios';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import viConfig from '../../../utils/petPagesConfig.vi';
 import enConfig from '../../../utils/petPagesConfig.en';
@@ -553,24 +554,7 @@ export default function HomePage() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-20 bg-gradient-to-r from-pink-600 to-pink-700 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">Đăng ký nhận thông báo</h2>
-          <p className="text-xl mb-10 max-w-2xl mx-auto">Nhận thông tin về sản phẩm mới và khuyến mãi đặc biệt</p>
-          <div className="max-w-md mx-auto">
-            <div className="flex gap-4">
-              <input
-                type="email"
-                placeholder="Email của bạn"
-                className="flex-1 px-6 py-4 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-white bg-white/90 backdrop-blur-sm"
-              />
-              <button className="bg-white text-pink-600 px-8 py-4 rounded-full font-bold hover:bg-gray-100 transition-colors transform hover:scale-105 hover:shadow-lg">
-                Đăng ký
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
     </div>
   );
