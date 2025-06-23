@@ -171,7 +171,7 @@ export default function ChangePasswordPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            <Header />
+            <Header/>
             <div className="flex items-center justify-center p-4 pt-20">
                 <Card className="w-full max-w-md">
                     <CardHeader className="text-center">
