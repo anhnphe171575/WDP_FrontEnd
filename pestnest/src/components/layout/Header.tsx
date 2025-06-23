@@ -384,30 +384,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
       setShowContacting(false);
       router.push('/messages');
     }, 1500);
-  const pathname = usePathname();
-
-  // Lấy config theo ngôn ngữ
-  const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
-
-  // State để kiểm tra đăng nhập
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = sessionStorage.getItem('token');
-        if (!token) {
-          setIsLoggedIn(false);
-          return;
-        }
-        // Có thể xác thực thêm với API nếu muốn chắc chắn
-        setIsLoggedIn(true);
-      } catch {
-        setIsLoggedIn(false);
-      }
-    };
-    checkAuth();
-  }, []);
+  };
 
   // Nếu initialSearchTerm thay đổi (khi chuyển trang search), đồng bộ input
   React.useEffect(() => {
@@ -430,9 +407,9 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           <Link href='/homepage'>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">{config.brand.short}</span>
+                <span className="text-primary-foreground font-bold text-lg">{lang === 'vi' ? pagesConfigVi.header.brand.short : pagesConfigEn.header.brand.short}</span>
               </div>
-              <span className="text-xl font-bold">{config.brand.full}</span>
+              <span className="text-xl font-bold">{lang === 'vi' ? pagesConfigVi.header.brand.full : pagesConfigEn.header.brand.full}</span>
             </div>
           </Link>
 
@@ -441,7 +418,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             <form className="relative" onSubmit={handleSearch}>
               <Input
                 type="text"
-                placeholder={config.search.placeholder}
+                placeholder={lang === 'vi' ? pagesConfigVi.header.search.placeholder : pagesConfigEn.header.search.placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-4 pr-12 py-2 w-full"
@@ -466,7 +443,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
 
             {/* Language Switcher */}
             <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
-              {lang === 'vi' ? config.language.vi : config.language.en}
+              {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
             {/* Nút Chatbot */}
             <Button
@@ -480,10 +457,10 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             </Button>
 
             {/* Notifications và Chat chỉ hiển thị nếu đã đăng nhập */}
-            {isLoggedIn && <NotificationDropdown />}
+            {React.useState(false) && <NotificationDropdown />}
 
             {/* Cart chỉ hiển thị nếu đã đăng nhập */}
-            {isLoggedIn && <CartDropdown />}
+            {React.useState(false) && <CartDropdown />}
 
             {/* User Account */}
             <UserDropdown />
@@ -508,7 +485,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         <form className="relative" onSubmit={handleSearch}>
           <Input
             type="text"
-            placeholder={config.search.mobilePlaceholder}
+            placeholder={lang === 'vi' ? pagesConfigVi.header.search.mobilePlaceholder : pagesConfigEn.header.search.mobilePlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-4 pr-12 py-2 w-full"
@@ -520,4 +497,4 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
       </div>
     </div>
   )
-} 
+}
