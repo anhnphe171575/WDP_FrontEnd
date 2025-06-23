@@ -8,6 +8,7 @@ import Image from 'next/image';
 import styles from './LoginPage.module.css';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';  
 import { AxiosError } from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 interface ErrorResponse {
   success: boolean;
@@ -41,8 +42,31 @@ export default function LoginPage() {
         } else{
           sessionStorage.setItem('token', token);
         }        
-        // Redirect to dashboard
-        router.push('/homepage');
+        // Decode token để lấy role
+        try {
+          const decoded = jwtDecode<{ role: number }>(token);
+          const role = decoded.role;
+          // Chuyển hướng theo role
+          switch (role) {
+            case 0: // ADMIN_DEVELOPER
+            case 8: // ADMIN_BUSINESS
+              router.push('/admin/dashboard');
+              break;
+            case 2: // ORDER_MANAGER
+              router.push('/order');
+              break;
+            case 4: // MARKETING_MANAGER
+              router.push('/marketing');
+              break;
+            case 1: // CUSTOMER
+            default:
+              router.push('/homepage');
+              break;
+          }
+        } catch (e) {
+          // Nếu decode lỗi, chuyển về homepage mặc định
+          router.push('/homepage');
+        }
       } else {
         setError(response.data.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
       }
@@ -109,8 +133,31 @@ export default function LoginPage() {
           sessionStorage.setItem('token', token);
         }
         
-        // Redirect to dashboard
-        router.push('/homepage');
+        // Decode token để lấy role
+        try {
+          const decoded = jwtDecode<{ role: number }>(token);
+          const role = decoded.role;
+          // Chuyển hướng theo role
+          switch (role) {
+            case 0: // ADMIN_DEVELOPER
+            case 8: // ADMIN_BUSINESS
+              router.push('/admin/dashboard');
+              break;
+            case 2: // ORDER_MANAGER
+              router.push('/order');
+              break;
+            case 4: // MARKETING_MANAGER
+              router.push('/marketing');
+              break;
+            case 1: // CUSTOMER
+            default:
+              router.push('/homepage');
+              break;
+          }
+        } catch (e) {
+          // Nếu decode lỗi, chuyển về homepage mặc định
+          router.push('/homepage');
+        }
       } else {
         setError(response.data.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
       }

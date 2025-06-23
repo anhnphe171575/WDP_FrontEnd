@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Edit, Eye, Trash2 } from "lucide-react";
 import NextImage from "next/image";
+import { ROLES } from "../../../../role.config";
 
 export interface Address {
   _id?: string; // MongoDB sẽ tự tạo nếu không chỉ định
@@ -42,30 +43,19 @@ export interface User {
   updatedAt?: Date;
 }
 
-const ROLES = {
-  CUSTOMER: 1 << 0,
-  ORDER_MANAGER: 1 << 1,
-  MARKETING_MANAGER: 1 << 2,
-  WAREHOUSE_STAFF: 1 << 3,
-  CUSTOMER_SERVICE: 1 << 4,
-  ADMIN_BUSINESS: 1 << 5,
-};
+
 
 const ROLE_COLORS = {
   CUSTOMER: "bg-blue-100 text-blue-800",
   ORDER_MANAGER: "bg-green-100 text-green-800",
   MARKETING_MANAGER: "bg-yellow-100 text-yellow-800",
-  WAREHOUSE_STAFF: "bg-orange-100 text-orange-800",
-  CUSTOMER_SERVICE: "bg-pink-100 text-pink-800",
-  ADMIN_BUSINESS: "bg-indigo-100 text-indigo-800",
+  ADMIN_BUSINESS: "bg-pink-100 text-pink-800",
 } as const;
 
 const ROLE_LABELS = {
   CUSTOMER: "Customer",
   ORDER_MANAGER: "Order Manager",
   MARKETING_MANAGER: "Marketing Manager",
-  WAREHOUSE_STAFF: "Warehouse Staff",
-  CUSTOMER_SERVICE: "Customer Service",
   ADMIN_BUSINESS: "Admin Business",
 } as const;
 
@@ -238,6 +228,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="name"
                 value={formData.name}
+                disabled={user ? true : false}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
@@ -248,6 +239,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                 id="email"
                 type="email"
                 value={formData.email}
+                disabled={user ? true : false}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
               />
@@ -260,6 +252,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="password"
                 type="password"
+                disabled={user ? true : false}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required={!user}
@@ -273,6 +266,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="phone"
                 value={formData.phone}
+                disabled={user ? true : false}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
@@ -281,6 +275,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               <Input
                 id="dob"
                 type="date"
+                disabled={user ? true : false}
                 value={formData.dob}
                 onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
               />
@@ -489,8 +484,9 @@ export default function UserPage() {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      (user?.name && user.name.toLowerCase().includes(searchQuery?.toLowerCase())) ||
+      (user?.email && user.email.toLowerCase().includes(searchQuery?.toLowerCase()));
 
     const matchesRole = selectedRole === "all" ||
       parseRoles(user.role).includes(selectedRole);

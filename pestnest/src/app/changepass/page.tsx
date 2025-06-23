@@ -9,6 +9,9 @@ import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { api } from '../../../utils/axios'
 import { AxiosError } from 'axios'
+import { useLanguage } from '@/context/LanguageContext'
+import viConfig from '../../../utils/petPagesConfig.vi'
+import enConfig from '../../../utils/petPagesConfig.en'
 
 interface ChangePasswordForm {
     currentPassword: string
@@ -51,6 +54,8 @@ const passwordRules = [
 ];
 
 export default function ChangePasswordPage() {
+    const { lang } = useLanguage()
+    const changepassConfig = (lang === 'vi' ? viConfig : enConfig).changepass
     const [formData, setFormData] = useState<ChangePasswordForm>({
         currentPassword: '',
         newPassword: '',
@@ -72,23 +77,20 @@ export default function ChangePasswordPage() {
     const validateForm = (): boolean => {
         const newErrors: ValidationErrors = {}
 
-        // Validate current password
         if (!formData.currentPassword) {
-            newErrors.currentPassword = 'Vui lòng nhập mật khẩu hiện tại'
+            newErrors.currentPassword = changepassConfig.errors.requiredCurrent
         }
 
-        // Validate new password
         if (!formData.newPassword) {
             newErrors.newPassword = 'Vui lòng nhập mật khẩu mới'
         } else if (!isStrongPassword) {
             newErrors.newPassword = 'Mật khẩu chưa đủ mạnh theo yêu cầu'
         }
 
-        // Validate confirm password
         if (!formData.confirmPassword) {
-            newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu mới'
+            newErrors.confirmPassword = changepassConfig.errors.requiredConfirm
         } else if (formData.newPassword !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp'
+            newErrors.confirmPassword = changepassConfig.errors.notMatch
         }
 
         setErrors(newErrors)
@@ -144,7 +146,7 @@ export default function ChangePasswordPage() {
                 // Reset success message after 3 seconds
                 setTimeout(() => setIsSuccess(false), 3000)
             } else {
-                setErrors({ currentPassword: response.data.message || 'Có lỗi xảy ra khi đổi mật khẩu' })
+                setErrors({ currentPassword: response.data.message || changepassConfig.errors.changeError })
             }
 
         } catch (error: unknown) {
@@ -154,13 +156,13 @@ export default function ChangePasswordPage() {
 
             // Xử lý các loại lỗi khác nhau
             if (axiosError.response?.status === 401) {
-                setErrors({ currentPassword: 'Mật khẩu hiện tại không đúng' })
+                setErrors({ currentPassword: changepassConfig.errors.wrongCurrent })
             } else if (axiosError.response?.status === 403) {
-                setErrors({ currentPassword: 'Token không hợp lệ hoặc hết hạn. Vui lòng đăng nhập lại.' })
+                setErrors({ currentPassword: changepassConfig.errors.tokenInvalid })
             } else if (axiosError.response?.data?.message) {
                 setErrors({ currentPassword: axiosError.response.data.message })
             } else {
-                setErrors({ currentPassword: 'Có lỗi xảy ra khi đổi mật khẩu. Vui lòng thử lại.' })
+                setErrors({ currentPassword: changepassConfig.errors.tryAgain })
             }
         } finally {
             setIsLoading(false)
@@ -176,9 +178,9 @@ export default function ChangePasswordPage() {
                         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                             <Lock className="h-6 w-6 text-primary" />
                         </div>
-                        <CardTitle className="text-2xl font-bold">Đổi Mật Khẩu</CardTitle>
+                        <CardTitle className="text-2xl font-bold">{changepassConfig.title}</CardTitle>
                         <CardDescription>
-                            Nhập mật khẩu hiện tại và mật khẩu mới để cập nhật tài khoản của bạn
+                            {changepassConfig.description}
                         </CardDescription>
                     </CardHeader>
 
@@ -186,12 +188,12 @@ export default function ChangePasswordPage() {
                         <CardContent className="space-y-4">
                             {/* Current Password */}
                             <div className="space-y-2">
-                                <Label htmlFor="currentPassword">Mật khẩu hiện tại</Label>
+                                <Label htmlFor="currentPassword">{changepassConfig.fields.currentPassword.label}</Label>
                                 <div className="relative">
                                     <Input
                                         id="currentPassword"
                                         type={showPasswords.current ? 'text' : 'password'}
-                                        placeholder="Nhập mật khẩu hiện tại"
+                                        placeholder={changepassConfig.fields.currentPassword.placeholder}
                                         value={formData.currentPassword}
                                         onChange={(e) => handleInputChange('currentPassword', e.target.value)}
                                         className={errors.currentPassword ? 'border-destructive' : ''}
@@ -220,12 +222,12 @@ export default function ChangePasswordPage() {
 
                             {/* New Password */}
                             <div className="space-y-2">
-                                <Label htmlFor="newPassword">Mật khẩu mới</Label>
+                                <Label htmlFor="newPassword">{changepassConfig.fields.newPassword.label}</Label>
                                 <div className="relative">
                                     <Input
                                         id="newPassword"
                                         type={showPasswords.new ? 'text' : 'password'}
-                                        placeholder="Nhập mật khẩu mới"
+                                        placeholder={changepassConfig.fields.newPassword.placeholder}
                                         value={formData.newPassword}
                                         onChange={(e) => handleInputChange('newPassword', e.target.value)}
                                         className={errors.newPassword ? 'border-destructive' : ''}
@@ -310,7 +312,7 @@ export default function ChangePasswordPage() {
                                 <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
                                     <CheckCircle className="h-5 w-5 text-green-600" />
                                     <span className="text-sm text-green-800">
-                                        Đổi mật khẩu thành công!
+                                        {changepassConfig.success}
                                     </span>
                                 </div>
                             )}
@@ -322,7 +324,7 @@ export default function ChangePasswordPage() {
                                 className="w-full"
                                 disabled={isLoading}
                             >
-                                {isLoading ? 'Đang xử lý...' : 'Đổi Mật Khẩu'}
+                                {isLoading ? changepassConfig.button.loading : changepassConfig.button.submit}
                             </Button>
                         </CardFooter>
                     </form>
