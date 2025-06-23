@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 
 import { CartProvider } from '@/context/CartContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { OrderProvider } from '@/context/OrderContext';
 import Footer from '@/components/layout/Footer';
 
 
@@ -43,11 +44,13 @@ export default function RootLayout({
       >
         <LanguageProvider>
           <CartProvider>
-            <GoogleOAuthProvider clientId={clientId || ''}>
-              {children}
-              <Footer />
-              <Toaster />
-            </GoogleOAuthProvider>
+            <OrderProvider>
+              <GoogleOAuthProvider clientId={clientId || ''}>
+                {children}
+                <Footer />
+                <Toaster />
+              </GoogleOAuthProvider>
+            </OrderProvider>
           </CartProvider>
         </LanguageProvider>
       </body>
