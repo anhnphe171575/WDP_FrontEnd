@@ -86,9 +86,7 @@ const UserProfilePage = () => {
                         name: profileData.name,
                         email: profileData.email,
                         phone: profileData.phone,
-                        address: addressObj,
-                        joinDate: new Date(profileData.createdAt).toLocaleDateString('vi-VN', {
-                        address: profileData.address || config.notUpdatedAddress,
+                        address: addressObj || config.notUpdatedAddress,
                         joinDate: new Date(profileData.createdAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', {
                             month: 'long',
                             year: 'numeric'
