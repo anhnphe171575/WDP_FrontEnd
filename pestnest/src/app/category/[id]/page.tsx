@@ -571,17 +571,6 @@ export default function ProductsPage() {
                     >
                       <CardContent className="p-4">
                         <div className="relative mb-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-2 right-2 z-10 bg-white/80 hover:bg-white"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              // Add to wishlist logic here
-                            }}
-                          >
-                            <Heart className="w-4 h-4" />
-                          </Button>
                           <Image
                             src={product.variants?.[0]?.images?.[0]?.url || "/placeholder.svg"}
                             alt={product.name}
