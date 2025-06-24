@@ -151,22 +151,32 @@ const MyOrderPage = () => {
 
     const handleCancelClick = (order: Order) => {
         setCancelOrder(order);
+        console.log('aa',order)
     };
 
     const handleConfirmCancel = async () => {
         if (!cancelOrder) return;
         setLoading(true);
         const token = sessionStorage.getItem('token');
+
         try {
-            // Assuming cancellation applies to the whole order and all items
-            const requests = cancelOrder.items.map(item => {
-                const url = `http://localhost:5000/api/orders/${cancelOrder._id}/orderItem/${item._id}/request-return`;
-                return axios.put(url, { reason: cancelReason }, { headers: { 'Authorization': `Bearer ${token}` } });
+            const itemsToCancel = cancelOrder.items.map(item => ({
+                orderItemId: item._id,
+                cancelQuantity: item.quantity
+            }));
+
+            const requestBody = {
+                reason: cancelReason,
+                items: itemsToCancel,
+            };
+
+            const url = `http://localhost:5000/api/orders/${cancelOrder._id}/orderItem/cancelled`;
+
+            await axios.put(url, requestBody, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-            await Promise.all(requests);
 
             await fetchOrders();
-
         } catch (err) {
             setError('Không thể hủy đơn hàng. Vui lòng thử lại.');
             console.error('Error cancelling order:', err);
@@ -561,7 +571,8 @@ const MyOrderPage = () => {
                 </div>
             </main>
             {cancelOrder && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50"   style={{ backgroundColor: "#00000061" }}
+>
                     <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold mb-4">Hủy đơn hàng</h2>
                         <p className="mb-4">Bạn có chắc chắn muốn hủy đơn hàng #{cancelOrder._id.slice(-6)}?</p>
@@ -601,8 +612,8 @@ const MyOrderPage = () => {
                             </button>
                             <button
                                 onClick={handleConfirmCancel}
-                                className="px-4 py-2 border rounded-lg bg-red-600 text-white hover:bg-red-700"
-                            >
+                                className="px-4 py-2 border rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-400"
+                                disabled={!cancelReason}                            >
                                 Xác nhận hủy
                             </button>
                         </div>
@@ -612,7 +623,8 @@ const MyOrderPage = () => {
 
             {/* Return Order Dialog */}
             {returnOrder && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"   style={{ backgroundColor: "#00000061" }}
+>
                     <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
                         <h2 className="text-xl font-bold mb-4">Yêu cầu trả hàng</h2>
                         <p className="mb-4 text-sm">Chọn sản phẩm bạn muốn trả cho đơn hàng #{returnOrder._id.slice(-6)}.</p>
