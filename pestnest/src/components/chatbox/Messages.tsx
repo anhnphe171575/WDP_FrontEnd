@@ -26,17 +26,16 @@ interface Conversation {
 }
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000'
-
 let socket: Socket
 
 export default function Messages() {
   const [currentUserId, setCurrentUserId] = useState<string>('')
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+  const [conversation, setConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Lấy userId từ sessionStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const id = sessionStorage.getItem('userId') || ''
@@ -44,131 +43,98 @@ export default function Messages() {
     }
   }, [])
 
+  // Khi có userId, tự động random ghép với 1 marketing (tạo/lấy conversation)
   useEffect(() => {
-    const fetchConversations = async () => {
-      if (!currentUserId) return
+    if (!currentUserId) return
+    const createOrGetConversation = async () => {
       try {
-        const res = await api.get(`/api/messages/conversation/${currentUserId}`)
-        setConversations(res.data)
+        const res = await api.post('/api/messages/conversation', { customerId: currentUserId })
+        console.log('Conversation API response:', res.data)
+        setConversation(res.data)
+      } catch (err) {
+        alert('Không thể tạo cuộc trò chuyện với nhân viên marketing!')
+        console.error(err)
+      }
+    }
+    createOrGetConversation()
+  }, [currentUserId])
+
+  // Khi đã có conversation, lấy lịch sử tin nhắn
+  useEffect(() => {
+    if (!conversation) {
+      setMessages([])
+      return
+    }
+    const fetchMessages = async () => {
+      try {
+        const res = await api.get(`/api/messages/${conversation._id}`)
+        setMessages(res.data)
       } catch (err) {
         console.error(err)
       }
     }
-    fetchConversations()
-  }, [currentUserId])
-
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (selectedConversation) {
-        try {
-          const res = await api.get(`/api/messages/${selectedConversation._id}`)
-          setMessages(res.data)
-        } catch (err) {
-          console.error(err)
-        }
-      } else {
-        setMessages([])
-      }
-    }
     fetchMessages()
-  }, [selectedConversation])
+  }, [conversation])
 
+  // Kết nối socket và join room khi đã có conversation
   useEffect(() => {
-    if (!currentUserId) return
-
+    if (!currentUserId || !conversation) return
     socket = io(SOCKET_URL, {
       auth: {
         token: sessionStorage.getItem('token')
       }
     })
-
-    if (selectedConversation) {
-      socket.emit('joinRoom', selectedConversation._id)
-    }
-
+    socket.emit('join', conversation._id)
     socket.on('receiveMessage', (message) => {
       setMessages(prev => [...prev, message])
     })
-
     return () => {
       socket.disconnect()
     }
-  }, [currentUserId, selectedConversation])
+  }, [currentUserId, conversation])
 
+  // Gửi tin nhắn mới qua socket
   const handleSendMessage = async () => {
-    if (inputMessage.trim() && selectedConversation && currentUserId) {
+    if (inputMessage.trim() && conversation && currentUserId) {
       try {
         socket.emit('sendMessage', {
-          conversationId: selectedConversation._id,
+          conversationId: conversation._id,
           senderId: currentUserId,
           content: inputMessage
         })
         setInputMessage("")
+        // Tin nhắn sẽ được nhận lại qua socket
       } catch (err) {
         console.error(err)
       }
     }
   }
 
+  // Tự động scroll xuống cuối khi có tin nhắn mới
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
   return (
-    <div className="container mx-auto max-w-6xl h-[90vh] mt-4 flex gap-4">
-      <Card className="w-80 flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Danh sách chat</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-auto p-0">
-          <div className="space-y-1">
-            {conversations.map((conv) => (
-              <div
-                key={conv._id}
-                className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                  selectedConversation?._id === conv._id ? 'bg-muted' : ''
-                }`}
-                onClick={() => setSelectedConversation(conv)}
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/api/placeholder/40/40" />
-                    <AvatarFallback>{conv._id[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm truncate">
-                        {conv.customerId === currentUserId ? conv.staffId : conv.customerId}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="container mx-auto max-w-2xl h-[90vh] mt-4 flex flex-col">
       <Card className="flex-1 flex flex-col">
-        {selectedConversation ? (
+        {conversation ? (
           <>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/api/placeholder/40/40" />
-                    <AvatarFallback>
-                      {selectedConversation._id[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {selectedConversation.customerId === currentUserId
-                        ? selectedConversation.staffId
-                        : selectedConversation.customerId}
-                    </CardTitle>
-                  </div>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/api/placeholder/40/40" />
+                  <AvatarFallback>
+                    {conversation.staffId[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-lg">
+                    Nhân viên Marketing
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">Mã: {conversation.staffId}</p>
                 </div>
+                <div className="flex-1" />
                 <Button variant="ghost" size="icon">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
@@ -209,7 +175,7 @@ export default function Messages() {
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center text-muted-foreground">
                       <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Bắt đầu cuộc trò chuyện</p>
+                      <p>Bắt đầu cuộc trò chuyện với nhân viên marketing</p>
                     </div>
                   </div>
                 )}
@@ -240,8 +206,8 @@ export default function Messages() {
           <CardContent className="flex-1 flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium mb-2">Chọn một cuộc trò chuyện để bắt đầu</p>
-              <p className="text-sm">Hiển thị tất cả lịch sử chat</p>
+              <p className="text-lg font-medium mb-2">Đang ghép nối với nhân viên marketing...</p>
+              <p className="text-sm">Vui lòng chờ trong giây lát</p>
             </div>
           </CardContent>
         )}
