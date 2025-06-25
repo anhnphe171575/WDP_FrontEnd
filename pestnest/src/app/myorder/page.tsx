@@ -88,7 +88,6 @@ const MyOrderPage = () => {
 
             if (response.data.success) {
                 setOrders(response.data.data);
-                console.log('Fetched orders:', response.data.data);
                 setFilteredOrders(response.data.data);
             }
         } catch (err) {
@@ -646,7 +645,6 @@ const MyOrderPage = () => {
                             <h3 className="font-semibold mb-2">Chọn sản phẩm:</h3>
                             <ul className="space-y-3">
                                 {returnOrder.items.map((item) => {
-                                    console.log("Rendering item:", item, "Checked:", returnItems.has(item._id));
 
                                     return (
                                         <li key={item._id} className="flex items-start gap-4 text-sm p-2 rounded-lg hover:bg-gray-50">
