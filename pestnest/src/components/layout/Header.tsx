@@ -1,4 +1,5 @@
 'use client';
+import { jwtDecode } from "jwt-decode";
 
 import * as React from "react"
 import {
@@ -30,7 +31,7 @@ import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/context/LanguageContext';
-
+import { io, Socket } from "socket.io-client";
 import axios from 'axios'
 import pagesConfigEn from '../../../utils/petPagesConfig.en.js';
 import pagesConfigVi from '../../../utils/petPagesConfig.vi.js';
@@ -56,33 +57,29 @@ interface CartItem {
   image: string;
 }
 
+interface Notification {
+  _id: string;
+  orderId:string;
+  title: string;
+  description: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 // Sample cart items
 
 
-// Sample notifications
-const notifications = [
-  {
-    id: 1,
-    title: "Order Shipped",
-    message: "Your order #12345 has been shipped",
-    time: "2 hours ago",
-    read: false,
-  },
-  {
-    id: 2,
-    title: "New Offer",
-    message: "50% off on electronics - Limited time",
-    time: "1 day ago",
-    read: false,
-  },
-  {
-    id: 3,
-    title: "Order Delivered",
-    message: "Your order #12344 has been delivered",
-    time: "2 days ago",
-    read: true,
-  },
-]
+let socket: Socket | null = null;
+
+export function getSocket() {
+  if (!socket) {
+    socket = io("http://localhost:5000", {
+    });
+  }
+  return socket;
+}
+
 
 function CartDropdown() {
   const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
@@ -186,10 +183,61 @@ function CartDropdown() {
 }
 
 function NotificationDropdown() {
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    setLoading(true);
+    api.get('/notification')
+      .then(res => {
+        // Giả sử API trả về mảng notification ở res.data.data
+        setNotifications(res.data || []);
+      })
+      .catch(err => {
+        console.error("Failed to fetch notifications:", err);
+        setNotifications([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Lắng nghe socket để nhận notification mới
+  useEffect(() => {
+    const socket = getSocket();
+    const token = sessionStorage.getItem("token");
+    let userId = null;
+    if (token) {
+      const decoded = jwtDecode<{ id: string }>(token);
+      userId = decoded.id;
+      console.log(userId);
+
+    }
+    if (userId) {
+      socket.emit("join", userId);
+    }
+
+    socket.on("notification", (notification: Notification) => {
+      console.log("New notification received:", notification);
+      setNotifications(prev => [notification, ...prev]);
+    });
+
+    socket.on("connect", () => {
+      console.log("Socket connected, id:", socket.id);
+    });
+    socket.on("connect_error", (err) => {
+      console.error("Socket connection error:", err);
+    });
+
+    return () => {
+      socket.off("notification");
+      socket.off("connect");
+      socket.off("connect_error");
+    };
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
@@ -205,24 +253,43 @@ function NotificationDropdown() {
         <div className="p-4">
           <h3 className="font-semibold mb-3">Notifications</h3>
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-3 rounded-lg border ${!notification.read ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <h4 className="text-sm font-medium">{notification.title}</h4>
-                  {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+            {loading ? (
+              <div>Loading...</div>
+            ) : notifications.length === 0 ? (
+              <div>No notifications</div>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={`p-3 rounded-lg border ${!notification.isRead ? "bg-blue-50 border-blue-200" : "bg-gray-50"} cursor-pointer`}
+                  onClick={async () => {
+                    try {
+                      if (!notification.isRead) {
+                        await api.patch(`/notification/${notification._id}`, { isRead: true });
+                        setNotifications(prev => prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
+                      }
+                      if (notification.orderId) {
+                        router.push(`/myorder/${notification.orderId}`);
+                      }
+                    } catch (err) {
+                      console.error('Failed to mark notification as read:', err);
+                    }
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="text-sm font-medium">{notification.title}</h4>
+                    {!notification.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">{notification.description}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(notification.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">{notification.message}</p>
-                <p className="text-xs text-muted-foreground">{notification.time}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <Separator className="my-3" />
-          <Button variant="outline" size="sm" className="w-full">
+          {/* <Button variant="outline" size="sm" className="w-full">
             View All Notifications
-          </Button>
+          </Button> */}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
