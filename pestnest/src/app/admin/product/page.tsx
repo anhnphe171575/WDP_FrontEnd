@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 interface Product {
@@ -25,6 +26,8 @@ interface Product {
     categoryId: string;
     name: string;
     description: string;
+    isParent?: boolean;
+    parentCategory?: string;
   }>;
 }
 
@@ -57,9 +60,11 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
     description: product.description,
     brand: product.brand || ''
   });
-  const [selectedParentCategory, setSelectedParentCategory] = useState<string | null>(null);
-  const [selectedChildCategory, setSelectedChildCategory] = useState<string | null>(null);
-  const [selectedGrandChildCategory, setSelectedGrandChildCategory] = useState<string | null>(null);
+  // Change to array for multi-select
+  const [selectedParentCategories, setSelectedParentCategories] = useState<string[]>([]);
+  // Store child/grandchild per parent
+  const [selectedChildCategories, setSelectedChildCategories] = useState<Record<string, string | null>>({});
+  const [selectedGrandChildCategories, setSelectedGrandChildCategories] = useState<Record<string, string | null>>({});
   const [categorySets, setCategorySets] = useState<Record<string, CategorySet>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,184 +83,144 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Starting to fetch data...');
-        
         // Fetch level 1 categories
         const categoriesResponse = await request(() => api.get('/categories/parent'));
-        console.log('Level 1 categories response:', categoriesResponse);
-        
         if (categoriesResponse && categoriesResponse.success) {
           setLevel1Categories(categoriesResponse.data);
         } else {
-          console.error('Failed to fetch categories:', categoriesResponse?.message || 'Unknown error');
           return;
         }
-
         // Fetch product details
         const productResponse = await request(() => api.get(`/products/productById/${product._id}`));
-        console.log('Product details:', productResponse);
-
         if (productResponse.success) {
           const productData = productResponse.data;
-          
-          // Set form data
+          // Thêm dòng này:
+          console.log('product.category:', productData.category);
           setFormData({
             name: productData.name,
             description: productData.description,
             brand: productData.brand || ''
           });
-
           // Process categories
           if (productData.category && productData.category.length > 0) {
-            // Get category IDs in order
-            const categoryIds = productData.category.map((cat: { id?: string; _id: string }) => cat.id || cat._id);
-            console.log('Category IDs:', categoryIds);
+            // 1. Lấy parent
+            const parentCategories = productData.category.filter((cat: any) => cat.isParent);
+            const parentIds = parentCategories.map((cat: any) => cat._id);
 
-            if (categoryIds.length > 0) {
-              // Set parent category
-              setSelectedParentCategory(categoryIds[0]);
-              
-              // Fetch child categories for parent
-              const childResponse = await request(() => api.get(`/categories/child-categories/${categoryIds[0]}`));
-              if (childResponse.success) {
-                setCategorySets({
-                  [categoryIds[0]]: {
-                    level2: childResponse.data || [],
-                    level3: []
-                  }
-                });
+            // 2. Mapping child và grandchild cho từng parent
+            const newChild = {};
+            const newGrand = {};
+            const newCategorySets = {};
 
-                if (categoryIds.length > 1) {
-                  // Set child category
-                  setSelectedChildCategory(categoryIds[1]);
-                  
-                  // Fetch grandchild categories
-                  const grandChildResponse = await request(() => api.get(`/categories/child-categories/${categoryIds[1]}`));
-                  if (grandChildResponse.success) {
-                    setCategorySets(prev => ({
-                      [categoryIds[0]]: {
-                        ...prev[categoryIds[0]],
-                        level3: grandChildResponse.data || []
-                      }
-                    }));
+            for (const parent of parentCategories) {
+              // Tìm child (con trực tiếp của parent)
+              const child = productData.category.find((cat: any) => cat.parentCategory === parent._id);
+              if (child) {
+                (newChild as any)[parent._id] = child._id;
+                // Fetch child categories (level2)
+                const childRes = await request(() => api.get(`/categories/child-categories/${parent._id}`));
+                (newCategorySets as any)[parent._id] = { level2: childRes.data || [], level3: [] };
 
-                    if (categoryIds.length > 2) {
-                      // Set grandchild category
-                      setSelectedGrandChildCategory(categoryIds[2]);
-                    }
-                  }
+                // Tìm grandchild (con của child)
+                const grand = productData.category.find((cat: any) => cat.parentCategory === child._id);
+                if (grand) {
+                  (newGrand as any)[parent._id] = grand._id;
+                  // Fetch grandchild categories (level3)
+                  const grandRes = await request(() => api.get(`/categories/child-categories/${child._id}`));
+                  (newCategorySets as any)[parent._id].level3 = grandRes.data || [];
                 }
+              } else {
+                // Nếu không có child, vẫn fetch child categories
+                const childRes = await request(() => api.get(`/categories/child-categories/${parent._id}`));
+                (newCategorySets as any)[parent._id] = { level2: childRes.data || [], level3: [] };
+                (newChild as any)[parent._id] = null;
+                (newGrand as any)[parent._id] = null;
               }
             }
+
+            setSelectedParentCategories(parentIds);
+            setSelectedChildCategories(newChild);
+            setSelectedGrandChildCategories(newGrand);
+            setCategorySets(newCategorySets);
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        //
       }
     };
-
     if (isOpen) {
       fetchData();
     }
   }, [isOpen, product._id]);
 
-  const handleParentCategoryChange = async (categoryId: string) => {
-    setSelectedParentCategory(categoryId);
-    setSelectedChildCategory(null);
-    setSelectedGrandChildCategory(null);
-    
-    try {
+  // Handle parent checkbox
+  const handleParentCategoryChange = async (categoryId: string, checked: boolean) => {
+    let newSelected = checked
+      ? [...selectedParentCategories, categoryId]
+      : selectedParentCategories.filter(id => id !== categoryId);
+    setSelectedParentCategories(newSelected);
+    if (checked) {
       // Fetch child categories for the selected parent
-      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
-      console.log('Child categories response:', response);
-      
-      if (response && response.success) {
-        setCategorySets({
-          [categoryId]: {
-            level2: response.data || [],
-            level3: []
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching child categories:', error);
+      try {
+        const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
+        setCategorySets(prev => ({ ...prev, [categoryId]: { level2: response.data || [], level3: [] } }));
+        setSelectedChildCategories(prev => ({ ...prev, [categoryId]: null }));
+        setSelectedGrandChildCategories(prev => ({ ...prev, [categoryId]: null }));
+      } catch {}
+    } else {
+      // Remove child/grandchild for this parent
+      setCategorySets(prev => { const p = { ...prev }; delete p[categoryId]; return p; });
+      setSelectedChildCategories(prev => { const p = { ...prev }; delete p[categoryId]; return p; });
+      setSelectedGrandChildCategories(prev => { const p = { ...prev }; delete p[categoryId]; return p; });
     }
   };
 
-  const handleChildCategoryChange = async (categoryId: string) => {
-    setSelectedChildCategory(categoryId);
-    setSelectedGrandChildCategory(null);
-    
+  // Handle child category per parent
+  const handleChildCategoryChange = async (parentId: string, childId: string) => {
+    setSelectedChildCategories(prev => ({ ...prev, [parentId]: childId }));
+    setSelectedGrandChildCategories(prev => ({ ...prev, [parentId]: null }));
+    // Fetch grandchild
     try {
-      // Fetch grandchild categories
-      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
-      console.log('Grandchild categories response:', response);
-      
-      if (response && response.success) {
-        setCategorySets(prev => ({
-          ...prev,
-          [selectedParentCategory!]: {
-            ...prev[selectedParentCategory!],
-            level3: response.data || []
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching grandchild categories:', error);
-    }
+      const response = await request(() => api.get(`/categories/child-categories/${childId}`));
+      setCategorySets(prev => ({ ...prev, [parentId]: { ...prev[parentId], level3: response.data || [] } }));
+    } catch {}
   };
-
-  const handleGrandChildCategoryChange = (categoryId: string) => {
-    setSelectedGrandChildCategory(categoryId);
+  // Handle grandchild per parent
+  const handleGrandChildCategoryChange = (parentId: string, grandId: string) => {
+    setSelectedGrandChildCategories(prev => ({ ...prev, [parentId]: grandId }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Prevent multiple submissions
-    if (submitRef.current) {
-      return;
-    }
+    if (submitRef.current) return;
     submitRef.current = true;
     setError(null);
-
     try {
       setIsSubmitting(true);
-
-      // Validate required fields
-      if (!formData.name || !formData.description) {
-        throw new Error('Name and description are required');
-      }
-
-      if (!selectedParentCategory) {
-        throw new Error('Please select a parent category');
-      }
-
-      // Create array of category IDs
-      const categoryIds = [selectedParentCategory];
-      if (selectedChildCategory) {
-        categoryIds.push(selectedChildCategory);
-      }
-      if (selectedGrandChildCategory) {
-        categoryIds.push(selectedGrandChildCategory);
-      }
-
+      if (!formData.name || !formData.description) throw new Error('Name and description are required');
+      if (selectedParentCategories.length === 0) throw new Error('Please select at least one parent category');
+      // Chỉ lấy các parentId còn tick và child/grandchild của chúng
+      let categories: { categoryId: string }[] = [];
+      selectedParentCategories.forEach(parentId => {
+        if (!level1Categories.find(c => c._id === parentId)) return; // parentId không hợp lệ
+        categories.push({ categoryId: parentId });
+        const childId = selectedChildCategories[parentId];
+        if (childId && categorySets[parentId]?.level2.find(c => c._id === childId)) {
+          categories.push({ categoryId: childId });
+          const grandId = selectedGrandChildCategories[parentId];
+          if (grandId && categorySets[parentId]?.level3.find(c => c._id === grandId)) {
+            categories.push({ categoryId: grandId });
+          }
+        }
+      });
       const submitData = {
         name: formData.name,
         description: formData.description,
         brand: formData.brand,
-        categories: categoryIds.map(categoryId => ({
-          categoryId: categoryId
-        }))
+        categories
       };
-
-      console.log('Sending data to update product:', submitData);
-      
       const response = await request(() => api.put(`/products/${product._id}`, submitData));
-
-      console.log('Response from server:', response);
-
       if (response.success) {
         onSave(response.data);
         onClose();
@@ -263,7 +228,6 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
         throw new Error(response.message || 'Failed to update product');
       }
     } catch (error: any) {
-      console.error('Error updating product:', error);
       setError(error.message || 'Failed to update product');
     } finally {
       setIsSubmitting(false);
@@ -317,59 +281,58 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
           </div>
           <div className="bg-gray-50 p-6 rounded-lg border">
             <Label className="font-semibold mb-2 block">Categories <span className="text-red-500">*</span></Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <Label className="font-semibold">Parent Category</Label>
-                <div className="space-y-2 mt-2">
-                  {level1Categories.map((category) => (
-                    <div key={`parent-${category._id}`} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`parent-${category._id}`}
-                        name="parentCategory"
-                        checked={selectedParentCategory === category._id}
-                        onChange={() => handleParentCategoryChange(category._id)}
-                        required
-                      />
-                      <Label htmlFor={`parent-${category._id}`}>{category.name}</Label>
+            <div className="space-y-2 mt-2">
+              {level1Categories.map((category) => (
+                <div key={`parent-${category._id}`} className="flex flex-col gap-1">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`parent-${category._id}`}
+                      checked={selectedParentCategories.includes(category._id)}
+                      onChange={e => handleParentCategoryChange(category._id, e.target.checked)}
+                    />
+                    <Label htmlFor={`parent-${category._id}`}>{category.name}</Label>
+                  </div>
+                  {/* Nếu parent này được chọn thì hiện child/grandchild ngay dưới nó */}
+                  {selectedParentCategories.includes(category._id) && (
+                    <div className="ml-6 mt-2 border-l-2 border-gray-200 pl-4">
+                      <div>
+                        <Label className="font-semibold">Child Category</Label>
+                        <div className="space-y-2 mt-2">
+                          {categorySets[category._id]?.level2.map((child) => (
+                            <div key={`child-${child._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`child-${category._id}-${child._id}`}
+                                name={`childCategory-${category._id}`}
+                                checked={selectedChildCategories[category._id] === child._id}
+                                onChange={() => handleChildCategoryChange(category._id, child._id)}
+                              />
+                              <Label htmlFor={`child-${category._id}-${child._id}`}>{child.name}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <Label className="font-semibold">Grandchild Category</Label>
+                        <div className="space-y-2 mt-2">
+                          {selectedChildCategories[category._id] && categorySets[category._id]?.level3.map((grand) => (
+                            <div key={`grandchild-${grand._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`grandchild-${category._id}-${grand._id}`}
+                                name={`grandchildCategory-${category._id}`}
+                                checked={selectedGrandChildCategories[category._id] === grand._id}
+                                onChange={() => handleGrandChildCategoryChange(category._id, grand._id)}
+                              />
+                              <Label htmlFor={`grandchild-${category._id}-${grand._id}`}>{grand.name}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-              <div>
-                <Label className="font-semibold">Child Category</Label>
-                <div className="space-y-2 mt-2">
-                  {selectedParentCategory && categorySets[selectedParentCategory]?.level2.map((category) => (
-                    <div key={`child-${category._id}`} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`child-${category._id}`}
-                        name="childCategory"
-                        checked={selectedChildCategory === category._id}
-                        onChange={() => handleChildCategoryChange(category._id)}
-                      />
-                      <Label htmlFor={`child-${category._id}`}>{category.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label className="font-semibold">Grandchild Category</Label>
-                <div className="space-y-2 mt-2">
-                  {selectedChildCategory && categorySets[selectedParentCategory!]?.level3.map((category) => (
-                    <div key={`grandchild-${category._id}`} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`grandchild-${category._id}`}
-                        name="grandchildCategory"
-                        checked={selectedGrandChildCategory === category._id}
-                        onChange={() => handleGrandChildCategoryChange(category._id)}
-                      />
-                      <Label htmlFor={`grandchild-${category._id}`}>{category.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
           <div className="flex justify-end gap-4 mt-6">
@@ -1048,6 +1011,11 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
             setIsImportModalOpen(false);
             setSelectedVariantForImport(null);
           }}
+          onVariantUpdate={(updatedVariant) => {
+            setVariants((prev) => prev.map(v => v._id === updatedVariant._id ? { ...v, sellPrice: updatedVariant.sellPrice } : v));
+            // Also update selectedVariantForImport if open
+            setSelectedVariantForImport((prev) => prev && prev._id === updatedVariant._id ? { ...prev, sellPrice: updatedVariant.sellPrice } : prev);
+          }}
         />
       )}
 
@@ -1097,9 +1065,10 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
     description: '',
     brand: ''
   });
-  const [selectedParentCategory, setSelectedParentCategory] = useState<string | null>(null);
-  const [selectedChildCategory, setSelectedChildCategory] = useState<string | null>(null);
-  const [selectedGrandChildCategory, setSelectedGrandChildCategory] = useState<string | null>(null);
+  // Đổi sang multi-select giống Edit
+  const [selectedParentCategories, setSelectedParentCategories] = useState<string[]>([]);
+  const [selectedChildCategories, setSelectedChildCategories] = useState<Record<string, string | null>>({});
+  const [selectedGrandChildCategories, setSelectedGrandChildCategories] = useState<Record<string, string | null>>({});
   const [categorySets, setCategorySets] = useState<Record<string, CategorySet>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1129,9 +1098,9 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       submitRef.current = false;
       setError(null);
       setFormData({ name: '', description: '', brand: '' });
-      setSelectedParentCategory(null);
-      setSelectedChildCategory(null);
-      setSelectedGrandChildCategory(null);
+      setSelectedParentCategories([]);
+      setSelectedChildCategories({});
+      setSelectedGrandChildCategories({});
       setCategorySets({});
       setVariants([]);
       setAttributes({ parentAttributes: [], childAttributes: [] });
@@ -1150,58 +1119,17 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
       try {
         const response = await request(() => api.get('/categories/parent'));
         if (response && response.success) {
+          console.log(response.data)
           setLevel1Categories(response.data);
         }
       } catch (error) {
-        console.error('Error fetching level 1 categories:', error);
         setError('Failed to fetch categories');
       }
     };
-
     if (isOpen) {
       fetchLevel1Categories();
     }
   }, [isOpen]);
-
-  // Sửa useEffect fetch attribute:
-  useEffect(() => {
-    const fetchAttributes = async () => {
-      if (selectedParentCategory) {
-        try {
-          const responseRaw = await request(() => api.get(`/categories/attributes/${selectedParentCategory}`));
-          const attributesData = responseRaw?.attributes;
-          if (responseRaw.success && attributesData) {
-            const parentAttributes = attributesData.map((attr: any) => ({
-              _id: attr._id,
-              value: attr.value,
-              description: attr.description
-            }));
-            const childAttributes: any[] = [];
-            attributesData.forEach((attr: any) => {
-              if (attr.children && attr.children.length > 0) {
-                attr.children.forEach((child: any) => {
-                  childAttributes.push({
-                    _id: child._id,
-                    value: child.value,
-                    description: child.description,
-                    parentId: { _id: attr._id, value: attr.value }
-                  });
-                });
-              }
-            });
-            setAttributes({ parentAttributes, childAttributes });
-          } else {
-            setAttributes({ parentAttributes: [], childAttributes: [] });
-          }
-        } catch (err: any) {
-          setAttributes({ parentAttributes: [], childAttributes: [] });
-        }
-      } else {
-        setAttributes({ parentAttributes: [], childAttributes: [] });
-      }
-    };
-    fetchAttributes();
-  }, [selectedParentCategory]);
 
   // Khi chọn parent attribute, fetch child attribute động (nếu cần)
   useEffect(() => {
@@ -1212,99 +1140,72 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
     // Không cần fetch lại vì đã lấy hết child attribute ở trên
   }, [selectedParentAttribute]);
 
-  const handleParentCategoryChange = async (categoryId: string) => {
-    setSelectedParentCategory(categoryId);
-    setSelectedChildCategory(null);
-    setSelectedGrandChildCategory(null);
-    
-    try {
+  const handleParentCategoryChange = async (categoryId: string, checked: boolean) => {
+    let newSelected = checked
+      ? [...selectedParentCategories, categoryId]
+      : selectedParentCategories.filter(id => id !== categoryId);
+    setSelectedParentCategories(newSelected);
+    if (checked) {
       // Fetch child categories for the selected parent
-      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
-      if (response && response.success) {
-        setCategorySets({
-          [categoryId]: {
-            level2: response.data || [],
-            level3: []
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching child categories:', error);
-      setError('Failed to fetch child categories');
+      try {
+        const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
+        setCategorySets(prev => ({ ...prev, [categoryId]: { level2: response.data || [], level3: [] } }));
+        setSelectedChildCategories(prev => ({ ...prev, [categoryId]: null }));
+        setSelectedGrandChildCategories(prev => ({ ...prev, [categoryId]: null }));
+      } catch {}
+    } else {
+      // Remove child/grandchild for this parent
+      setCategorySets(prev => { const p = { ...prev }; delete p[categoryId]; return p; });
+      setSelectedChildCategories(prev => { const p = { ...prev }; delete p[categoryId]; return p; });
+      setSelectedGrandChildCategories(prev => { const p = { ...prev }; delete p[categoryId]; return p; });
     }
   };
 
-  const handleChildCategoryChange = async (categoryId: string) => {
-    setSelectedChildCategory(categoryId);
-    setSelectedGrandChildCategory(null);
-    
+  const handleChildCategoryChange = async (parentId: string, childId: string) => {
+    setSelectedChildCategories(prev => ({ ...prev, [parentId]: childId }));
+    setSelectedGrandChildCategories(prev => ({ ...prev, [parentId]: null }));
+    // Fetch grandchild
     try {
-      // Fetch grandchild categories
-      const response = await request(() => api.get(`/categories/child-categories/${categoryId}`));
-      if (response && response.success) {
-        setCategorySets(prev => ({
-          ...prev,
-          [selectedParentCategory!]: {
-            ...prev[selectedParentCategory!],
-            level3: response.data || []
-          }
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching grandchild categories:', error);
-      setError('Failed to fetch grandchild categories');
-    }
+      const response = await request(() => api.get(`/categories/child-categories/${childId}`));
+      setCategorySets(prev => ({ ...prev, [parentId]: { ...prev[parentId], level3: response.data || [] } }));
+    } catch {}
   };
-
-  const handleGrandChildCategoryChange = (categoryId: string) => {
-    setSelectedGrandChildCategory(categoryId);
+  // Handle grandchild per parent
+  const handleGrandChildCategoryChange = (parentId: string, grandId: string) => {
+    setSelectedGrandChildCategories(prev => ({ ...prev, [parentId]: grandId }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Prevent multiple submissions
-    if (submitRef.current || isSubmitting) {
-      console.log('Preventing duplicate submission');
-      return;
-    }
+    if (submitRef.current || isSubmitting) return;
     submitRef.current = true;
     setError(null);
-
     try {
       setIsSubmitting(true);
-
-      // Validate required fields
-      if (!formData.name || !formData.description) {
-        throw new Error('Name and description are required');
-      }
-
-      if (!selectedParentCategory) {
-        throw new Error('Please select a parent category');
-      }
-
-      // Create array of category IDs
-      const categoryIds = [selectedParentCategory];
-      if (selectedChildCategory) {
-        categoryIds.push(selectedChildCategory);
-      }
-      if (selectedGrandChildCategory) {
-        categoryIds.push(selectedGrandChildCategory);
-      }
-
+      if (!formData.name || !formData.description) throw new Error('Name and description are required');
+      if (selectedParentCategories.length === 0) throw new Error('Please select at least one parent category');
+      // Build categories giống Edit
+      let categories: { categoryId: string }[] = [];
+      selectedParentCategories.forEach(parentId => {
+        if (!level1Categories.find(c => c._id === parentId)) return;
+        categories.push({ categoryId: parentId });
+        const childId = selectedChildCategories[parentId];
+        if (childId && categorySets[parentId]?.level2.find(c => c._id === childId)) {
+          categories.push({ categoryId: childId });
+          const grandId = selectedGrandChildCategories[parentId];
+          if (grandId && categorySets[parentId]?.level3.find(c => c._id === grandId)) {
+            categories.push({ categoryId: grandId });
+          }
+        }
+      });
       const submitData = {
         name: formData.name,
         description: formData.description,
         brand: formData.brand,
-        categories: categoryIds.map(categoryId => ({
-          categoryId: categoryId
-        }))
+        categories
       };
-
-      console.log('Sending data to create product:', submitData);
       const response = await request(() => api.post('/products', submitData));
-      console.log('Response from server:', response);
-
       if (response.success) {
         const createdProduct = response.data;
         // Tạo các variant nếu có
@@ -1338,7 +1239,6 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
         throw new Error(response.message || 'Failed to create product');
       }
     } catch (error: any) {
-      console.error('Error creating product:', error);
       setError(error.message || 'Failed to create product');
     } finally {
       setIsSubmitting(false);
@@ -1459,65 +1359,64 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
           </div>
           <div className="bg-gray-50 p-6 rounded-lg border">
             <Label className="font-semibold mb-2 block">Categories <span className="text-red-500">*</span></Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <Label className="font-semibold">Parent Category <span className="text-red-500">*</span></Label>
-                <div className="space-y-2 mt-2">
-                  {level1Categories.map((category) => (
-                    <div key={`parent-${category._id}`} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`parent-${category._id}`}
-                        name="parentCategory"
-                        checked={selectedParentCategory === category._id}
-                        onChange={() => handleParentCategoryChange(category._id)}
-                        required
-                      />
-                      <Label htmlFor={`parent-${category._id}`}>{category.name}</Label>
+            <div className="space-y-2 mt-2">
+              {level1Categories.map((category) => (
+                <div key={`parent-${category._id}`} className="flex flex-col gap-1">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`parent-${category._id}`}
+                      checked={selectedParentCategories.includes(category._id)}
+                      onChange={e => handleParentCategoryChange(category._id, e.target.checked)}
+                    />
+                    <Label htmlFor={`parent-${category._id}`}>{category.name}</Label>
+                  </div>
+                  {/* Nếu parent này được chọn thì hiện child/grandchild ngay dưới nó */}
+                  {selectedParentCategories.includes(category._id) && (
+                    <div className="ml-6 mt-2 border-l-2 border-gray-200 pl-4">
+                      <div>
+                        <Label className="font-semibold">Child Category</Label>
+                        <div className="space-y-2 mt-2">
+                          {categorySets[category._id]?.level2.map((child) => (
+                            <div key={`child-${child._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`child-${category._id}-${child._id}`}
+                                name={`childCategory-${category._id}`}
+                                checked={selectedChildCategories[category._id] === child._id}
+                                onChange={() => handleChildCategoryChange(category._id, child._id)}
+                              />
+                              <Label htmlFor={`child-${category._id}-${child._id}`}>{child.name}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <Label className="font-semibold">Grandchild Category</Label>
+                        <div className="space-y-2 mt-2">
+                          {selectedChildCategories[category._id] && categorySets[category._id]?.level3.map((grand) => (
+                            <div key={`grandchild-${grand._id}`} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`grandchild-${category._id}-${grand._id}`}
+                                name={`grandchildCategory-${category._id}`}
+                                checked={selectedGrandChildCategories[category._id] === grand._id}
+                                onChange={() => handleGrandChildCategoryChange(category._id, grand._id)}
+                              />
+                              <Label htmlFor={`grandchild-${category._id}-${grand._id}`}>{grand.name}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-              <div>
-                <Label className="font-semibold">Child Category</Label>
-                <div className="space-y-2 mt-2">
-                  {selectedParentCategory && categorySets[selectedParentCategory]?.level2.map((category) => (
-                    <div key={`child-${category._id}`} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`child-${category._id}`}
-                        name="childCategory"
-                        checked={selectedChildCategory === category._id}
-                        onChange={() => handleChildCategoryChange(category._id)}
-                      />
-                      <Label htmlFor={`child-${category._id}`}>{category.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label className="font-semibold">Grandchild Category</Label>
-                <div className="space-y-2 mt-2">
-                  {selectedChildCategory && categorySets[selectedParentCategory!]?.level3.map((category) => (
-                    <div key={`grandchild-${category._id}`} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`grandchild-${category._id}`}
-                        name="grandchildCategory"
-                        checked={selectedGrandChildCategory === category._id}
-                        onChange={() => handleGrandChildCategoryChange(category._id)}
-                      />
-                      <Label htmlFor={`grandchild-${category._id}`}>{category.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
           <div className="bg-gray-50 p-6 rounded-lg border">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-base text-gray-700">Product Variants</h3>
-              <Button type="button" onClick={() => setIsAddVariantFormOpen(true)} disabled={!selectedGrandChildCategory}>Add Variant</Button>
+              <Button type="button" onClick={() => setIsAddVariantFormOpen(true)} disabled={selectedParentCategories.length === 0}>Add Variant</Button>
             </div>
             {variants.length > 0 && (
               <div className="space-y-2 mb-4">
@@ -1672,9 +1571,10 @@ interface ImportManagementModalProps {
   product: Product;
   isOpen: boolean;
   onClose: () => void;
+  onVariantUpdate?: (updatedVariant: ProductVariant) => void;
 }
 
-function ImportManagementModal({ variant, product, isOpen, onClose }: ImportManagementModalProps) {
+function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpdate }: ImportManagementModalProps) {
   const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1688,7 +1588,14 @@ function ImportManagementModal({ variant, product, isOpen, onClose }: ImportMana
     quantity: 0,
     costPrice: 0
   });
+  const [sellPrice, setSellPrice] = useState<number>(variant.sellPrice);
+  const [isUpdatingSellPrice, setIsUpdatingSellPrice] = useState(false);
+  const [sellPriceError, setSellPriceError] = useState<string | null>(null);
   const { request } = useApi();
+
+  useEffect(() => {
+    setSellPrice(variant.sellPrice);
+  }, [variant.sellPrice, variant._id]);
 
   useEffect(() => {
     const fetchImportBatches = async () => {
@@ -1824,6 +1731,39 @@ function ImportManagementModal({ variant, product, isOpen, onClose }: ImportMana
     attr.parentId ? `${attr.parentId.value}: ${attr.value}` : attr.value
   ).join(', ');
 
+  const handleSellPriceUpdate = async (newPrice: number) => {
+    setIsUpdatingSellPrice(true);
+    setSellPriceError(null);
+    try {
+      const formData = new FormData();
+      formData.append('sellPrice', String(newPrice));
+      const response = await request(() =>
+        api.put(`/products/variant/${variant._id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      );
+      if (!response.success) {
+        setSellPriceError(response.message || 'Failed to update sell price');
+        setSellPrice(variant.sellPrice);
+      } else {
+        // Fetch latest variant data
+        const variantRes = await request(() => api.get(`/products/product-variant/${variant.product_id}`));
+        if (variantRes.success && Array.isArray(variantRes.data)) {
+          const updated = variantRes.data.find((v: ProductVariant) => v._id === variant._id);
+          if (updated) {
+            setSellPrice(updated.sellPrice);
+            if (onVariantUpdate) onVariantUpdate(updated);
+          }
+        }
+      }
+    } catch (err: any) {
+      setSellPriceError(err.message || 'Failed to update sell price');
+      setSellPrice(variant.sellPrice);
+    } finally {
+      setIsUpdatingSellPrice(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
@@ -1850,12 +1790,30 @@ function ImportManagementModal({ variant, product, isOpen, onClose }: ImportMana
                 <span className="font-medium">Categories:</span> {product.category.map(cat => cat.name).join(', ')}
               </div>
               <div>
-                <span className="font-medium">Sell Price:</span> ${variant.sellPrice}
-              </div>
-              <div>
                 <span className="font-medium">Images:</span> {variant.images.length}
               </div>
             </div>
+          </div>
+
+          {/* Sell Price Update */}
+          <div className="bg-white p-4 rounded-lg border flex items-center gap-4 mb-2">
+            <Label htmlFor="variant-sell-price" className="font-semibold">Sell Price:</Label>
+            <Input
+              id="variant-sell-price"
+              type="number"
+              value={sellPrice}
+              min={0}
+              step={0.01}
+              className="w-32"
+              disabled={isUpdatingSellPrice}
+              onChange={e => setSellPrice(Number(e.target.value))}
+              onBlur={async () => {
+                if (sellPrice === variant.sellPrice) return;
+                await handleSellPriceUpdate(sellPrice);
+              }}
+            />
+            {isUpdatingSellPrice && <span className="text-sm text-gray-500">Saving...</span>}
+            {sellPriceError && <span className="text-sm text-red-500">{sellPriceError}</span>}
           </div>
 
           <div className="flex justify-between items-center">

@@ -12,6 +12,7 @@ interface Product {
   name: string;
   description: string;
   variants: any[];
+  image?: string;
   // Thêm các trường khác nếu cần
 }
 
@@ -28,7 +29,7 @@ export default function WishlistPage() {
           setProducts(res.data.products);
         }
       } catch (err) {
-        // Xử lý lỗi
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -53,6 +54,13 @@ export default function WishlistPage() {
                   <CardTitle>{product.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-40 object-cover mb-2 rounded"
+                    />
+                  )}
                   <p>{product.description}</p>
                   <Link href={`/product/${product._id}`}>
                     <Button className="mt-2">Xem chi tiết</Button>

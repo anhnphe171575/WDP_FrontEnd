@@ -13,6 +13,7 @@ import Image from "next/image"
 import Header from "@/components/layout/Header"
 import { useRouter } from "next/navigation"
 import axiosInstance from "../../../utils/axios"
+import { useOrder } from "@/context/OrderContext"
 
 interface CartItem {
   _id: string
@@ -63,6 +64,7 @@ function formatCurrency(amount: number): string {
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const { setOrderData } = useOrder()
   const [shippingMethod, setShippingMethod] = useState("standard")
   const [paymentMethod, setPaymentMethod] = useState("card")
   const [selectedAddress, setSelectedAddress] = useState<string>("")
@@ -138,8 +140,8 @@ export default function CheckoutPage() {
   })
 
   const subtotal = cartItems.reduce((total, item) => total + item.product.selectedVariant.price * item.quantity, 0)
-  const shipping = shippingMethod === "express" ? 50000 : 30000
-  const tax = Math.round(subtotal * 0.1)
+  const shipping = shippingMethod === "express" ? 0 : 0
+  const tax = Math.round(subtotal * 0.0)
   const total = subtotal + shipping + tax
 
   const handleDeleteAddress = async (addressId: string) => {
@@ -201,7 +203,6 @@ export default function CheckoutPage() {
     }
     setIsPlacingOrder(true)
     try {
-      // Prepare payload as needed by your backend
       const payload = {
         addressId: selectedAddress,
         shippingMethod,
@@ -212,11 +213,22 @@ export default function CheckoutPage() {
         })),
         amount: total,
       }
-      const response = await axiosInstance.post('/payment/create-payment', payload)
-      if (response.data && response.data.error === 0 && response.data.url) {
-        window.location.href = response.data.url
+      
+      // Nếu chọn COD, lưu vào context và chuyển hướng
+      if (paymentMethod === 'cod') {
+        setOrderData(payload)
+        // Xóa items đã checkout khỏi localStorage
+        localStorage.removeItem('checkoutItems')
+        // Chuyển đến trang thành công
+        router.push('/payment/result?method=cod')
       } else {
-        alert('Không thể tạo thanh toán. Vui lòng thử lại!')
+        // Thanh toán online - gọi API payment như cũ
+        const response = await axiosInstance.post('/payment/create-payment', payload)
+        if (response.data && response.data.error === 0 && response.data.url) {
+          window.location.href = response.data.url
+        } else {
+          alert('Không thể tạo thanh toán. Vui lòng thử lại!')
+        }
       }
     } catch (error) {
       alert('Có lỗi xảy ra khi đặt hàng!')
@@ -469,7 +481,7 @@ export default function CheckoutPage() {
             <CardContent>
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
                 <div className="flex items-center space-x-2 border rounded-md p-4">
-                  <RadioGroupItem value="card" id="card" />
+                  <RadioGroupItem value="PayOs" id="card" />
                   <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer">
                     <CreditCard className="h-5 w-5" />
                     <div>
