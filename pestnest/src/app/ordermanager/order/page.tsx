@@ -46,7 +46,7 @@ interface Order {
     status:string
 }[];
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'reject-return';
   paymentMethod: string;
   voucher?: string[];
   createAt?: Date;
@@ -66,6 +66,7 @@ interface Order {
     postalCode: string;
     country: string;
   };
+  reasonRejectCancel?: string;
 }
 
 const ORDER_STATUS = {
@@ -74,6 +75,7 @@ const ORDER_STATUS = {
   SHIPPED: 'shipped',
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
+  REJECT_RETURN: 'reject-return',
 } as const;
 
 const ORDER_STATUS_COLORS = {
@@ -82,6 +84,7 @@ const ORDER_STATUS_COLORS = {
   shipped: "bg-purple-100 text-purple-800",
   completed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
+  "reject-return": "bg-fuchsia-100 text-fuchsia-800",
 } as const;
 
 
@@ -203,6 +206,10 @@ export default function OrderPage() {
   const [selectedReturnItem, setSelectedReturnItem] = useState<any[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState<string>("")
+  const [isRejectReasonDialogOpen, setIsRejectReasonDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [itemToProcess, setItemToProcess] = useState<any | null>(null);
+  const [isViewReasonDialogOpen, setIsViewReasonDialogOpen] = useState(false);
 
 
   useEffect(() => {
@@ -243,6 +250,25 @@ export default function OrderPage() {
       setOrders(orders.filter(order => order._id !== id));
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+  
+  const handleRejectReturn = async () => {
+    if (!selectedOrder || !itemToProcess || !rejectionReason) {
+      alert("Lý do từ chối không được để trống.");
+      return;
+    }
+    try {
+      await api.put(`/orders/${selectedOrder._id}/reject-return`, {
+        itemId: itemToProcess._id,
+        reason: rejectionReason,
+      });
+      setIsRejectReasonDialogOpen(false);
+      setRejectionReason("");
+      setItemToProcess(null);
+      fetchOrders();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Có lỗi xảy ra khi từ chối yêu cầu.");
     }
   };
 
@@ -475,6 +501,17 @@ export default function OrderPage() {
                             <span role="img" aria-label="Cancelled">❌</span> Xem hàng đã hủy
                           </span>
                         )}
+                         {order.status === 'reject-return' && (
+                           <span
+                           className="flex items-center text-fuchsia-600 text-xs gap-1 cursor-pointer underline"
+                           onClick={() => {
+                             setSelectedOrder(order);
+                             setIsViewReasonDialogOpen(true);
+                           }}
+                         >
+                           <span role="img" aria-label="Rejected">❗️</span> Xem lý do từ chối
+                         </span>
+                        )}
                       </div>
                   </TableCell>
                   <TableCell>{order.createAt ? new Date(order.createAt).toLocaleDateString() : "N/A"}</TableCell>
@@ -669,7 +706,11 @@ export default function OrderPage() {
               </div>
               {item.status === 'returned-requested' ? (
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setItemToProcess(item);
+                    setIsReturnDialogOpen(false);
+                    setIsRejectReasonDialogOpen(true);
+                  }}>
                     Từ chối
                   </Button>
                   <Button
@@ -696,6 +737,52 @@ export default function OrderPage() {
             </div>
           ))}
         </DialogContent>
+      </Dialog>
+       <Dialog open={isRejectReasonDialogOpen} onOpenChange={setIsRejectReasonDialogOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Lý do từ chối trả hàng</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                  <Label htmlFor="rejectionReason">Vui lòng nhập lý do từ chối:</Label>
+                  <textarea
+                      id="rejectionReason"
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      className="w-full p-2 border rounded-md"
+                      rows={4}
+                  />
+                  <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setIsRejectReasonDialogOpen(false)}>
+                          Hủy
+                      </Button>
+                      <Button onClick={handleRejectReturn}>
+                          Xác nhận từ chối
+                      </Button>
+                  </div>
+              </div>
+          </DialogContent>
+      </Dialog>
+
+      <Dialog open={isViewReasonDialogOpen} onOpenChange={setIsViewReasonDialogOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Lý do từ chối trả hàng</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                  <p className="text-sm text-gray-500">
+                      Lý do từ chối cho đơn hàng #{selectedOrder?._id?.slice(-6)}:
+                  </p>
+                  <div className="p-4 bg-gray-100 rounded-md">
+                      <p>{selectedOrder?.reasonRejectCancel || 'Không có lý do được cung cấp.'}</p>
+                  </div>
+                  <div className="flex justify-end">
+                      <Button variant="outline" onClick={() => setIsViewReasonDialogOpen(false)}>
+                          Đóng
+                      </Button>
+                  </div>
+              </div>
+          </DialogContent>
       </Dialog>
     </div>
   );

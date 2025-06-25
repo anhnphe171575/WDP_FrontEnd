@@ -30,7 +30,7 @@ import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/context/LanguageContext';
-
+import { io, Socket } from "socket.io-client";
 import axios from 'axios'
 import pagesConfigEn from '../../../utils/petPagesConfig.en.js';
 import pagesConfigVi from '../../../utils/petPagesConfig.vi.js';
@@ -56,9 +56,30 @@ interface CartItem {
   image: string;
 }
 
+interface Notification {
+  _id: string;
+  title: string;
+  description: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+}
+
 // Sample cart items
 
 
+let socket: Socket | null = null;
+
+export function getSocket() {
+  if (!socket) {
+    socket = io("http://localhost:5000", {
+
+      withCredentials: true,
+      
+    });
+  }
+  return socket;
+}
 // Sample notifications
 const notifications = [
   {
@@ -186,10 +207,44 @@ function CartDropdown() {
 }
 
 function NotificationDropdown() {
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Lấy notification khi mount
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/notification"); // Đổi endpoint đúng với backend
+        setNotifications(res.data.notifications || []);
+        console.log("Fetched notifications:", res);
+      } catch (e) {
+        setNotifications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, []);
+
+  // Lắng nghe socket để nhận notification mới
+  useEffect(() => {
+    const socket = getSocket();
+    // Lấy userId từ token/session nếu cần join room
+    // socket.emit("join", userId);
+
+    socket.on("notification", (notification: Notification) => {
+      setNotifications((prev) => [notification, ...prev]);
+    });
+
+    return () => {
+      socket.off("notification");
+    };
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
@@ -205,19 +260,25 @@ function NotificationDropdown() {
         <div className="p-4">
           <h3 className="font-semibold mb-3">Notifications</h3>
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-3 rounded-lg border ${!notification.read ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <h4 className="text-sm font-medium">{notification.title}</h4>
-                  {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+            {loading ? (
+              <div>Loading...</div>
+            ) : notifications.length === 0 ? (
+              <div>No notifications</div>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={`p-3 rounded-lg border ${!notification.read ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="text-sm font-medium">{notification.title}</h4>
+                    {!notification.read && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">{notification.description}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(notification.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">{notification.message}</p>
-                <p className="text-xs text-muted-foreground">{notification.time}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <Separator className="my-3" />
           <Button variant="outline" size="sm" className="w-full">

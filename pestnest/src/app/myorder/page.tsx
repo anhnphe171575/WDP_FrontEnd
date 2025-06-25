@@ -14,6 +14,7 @@ interface Order {
     status: string;
     paymentMethod: string;
     createAt: string;
+    reasonRejectCancel?: string;
     items: {
         _id: string;
         productName: string;
@@ -64,6 +65,7 @@ const MyOrderPage = () => {
     const [returnOrder, setReturnOrder] = useState<Order | null>(null);
     const [returnReason, setReturnReason] = useState('');
     const [returnItems, setReturnItems] = useState<Map<string, number>>(new Map());
+    const [rejectionReasonOrder, setRejectionReasonOrder] = useState<Order | null>(null);
 
     const fetchOrders = useCallback(async () => {
         const token = sessionStorage.getItem('token');
@@ -273,6 +275,8 @@ const MyOrderPage = () => {
                 return 'bg-green-100 text-green-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
+            case 'reject-return':
+                return 'bg-purple-100 text-purple-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -388,6 +392,7 @@ const MyOrderPage = () => {
                                                 <option value="processing">Đang xử lý</option>
                                                 <option value="completed">Hoàn thành</option>
                                                 <option value="cancelled">Đã hủy</option>
+                                                <option value="reject-return">Bị từ chối trả hàng</option>
                                             </select>
                                         </div>
                                         <div>
@@ -523,7 +528,8 @@ const MyOrderPage = () => {
                                                             order.status === 'completed' ? 'Hoàn thành' :
                                                                 order.status === 'processing' ? 'Đang xử lý' :
                                                                 order.status ==='pending'? 'Chờ xử lý':
-                                                                order.status === 'returned' ? 'Hoàn hàng' : "Đang chờ xử lý"}
+                                                                order.status === 'returned' ? 'Hoàn hàng' : 
+                                                                order.status === 'reject-return' ? 'Từ chối trả hàng' : "Đang chờ xử lý"}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -558,6 +564,13 @@ const MyOrderPage = () => {
                                                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                                                         >
                                                             Hủy đơn
+                                                        </button>
+                                                    ) : order.status === 'reject-return' ? (
+                                                        <button
+                                                            onClick={() => setRejectionReasonOrder(order)}
+                                                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                                                        >
+                                                            Xem lý do
                                                         </button>
                                                     ) : null}
                                                 </td>
@@ -699,6 +712,30 @@ const MyOrderPage = () => {
                                 disabled={returnItems.size === 0 || !returnReason}
                             >
                                 Gửi yêu cầu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Rejection Reason Dialog */}
+            {rejectionReasonOrder && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style={{ backgroundColor: "#00000061" }}>
+                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h2 className="text-xl font-bold mb-4">Lý do từ chối trả hàng</h2>
+                        <p className="mb-2 text-sm text-gray-600">Đơn hàng: #{rejectionReasonOrder._id.slice(-6)}</p>
+                        <div className="border-t border-b py-4 my-4">
+                            <h3 className="font-semibold mb-2 text-gray-800">Lý do từ quản trị viên:</h3>
+                            <p className="text-gray-700 bg-gray-50 p-3 rounded-md">
+                                {rejectionReasonOrder.reasonRejectCancel || 'Không có lý do được cung cấp.'}
+                            </p>
+                        </div>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setRejectionReasonOrder(null)}
+                                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                            >
+                                Đóng
                             </button>
                         </div>
                     </div>
