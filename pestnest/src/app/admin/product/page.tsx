@@ -1048,6 +1048,11 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
             setIsImportModalOpen(false);
             setSelectedVariantForImport(null);
           }}
+          onVariantUpdate={(updatedVariant) => {
+            setVariants((prev) => prev.map(v => v._id === updatedVariant._id ? { ...v, sellPrice: updatedVariant.sellPrice } : v));
+            // Also update selectedVariantForImport if open
+            setSelectedVariantForImport((prev) => prev && prev._id === updatedVariant._id ? { ...prev, sellPrice: updatedVariant.sellPrice } : prev);
+          }}
         />
       )}
 
@@ -1672,9 +1677,10 @@ interface ImportManagementModalProps {
   product: Product;
   isOpen: boolean;
   onClose: () => void;
+  onVariantUpdate?: (updatedVariant: ProductVariant) => void;
 }
 
-function ImportManagementModal({ variant, product, isOpen, onClose }: ImportManagementModalProps) {
+function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpdate }: ImportManagementModalProps) {
   const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1688,7 +1694,14 @@ function ImportManagementModal({ variant, product, isOpen, onClose }: ImportMana
     quantity: 0,
     costPrice: 0
   });
+  const [sellPrice, setSellPrice] = useState<number>(variant.sellPrice);
+  const [isUpdatingSellPrice, setIsUpdatingSellPrice] = useState(false);
+  const [sellPriceError, setSellPriceError] = useState<string | null>(null);
   const { request } = useApi();
+
+  useEffect(() => {
+    setSellPrice(variant.sellPrice);
+  }, [variant.sellPrice, variant._id]);
 
   useEffect(() => {
     const fetchImportBatches = async () => {
@@ -1824,6 +1837,39 @@ function ImportManagementModal({ variant, product, isOpen, onClose }: ImportMana
     attr.parentId ? `${attr.parentId.value}: ${attr.value}` : attr.value
   ).join(', ');
 
+  const handleSellPriceUpdate = async (newPrice: number) => {
+    setIsUpdatingSellPrice(true);
+    setSellPriceError(null);
+    try {
+      const formData = new FormData();
+      formData.append('sellPrice', String(newPrice));
+      const response = await request(() =>
+        api.put(`/products/variant/${variant._id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      );
+      if (!response.success) {
+        setSellPriceError(response.message || 'Failed to update sell price');
+        setSellPrice(variant.sellPrice);
+      } else {
+        // Fetch latest variant data
+        const variantRes = await request(() => api.get(`/products/product-variant/${variant.product_id}`));
+        if (variantRes.success && Array.isArray(variantRes.data)) {
+          const updated = variantRes.data.find((v: ProductVariant) => v._id === variant._id);
+          if (updated) {
+            setSellPrice(updated.sellPrice);
+            if (onVariantUpdate) onVariantUpdate(updated);
+          }
+        }
+      }
+    } catch (err: any) {
+      setSellPriceError(err.message || 'Failed to update sell price');
+      setSellPrice(variant.sellPrice);
+    } finally {
+      setIsUpdatingSellPrice(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
@@ -1850,12 +1896,30 @@ function ImportManagementModal({ variant, product, isOpen, onClose }: ImportMana
                 <span className="font-medium">Categories:</span> {product.category.map(cat => cat.name).join(', ')}
               </div>
               <div>
-                <span className="font-medium">Sell Price:</span> ${variant.sellPrice}
-              </div>
-              <div>
                 <span className="font-medium">Images:</span> {variant.images.length}
               </div>
             </div>
+          </div>
+
+          {/* Sell Price Update */}
+          <div className="bg-white p-4 rounded-lg border flex items-center gap-4 mb-2">
+            <Label htmlFor="variant-sell-price" className="font-semibold">Sell Price:</Label>
+            <Input
+              id="variant-sell-price"
+              type="number"
+              value={sellPrice}
+              min={0}
+              step={0.01}
+              className="w-32"
+              disabled={isUpdatingSellPrice}
+              onChange={e => setSellPrice(Number(e.target.value))}
+              onBlur={async () => {
+                if (sellPrice === variant.sellPrice) return;
+                await handleSellPriceUpdate(sellPrice);
+              }}
+            />
+            {isUpdatingSellPrice && <span className="text-sm text-gray-500">Saving...</span>}
+            {sellPriceError && <span className="text-sm text-red-500">{sellPriceError}</span>}
           </div>
 
           <div className="flex justify-between items-center">
