@@ -14,6 +14,7 @@ import {
   Target,
   Mail,
   Share2,
+  Languages,
 } from "lucide-react"
 
 import {
@@ -40,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useLanguage } from "@/context/LanguageContext"
 
 // Menu items for the sidebar
 const menuItems = [
@@ -109,6 +111,12 @@ const settingsItems = [
 ]
 
 function MarketingSidebar() {
+  const { lang, setLang } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLang(lang === 'vi' ? 'en' : 'vi');
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -160,6 +168,12 @@ function MarketingSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={toggleLanguage}>
+                  <Languages />
+                  <span>{lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

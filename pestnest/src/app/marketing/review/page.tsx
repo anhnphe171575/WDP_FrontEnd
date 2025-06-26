@@ -123,6 +123,7 @@ export default function ReviewManagement() {
       
       // Process reviews to get stats per product
       const productStats = reviewsData.reduce((acc: any, review: any) => {
+        if (!review.productId || !review.productId.name) return acc;
         const productId = review.productId._id;
         if (!acc[productId]) {
           acc[productId] = {
@@ -162,7 +163,9 @@ export default function ReviewManagement() {
   const fetchProductComments = async (productId: string, productName: string) => {
     try {
       const response = await api.get(`/reviews/product/${productId}`);
-      setSelectedProductComments(response.data.data.filter((review: any) => review.comment));
+      setSelectedProductComments(
+        response.data.data.filter((review: any) => review.comment && review.userId)
+      );
       setSelectedProductName(productName);
       setCommentRatingFilter("all"); // Reset comment rating filter when opening new product
     } catch (error) {
@@ -324,8 +327,8 @@ export default function ReviewManagement() {
                                   <div key={comment._id} className="border rounded-lg p-4">
                                     <div className="flex justify-between items-start mb-2">
                                       <div>
-                                        <p className="font-semibold">{comment.userId.name}</p>
-                                        <p className="text-sm text-gray-500">{comment.userId.email}</p>
+                                        <p className="font-semibold">{comment.userId?.name || "Unknown User"}</p>
+                                        <p className="text-sm text-gray-500">{comment.userId?.email || "No email"}</p>
                                       </div>
                                       <div className="text-sm text-gray-500">
                                         {formatDate(comment.createdAt)}
