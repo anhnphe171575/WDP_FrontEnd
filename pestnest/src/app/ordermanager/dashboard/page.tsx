@@ -173,7 +173,7 @@ export default function Component() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold"> {revenueData.totalRevenue} VND</div>
+              <div className="text-2xl font-bold"> {revenueData?.totalRevenue || 'null'} VND</div>
               <p className="text-xs text-muted-foreground">+8% from last month</p>
             </CardContent>
           </Card>
@@ -184,7 +184,7 @@ export default function Component() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{revenueData.currentMonthRevenue} VND</div>
+              <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || 'null'} VND</div>
               <p className="text-xs text-muted-foreground">+3% from last month</p>
             </CardContent>
           </Card>
@@ -194,7 +194,7 @@ export default function Component() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{revenueData.currentMonthRevenue} VND</div>
+              <div className="text-2xl font-bold">1000 VND</div>
               <p className="text-xs text-muted-foreground">+3% from last month</p>
             </CardContent>
           </Card>
