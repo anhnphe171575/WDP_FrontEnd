@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { api } from "../../../../utils/axios"
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
 
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -25,6 +26,31 @@ const statusColors = {
   completed: "#22c55e",
   returned: "#f97316"
 };
+
+// Add Product interface for product tables
+interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  category: string[];
+  createAt: string;
+  updateAt: string;
+  variants: {
+    _id: string;
+    images: {
+      url: string;
+    }[];
+    attribute: {
+      Attribute_id: string;
+      value: string;
+    }[];
+    sellPrice: number;
+    totalQuantity: number;
+  }[];
+  brand: string;
+  minSellPrice?: number;
+  totalQuantity?: number;
+}
 
 function formatOrderStatusData(data: any, year: number, month: number) {
   if (!data?.ordersStatusByYearMonth) return [];
@@ -57,15 +83,22 @@ function formatOrdersData(ordersData: any, year: number) {
 
 
 export default function Component() {
-  const [selectedYear, setSelectedYear] = React.useState<string>("2024")
+  const [selectedYear, setSelectedYear] = React.useState<string>("2025")
   const [selectedMonth, setSelectedMonth] = React.useState<string>(String(new Date().getMonth() + 1)) // Default to this month
   const [ordersData, setOrdersData] = React.useState<any>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [year, setYear] = React.useState<number[]>([2024, 2025, 2022])
+  const [bestSelling, setBestSelling] = React.useState<Product[]>([])
+  const [worstSelling, setWorstSelling] = React.useState<Product[]>([])
+  const [loadingProducts, setLoadingProducts] = React.useState(true)
+  const [errorProducts, setErrorProducts] = React.useState<string | null>(null)
+  const [revenueData, setRevenueData] = React.useState<any>(null)
+  
 
   React.useEffect(() => {
     fetchOrders()
+    fetchProductTables()
   }, [])
   // Fetch orders data from API
   const fetchOrders = async () => {
@@ -82,6 +115,26 @@ export default function Component() {
     }
   };
 
+  // Fetch best-selling and worst-selling products
+  const fetchProductTables = async () => {
+    setLoadingProducts(true)
+    setErrorProducts(null)
+    try {
+      const [best, worst, revenue] = await Promise.all([
+        api.get('/products/best-selling'),
+        api.get('/products/worst-selling'),
+        api.get('/orders/revenue')
+      ])
+      setBestSelling(best.data.data?.slice(0, 5) || [])
+      setWorstSelling(worst.data.data?.slice(0, 5) || [])
+      setRevenueData(revenue.data)
+      console.log(revenue.data);
+    } catch (err: any) {
+      setErrorProducts(err?.message || 'Error fetching product tables')
+    } finally {
+      setLoadingProducts(false)
+    }
+  }
 
   const filteredOrdersData = React.useMemo(() => {
     if (!ordersData) return [];
@@ -110,7 +163,7 @@ export default function Component() {
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{ordersData?.totalOrders || 'null'}</div>
+              <div className="text-2xl font-bold">{ordersData?.totalOrders || 'null'} </div>
               <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
@@ -120,7 +173,7 @@ export default function Component() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$45,231</div>
+              <div className="text-2xl font-bold"> {revenueData.totalRevenue} VND</div>
               <p className="text-xs text-muted-foreground">+8% from last month</p>
             </CardContent>
           </Card>
@@ -131,7 +184,17 @@ export default function Component() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$156</div>
+              <div className="text-2xl font-bold">{revenueData.currentMonthRevenue} VND</div>
+              <p className="text-xs text-muted-foreground">+3% from last month</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{revenueData.currentMonthRevenue} VND</div>
               <p className="text-xs text-muted-foreground">+3% from last month</p>
             </CardContent>
           </Card>
@@ -271,7 +334,81 @@ export default function Component() {
               </div>
             </CardContent>
           </Card>
+          {/* Best selling  */}
+          
         </div>
+
+        <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 5 Best-Selling Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingProducts ? (
+                  <div>Loading...</div>
+                ) : errorProducts ? (
+                  <div className="text-red-600">{errorProducts}</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Sold</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bestSelling.map((product) => (
+                        <TableRow key={product._id}>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>{product.brand}</TableCell>
+                          <TableCell>{product.minSellPrice?.toLocaleString() || 0}</TableCell>
+                          <TableCell>{product.totalQuantity || 0}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+            {/* Worst selling  */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top 5 Worst-Selling Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingProducts ? (
+                  <div>Loading...</div>
+                ) : errorProducts ? (
+                  <div className="text-red-600">{errorProducts}</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Brand</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Sold</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {worstSelling.map((product) => (
+                        <TableRow key={product._id}>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell>{product.brand}</TableCell>
+                          <TableCell>{product.minSellPrice?.toLocaleString() || 0}</TableCell>
+                          <TableCell>{product.totalQuantity || 0}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
       </main>
     </div>
   )
