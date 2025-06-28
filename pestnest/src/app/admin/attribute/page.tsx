@@ -699,7 +699,7 @@ export default function AttributePage() {
                     <TableCell>{attr.categories?.map(cid => categories.find(c => c._id === cid)?.name).filter(Boolean).join(", ")}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button variant="secondary" size="sm" onClick={() => handleShowChildren(attr)}>Xem attribute con</Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Xem attribute con" onClick={() => handleShowChildren(attr)}><ChevronRight className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Edit" onClick={() => handleEdit(attr)}><Edit className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" title="Delete" onClick={() => handleDelete(attr._id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>

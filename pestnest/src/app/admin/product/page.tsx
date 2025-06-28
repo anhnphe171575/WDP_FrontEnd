@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox";
-
+import ChatBot from "@/components/chatbot/ChatBot";
 
 interface Product {
   _id: string;
@@ -2086,19 +2086,6 @@ interface PaginationProps {
   setCurrentPage: (value: number) => void;
 }
 
-// Thêm hàm uploadImage ở đầu file (trước các component)
-const uploadImage = async (file: File) => {
-  const formData = new FormData();
-  formData.append('image', file);
-  const response = await api.post('/products/upload-image', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  if (response.data && response.data.url) {
-    return response.data.url;
-  }
-  throw new Error('Upload image failed');
-};
-
 export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2386,7 +2373,7 @@ export default function ProductPage() {
           )}
         </CardContent>
       </Card>
-
+          <ChatBot/>
       {selectedProduct && (
         <EditProductModal
           product={selectedProduct}
