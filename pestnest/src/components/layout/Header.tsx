@@ -1,5 +1,4 @@
 'use client';
-import { jwtDecode } from "jwt-decode";
 
 import * as React from "react"
 import {
@@ -10,7 +9,6 @@ import {
   Heart,
   ChevronDown,
   Package,
-  Settings,
   LogOut,
 } from "lucide-react"
 import Link from 'next/link'
@@ -26,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { MessageCircle } from 'lucide-react'
@@ -35,6 +33,7 @@ import { io, Socket } from "socket.io-client";
 import axios from 'axios'
 import pagesConfigEn from '../../../utils/petPagesConfig.en.js';
 import pagesConfigVi from '../../../utils/petPagesConfig.vi.js';
+import { jwtDecode } from 'jwt-decode';
 
 declare global {
   interface Window {
@@ -430,11 +429,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
 
   // Xử lý khi click vào nút chat
   const handleContactChatbot = () => {
-    setShowContacting(true);
-    setTimeout(() => {
-      setShowContacting(false);
-      router.push('/messages');
-    }, 1500);
+    router.push('/messages');
   };
 
   // Nếu initialSearchTerm thay đổi (khi chuyển trang search), đồng bộ input
@@ -451,7 +446,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   };
 
   return (
-    <div className="border-b bg-white">
+    <div className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
