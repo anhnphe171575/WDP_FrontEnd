@@ -361,14 +361,12 @@ function UserDropdown({ isLoggedIn, user }: { isLoggedIn: boolean, user: { name:
             {config.user.myOrders}
           </Link>
         </DropdownMenuItem>
-        {/* <DropdownMenuItem>
-          <Heart className="mr-2 h-4 w-4" />
-          Wishlist
+        <DropdownMenuItem asChild>
+          <Link href="/wishlist" className="flex items-center">
+            <Heart className="mr-2 h-4 w-4" />
+            {config.user.wishlist}
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </DropdownMenuItem> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />

@@ -334,9 +334,6 @@ export default function ShoppingCart() {
               <span className="text-blue-600 font-semibold ml-2 text-xl">{formatPrice(calculateSelectedTotal())}</span>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-gray-300 hover:bg-gray-100">
-                {cartConfig.addToFavorite}
-              </Button>
               <Button 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8"
                 onClick={handleBuyNow}
