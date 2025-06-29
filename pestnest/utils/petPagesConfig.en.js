@@ -389,7 +389,31 @@ const pagesConfig = {
       selectedVariantNotFound: "Selected variant not found",
       loading: "Loading...",
       errorFetching: "Error fetching product:",
-      addToWishlist: "Add to wishlist"
+      addToWishlist: "Add to wishlist",
+      cancel: "Cancel",
+      reviewForm: {
+        title: "Write a Review",
+        subtitle: "Share your experience with this product",
+        rating: "Rating",
+        titleField: "Review Title",
+        titlePlaceholder: "Summarize your experience",
+        comment: "Review",
+        commentPlaceholder: "Tell us about your experience with this product...",
+        images: "Images (optional)",
+        submit: "Submit Review",
+        submitting: "Submitting...",
+        success: "Review submitted successfully!",
+        error: "Failed to submit review. Please try again.",
+        required: "This field is required",
+        minRating: "Please select a rating",
+        minCommentLength: "Review must be at least 10 characters long"
+      },
+      unreviewedSection: {
+        title: "You purchased this product",
+        subtitle: "Share your experience to help other customers",
+        writeReview: "Write a Review",
+        purchasedOn: "Purchased on {date}"
+      }
     },
     bestSellingPage: {
       breadcrumb: {

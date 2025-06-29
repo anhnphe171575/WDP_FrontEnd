@@ -22,6 +22,11 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // Don't set Content-Type for FormData, let axios handle it automatically
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     if (process.env.NODE_ENV === 'development') {
     
     }
@@ -75,7 +80,29 @@ export const api = {
   put: (url, data, config) => axiosInstance.put(url, data, config),
   patch: (url, data, config) => axiosInstance.patch(url, data, config),
   delete: (url, config) => axiosInstance.delete(url, config),
+  
+  // Review API methods
+  reviews: {
+    // Create a new review
+    create: (reviewData) => axiosInstance.post('/reviews', reviewData),
+    
+    // Get all reviews
+    getAll: () => axiosInstance.get('/reviews'),
+    
+    // Get reviews for a specific product
+    getByProduct: (productId) => axiosInstance.get(`/reviews/product/${productId}`),
+    
+    // Get unreviewed products for a user
+    getUnreviewed: (productId) => axiosInstance.get(`/reviews/unreviewed/${productId}`),
+    
+    // Update a review
+    update: (reviewId, reviewData) => axiosInstance.put(`/reviews/${reviewId}`, reviewData),
+    
+    // Delete a review
+    delete: (reviewId) => axiosInstance.delete(`/reviews/${reviewId}`),
+  },
 };
+
 // Utility functions cho các trường hợp đặc biệt
 export const apiUtils = {
   // Upload file
@@ -107,6 +134,17 @@ export const apiUtils = {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Download failed:', error);
+      throw error;
+    }
+  },
+
+  // Create review
+  createReview: async (reviewData) => {
+    try {
+      const response = await axiosInstance.post('/reviews', reviewData);
+      return response.data;
+    } catch (error) {
+      console.error('Create review failed:', error);
       throw error;
     }
   },

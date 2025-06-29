@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Heart, Star, ThumbsUp, ShoppingCart, Truck, Shield, RotateCcw } from "lucide-react"
+import { Heart, Star, ThumbsUp, ShoppingCart, Truck, Shield, RotateCcw, X } from "lucide-react"
 import { useParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,9 @@ import { Separator } from "@/components/ui/separator"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import Header from "@/components/layout/Header"
 import { api } from "../../../../utils/axios"
 import { useLanguage } from '@/context/LanguageContext'
@@ -67,6 +70,22 @@ interface Product {
   totalReviews: number;
 }
 
+interface UnreviewedProduct {
+  _id: string;
+  productName: string;
+  productDescription: string;
+  productBrand: string;
+  totalQuantity: number;
+  lastPurchaseDate: string;
+}
+
+interface UnreviewedData {
+  totalPurchasedProducts: number;
+  totalReviewedProducts: number;
+  unreviewedProducts: UnreviewedProduct[];
+  unreviewedCount: number;
+}
+
 export default function ProductPage() {
   const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
@@ -80,6 +99,17 @@ export default function ProductPage() {
   const config = lang === 'vi' ? viConfig.productDetail : enConfig.productDetail;
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  
+  // Review form states
+  const [unreviewedData, setUnreviewedData] = useState<UnreviewedData | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 0,
+    comment: '',
+    images: [] as File[]
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -104,6 +134,24 @@ export default function ProductPage() {
     }
   }, [params.id]);
 
+  // Fetch unreviewed products
+  useEffect(() => {
+    const fetchUnreviewedProducts = async () => {
+      try {
+        const response = await api.get(`/reviews/unreviewed/${params.id}`);
+        if (response.data.success) {
+          setUnreviewedData(response.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching unreviewed products:', err);
+      }
+    };
+
+    if (params.id) {
+      fetchUnreviewedProducts();
+    }
+  }, [params.id]);
+
   // Kiểm tra sản phẩm đã trong wishlist chưa
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -116,6 +164,160 @@ export default function ProductPage() {
     };
     if (product?._id) fetchWishlist();
   }, [product?._id]);
+
+  const handleAddToCart = async () => {
+    if (!product) {
+      setAddToCartError(config.productNotFound);
+      return;
+    }
+
+    if (!product.variants[selectedVariant]) {
+      setAddToCartError(config.selectedVariantNotFound);
+      return;
+    }
+
+    if (quantity <= 0) {
+      setAddToCartError(config.quantityGreaterThanZero);
+      return;
+    }
+    
+    try {
+      setAddingToCart(true);
+      setAddToCartError(null);
+      const response = await api.post('/cart/addtocart', {
+        productId: product._id,
+        productVariantId: product.variants[selectedVariant]._id,
+        quantity: quantity
+      });
+
+      if (response.data.success) {
+        // Show success message
+        alert(config.addToCartSuccess);
+      } else {
+        throw new Error(response.data.message || config.addToCartFail);
+      }
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      setAddToCartError(err instanceof Error ? err.message : config.addToCartFail);
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleToggleWishlist = async () => {
+    if (!product) return;
+    setWishlistLoading(true);
+    try {
+      if (isWishlisted) {
+        await api.post('/wishlist/remove', { productId: product._id });
+        setIsWishlisted(false);
+      } else {
+        await api.post('/wishlist/add', { productId: product._id });
+        setIsWishlisted(true);
+      }
+    } catch {}
+    setWishlistLoading(false);
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!product) return;
+
+    // Validation
+    if (reviewForm.rating === 0) {
+      setReviewError(config.reviewForm.minRating);
+      return;
+    }
+
+    if (reviewForm.comment.length < 10) {
+      setReviewError(config.reviewForm.minCommentLength);
+      return;
+    }
+
+    // Validate images
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    
+    for (const image of reviewForm.images) {
+      if (image.size > maxFileSize) {
+        setReviewError('Kích thước file không được vượt quá 5MB');
+        return;
+      }
+      if (!allowedTypes.includes(image.type)) {
+        setReviewError('Chỉ chấp nhận file ảnh (JPEG, PNG, WebP)');
+        return;
+      }
+    }
+
+    try {
+      setSubmittingReview(true);
+      setReviewError(null);
+      
+      let response;
+      
+      // If no images, send as JSON
+      if (reviewForm.images.length === 0) {
+        response = await api.post('/reviews', {
+          productId: product._id,
+          rating: reviewForm.rating,
+          comment: reviewForm.comment
+        });
+      } else {
+        // If has images, send as FormData
+        const formData = new FormData();
+        formData.append('productId', product._id);
+        formData.append('rating', reviewForm.rating.toString());
+        formData.append('comment', reviewForm.comment);
+        
+        // Append images
+        reviewForm.images.forEach((image, index) => {
+          formData.append('images', image);
+        });
+
+        // Debug logging
+        console.log('FormData contents:');
+        for (let [key, value] of formData.entries()) {
+          console.log(key, value);
+        }
+        console.log('Number of images:', reviewForm.images.length);
+
+        response = await api.post('/reviews', formData);
+      }
+
+      if (response.data.success) {
+        alert(config.reviewForm.success);
+        setShowReviewForm(false);
+        setReviewForm({ rating: 0, comment: '', images: [] });
+        // Refresh the page to show the new review
+        window.location.reload();
+      } else {
+        throw new Error(response.data.message || config.reviewForm.error);
+      }
+    } catch (err: any) {
+      console.error('Error submitting review:', err);
+      console.error('Error response:', err.response?.data);
+      
+      // Handle specific error cases
+      if (err.response?.status === 413) {
+        setReviewError('File ảnh quá lớn. Vui lòng chọn file nhỏ hơn.');
+      } else if (err.response?.status === 400) {
+        setReviewError(err.response.data.message || 'Dữ liệu không hợp lệ');
+      } else if (err.response?.status === 500) {
+        setReviewError('Lỗi server. Vui lòng thử lại sau.');
+      } else {
+        setReviewError(err instanceof Error ? err.message : config.reviewForm.error);
+      }
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   if (loading) {
     return (
@@ -185,59 +387,9 @@ export default function ProductPage() {
     });
   });
 
-  const handleAddToCart = async () => {
-    if (!product) {
-      setAddToCartError(config.productNotFound);
-      return;
-    }
-
-    if (!product.variants[selectedVariant]) {
-      setAddToCartError(config.selectedVariantNotFound);
-      return;
-    }
-
-    if (quantity <= 0) {
-      setAddToCartError(config.quantityGreaterThanZero);
-      return;
-    }
-    
-    try {
-      setAddingToCart(true);
-      setAddToCartError(null);
-      const response = await api.post('/cart/addtocart', {
-        productId: product._id,
-        productVariantId: product.variants[selectedVariant]._id,
-        quantity: quantity
-      });
-
-      if (response.data.success) {
-        // Show success message
-        alert(config.addToCartSuccess);
-      } else {
-        throw new Error(response.data.message || config.addToCartFail);
-      }
-    } catch (err) {
-      console.error('Error adding to cart:', err);
-      setAddToCartError(err instanceof Error ? err.message : config.addToCartFail);
-    } finally {
-      setAddingToCart(false);
-    }
-  };
-
-  const handleToggleWishlist = async () => {
-    if (!product) return;
-    setWishlistLoading(true);
-    try {
-      if (isWishlisted) {
-        await api.post('/wishlist/remove', { productId: product._id });
-        setIsWishlisted(false);
-      } else {
-        await api.post('/wishlist/add', { productId: product._id });
-        setIsWishlisted(true);
-      }
-    } catch {}
-    setWishlistLoading(false);
-  };
+  // Check if current product is in unreviewed list
+  const isUnreviewed = unreviewedData?.unreviewedProducts?.some(p => p._id === product._id);
+  const unreviewedProduct = unreviewedData?.unreviewedProducts?.find(p => p._id === product._id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -385,6 +537,178 @@ export default function ProductPage() {
             </div>
           </div>
         </div>
+
+        {/* Unreviewed Section */}
+        {isUnreviewed && unreviewedProduct && (
+          <div className="mb-16">
+            <Card className="border-2 border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold text-primary">
+                      {config.unreviewedSection.title}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {config.unreviewedSection.subtitle}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {config.unreviewedSection.purchasedOn.replace('{date}', formatDate(unreviewedProduct.lastPurchaseDate))}
+                    </p>
+                  </div>
+                  <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        {config.unreviewedSection.writeReview}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px]">
+                      <DialogHeader>
+                        <DialogTitle>{config.reviewForm.title}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {config.reviewForm.subtitle}
+                          </p>
+                        </div>
+                        
+                        {/* Rating */}
+                        <div className="space-y-3">
+                          <Label>{config.reviewForm.rating}</Label>
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                                className="focus:outline-none"
+                              >
+                                <Star
+                                  className={`w-8 h-8 transition-colors ${
+                                    star <= reviewForm.rating
+                                      ? "fill-yellow-400 text-yellow-400"
+                                      : "text-gray-300 hover:text-yellow-400"
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Comment */}
+                        <div className="space-y-2">
+                          <Label htmlFor="review-comment">{config.reviewForm.comment}</Label>
+                          <Textarea
+                            id="review-comment"
+                            placeholder={config.reviewForm.commentPlaceholder}
+                            value={reviewForm.comment}
+                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                            rows={4}
+                          />
+                        </div>
+
+                        {/* Image Upload */}
+                        <div className="space-y-2">
+                          <Label>{config.reviewForm.images}</Label>
+                          <div className="space-y-3">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                // Validate files before adding
+                                const maxFileSize = 5 * 1024 * 1024; // 5MB
+                                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                                
+                                const validFiles = files.filter(file => {
+                                  if (file.size > maxFileSize) {
+                                    alert(`File ${file.name} quá lớn (tối đa 5MB)`);
+                                    return false;
+                                  }
+                                  if (!allowedTypes.includes(file.type)) {
+                                    alert(`File ${file.name} không phải là ảnh hợp lệ`);
+                                    return false;
+                                  }
+                                  return true;
+                                });
+                                
+                                setReviewForm({ ...reviewForm, images: [...reviewForm.images, ...validFiles] });
+                              }}
+                              className="cursor-pointer"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Chấp nhận: JPEG, PNG, WebP. Tối đa 5MB mỗi file.
+                            </p>
+                            {reviewForm.images.length > 0 && (
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-3 gap-3">
+                                  {reviewForm.images.map((file, index) => (
+                                    <div key={index} className="relative">
+                                      <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                                        <img
+                                          src={URL.createObjectURL(file)}
+                                          alt={`Preview ${index + 1}`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newImages = reviewForm.images.filter((_, i) => i !== index);
+                                          setReviewForm({ ...reviewForm, images: newImages });
+                                        }}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Đã chọn {reviewForm.images.length} ảnh
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {reviewError && (
+                          <div className="text-sm text-red-500">
+                            {reviewError}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowReviewForm(false)}
+                            disabled={submittingReview}
+                          >
+                            {config.cancel}
+                          </Button>
+                          <Button
+                            onClick={handleReviewSubmit}
+                            disabled={submittingReview}
+                          >
+                            {submittingReview ? (
+                              <div className="flex items-center">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                {config.reviewForm.submitting}
+                              </div>
+                            ) : (
+                              config.reviewForm.submit
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Reviews Section */}
         {product.reviews.length > 0 && (

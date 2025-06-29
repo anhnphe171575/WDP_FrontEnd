@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React from "react";
-import { CheckCircle, Package, Home, ShoppingBag } from "lucide-react";
+import { CheckCircle, Package, Home, ShoppingBag, RotateCcw } from "lucide-react";
 import Header from "@/components/layout/Header";
 import { useOrder } from "@/context/OrderContext";
 
@@ -11,8 +11,18 @@ export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
   const { orderData, clearOrderData } = useOrder();
   const method = searchParams.get("method");
+  const [buyAgainMode, setBuyAgainMode] = React.useState(false);
 
   React.useEffect(() => {
+    // Kiểm tra chế độ mua lại từ sessionStorage
+    const isBuyAgainMode = sessionStorage.getItem('buyAgainMode') === 'true';
+    setBuyAgainMode(isBuyAgainMode);
+    
+    // Xóa flag chế độ mua lại khỏi sessionStorage
+    if (isBuyAgainMode) {
+      sessionStorage.removeItem('buyAgainMode');
+    }
+    
     // Nếu không có orderData và method là cod, chuyển về trang chủ
     if (!orderData && method === 'cod') {
       window.location.href = '/homepage';
@@ -21,6 +31,14 @@ export default function PaymentSuccessPage() {
 
   // Tạo orderId giả cho COD (có thể thay bằng timestamp hoặc random string)
   const orderId = method === 'cod' ? `COD-${Date.now()}` : null;
+
+  const handleClearOrderData = () => {
+    clearOrderData();
+    // Nếu ở chế độ mua lại, không xóa items khỏi localStorage
+    if (!buyAgainMode) {
+      localStorage.removeItem('checkoutItems');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -43,6 +61,16 @@ export default function PaymentSuccessPage() {
               : 'Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đã được xử lý thành công.'
             }
           </p>
+
+          {/* Buy Again Mode Notice */}
+          {buyAgainMode && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+              <div className="flex items-center justify-center gap-2 text-green-800">
+                <RotateCcw className="h-5 w-5" />
+                <p className="font-medium">Chế độ mua lại: Sản phẩm vẫn còn trong giỏ hàng để bạn có thể mua lại dễ dàng!</p>
+              </div>
+            </div>
+          )}
 
           {/* Order Details */}
           {orderData && method === 'cod' && (
@@ -80,7 +108,7 @@ export default function PaymentSuccessPage() {
             <Link href="/homepage">
               <button 
                 className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={() => clearOrderData()}
+                onClick={handleClearOrderData}
               >
                 <Home className="h-5 w-5" />
                 Về trang chủ
@@ -90,12 +118,25 @@ export default function PaymentSuccessPage() {
             <Link href="/myorder">
               <button 
                 className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
-                onClick={() => clearOrderData()}
+                onClick={handleClearOrderData}
               >
                 <ShoppingBag className="h-5 w-5" />
                 Xem đơn hàng
               </button>
             </Link>
+
+            {/* Buy Again Button */}
+            {buyAgainMode && (
+              <Link href="/cart">
+                <button 
+                  className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  onClick={handleClearOrderData}
+                >
+                  <RotateCcw className="h-5 w-5" />
+                  Mua lại
+                </button>
+              </Link>
+            )}
           </div>
 
           {/* Additional Info */}

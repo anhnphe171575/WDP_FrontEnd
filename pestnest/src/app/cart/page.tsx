@@ -52,6 +52,7 @@ export default function ShoppingCart() {
   const router = useRouter()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [selectedItems, setSelectedItems] = useState<string[]>([])
+  const [rebuyItems, setRebuyItems] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { lang } = useLanguage();
@@ -78,6 +79,19 @@ export default function ShoppingCart() {
 
     fetchCart()
   }, [])
+
+  // Load rebuy items from session storage on component mount
+  useEffect(() => {
+    const savedRebuyItems = sessionStorage.getItem('rebuyItems')
+    if (savedRebuyItems) {
+      setRebuyItems(JSON.parse(savedRebuyItems))
+    }
+  }, [])
+
+  // Save rebuy items to session storage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('rebuyItems', JSON.stringify(rebuyItems))
+  }, [rebuyItems])
 
   const updateQuantity = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return
@@ -112,6 +126,12 @@ export default function ShoppingCart() {
 
   const toggleItemSelection = (id: string) => {
     setSelectedItems(prev => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    )
+  }
+
+  const toggleRebuySelection = (id: string) => {
+    setRebuyItems(prev => 
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     )
   }
@@ -239,6 +259,8 @@ export default function ShoppingCart() {
               key={item._id} 
               className={`shadow-sm hover:shadow-md transition-all duration-200 ${
                 selectedItems.includes(item._id) ? "ring-2 ring-blue-500 bg-blue-50/50" : ""
+              } ${
+                rebuyItems.includes(item._id) ? "ring-2 ring-green-500 bg-green-50/50" : ""
               }`}
             >
               <CardContent className="p-6">
@@ -250,6 +272,18 @@ export default function ShoppingCart() {
                       onChange={() => toggleItemSelection(item._id)}
                       className="border-gray-300"
                     />
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <Checkbox
+                      id={`rebuy-${item._id}`}
+                      checked={rebuyItems.includes(item._id)}
+                      onChange={() => toggleRebuySelection(item._id)}
+                      className="border-green-300"
+                    />
+                    <label htmlFor={`rebuy-${item._id}`} className="text-xs text-green-600 cursor-pointer">
+                      Mua lại
+                    </label>
                   </div>
 
                   <img
@@ -310,6 +344,9 @@ export default function ShoppingCart() {
                           {formatPrice(item.product.selectedVariant.price * item.quantity)}
                           {selectedItems.includes(item._id) && (
                             <span className="text-xs text-blue-500 block mt-1">{cartConfig.selected}</span>
+                          )}
+                          {rebuyItems.includes(item._id) && (
+                            <span className="text-xs text-green-500 block mt-1">✓ Mua lại</span>
                           )}
                         </div>
                         <div className="text-sm text-gray-600 mt-1">

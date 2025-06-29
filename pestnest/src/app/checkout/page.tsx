@@ -66,13 +66,14 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { setOrderData } = useOrder()
   const [shippingMethod, setShippingMethod] = useState("standard")
-  const [paymentMethod, setPaymentMethod] = useState("card")
+  const [paymentMethod, setPaymentMethod] = useState("")
   const [selectedAddress, setSelectedAddress] = useState<string>("")
   const [showNewAddressForm, setShowNewAddressForm] = useState(false)
   const [addresses, setAddresses] = useState<Address[]>([])
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [paymentError, setPaymentError] = useState("")
 
   useEffect(() => {
     const fetchData = async () => {
@@ -201,8 +202,20 @@ export default function CheckoutPage() {
       alert('Vui lòng chọn địa chỉ giao hàng!')
       return
     }
+    
+    if (!paymentMethod) {
+      setPaymentError('Vui lòng chọn phương thức thanh toán!')
+      setPaymentError("")
+      return
+    }
+    
+    setPaymentError("")
     setIsPlacingOrder(true)
     try {
+      // Lấy dữ liệu từ sessionStorage và localStorage
+      const rebuyItems = JSON.parse(sessionStorage.getItem('rebuyItems') || '[]')
+      const buyAgainMode = localStorage.getItem('buyAgainMode') === 'true'
+      
       const payload = {
         addressId: selectedAddress,
         shippingMethod,
@@ -212,19 +225,26 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         amount: total,
+        // Thêm dữ liệu mua lại vào payload
+        rebuyItems: rebuyItems
       }
       
       // Nếu chọn COD, lưu vào context và chuyển hướng
+      console.log("payload",payload)
       if (paymentMethod === 'cod') {
         setOrderData(payload)
-        // Xóa items đã checkout khỏi localStorage
-        localStorage.removeItem('checkoutItems')
+        // Chỉ xóa items đã checkout khỏi localStorage nếu không ở chế độ mua lại
+        
+        // Xóa flag chế độ mua lại
         // Chuyển đến trang thành công
         router.push('/payment/result?method=cod')
       } else {
         // Thanh toán online - gọi API payment như cũ
         const response = await axiosInstance.post('/payment/create-payment', payload)
         if (response.data && response.data.error === 0 && response.data.url) {
+          // Lưu thông tin chế độ mua lại vào sessionStorage để sử dụng sau khi thanh toán
+          
+          // Xóa flag chế độ mua lại khỏi localStorage
           window.location.href = response.data.url
         } else {
           alert('Không thể tạo thanh toán. Vui lòng thử lại!')
@@ -479,10 +499,13 @@ export default function CheckoutPage() {
               <CardDescription>Chọn phương thức thanh toán</CardDescription>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
+              <RadioGroup value={paymentMethod} onValueChange={(value) => {
+                setPaymentMethod(value)
+                setPaymentError("")
+              }} className="space-y-4">
                 <div className="flex items-center space-x-2 border rounded-md p-4">
-                  <RadioGroupItem value="PayOs" id="card" />
-                  <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="PayOs" id="PayOs" />
+                  <Label htmlFor="PayOs" className="flex items-center gap-2 cursor-pointer">
                     <CreditCard className="h-5 w-5" />
                     <div>
                       <p className="font-medium">Thẻ tín dụng/ghi nợ</p>
@@ -501,6 +524,9 @@ export default function CheckoutPage() {
                   </Label>
                 </div>
               </RadioGroup>
+              {paymentError && (
+                <p className="text-sm text-red-500 mt-2">{paymentError}</p>
+              )}
             </CardContent>
             <CardFooter>
               <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={isPlacingOrder}>

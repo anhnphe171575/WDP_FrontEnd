@@ -392,7 +392,31 @@ productDetail: {
   selectedVariantNotFound: "Không tìm thấy biến thể đã chọn",
   loading: "Đang tải...",
   errorFetching: "Lỗi khi tải sản phẩm:",
-  addToWishlist: "Thêm vào yêu thích"
+  addToWishlist: "Thêm vào yêu thích",
+  cancel: "Hủy",
+  reviewForm: {
+    title: "Viết đánh giá",
+    subtitle: "Chia sẻ trải nghiệm của bạn với sản phẩm này",
+    rating: "Đánh giá",
+    titleField: "Tiêu đề đánh giá",
+    titlePlaceholder: "Tóm tắt trải nghiệm của bạn",
+    comment: "Đánh giá",
+    commentPlaceholder: "Hãy cho chúng tôi biết về trải nghiệm của bạn với sản phẩm này...",
+    images: "Hình ảnh (tùy chọn)",
+    submit: "Gửi đánh giá",
+    submitting: "Đang gửi...",
+    success: "Gửi đánh giá thành công!",
+    error: "Gửi đánh giá thất bại. Vui lòng thử lại.",
+    required: "Trường này là bắt buộc",
+    minRating: "Vui lòng chọn đánh giá",
+    minCommentLength: "Đánh giá phải có ít nhất 10 ký tự"
+  },
+  unreviewedSection: {
+    title: "Bạn đã mua sản phẩm này",
+    subtitle: "Chia sẻ trải nghiệm để giúp khách hàng khác",
+    writeReview: "Viết đánh giá",
+    purchasedOn: "Đã mua vào {date}"
+  }
 },
 bestSellingPage: {
   breadcrumb: {

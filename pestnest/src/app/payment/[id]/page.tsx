@@ -12,6 +12,7 @@ export default function PaymentSuccessPage() {
   const { orderData } = useOrder();
   const [paymentStatus, setPaymentStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = React.useState('');
+  const [buyAgainMode, setBuyAgainMode] = React.useState(false);
   const hasFetchedRef = React.useRef(false);
 
   // Lấy từng tham số
@@ -26,6 +27,18 @@ export default function PaymentSuccessPage() {
   const status = searchParams.get("status");
   const orderCode = searchParams.get("orderCode");
   const method = searchParams.get("method");
+  const rebuyItems = searchParams.get("rebuyItems");
+
+  React.useEffect(() => {
+    // Kiểm tra chế độ mua lại từ sessionStorage
+    const isBuyAgainMode = sessionStorage.getItem('buyAgainMode') === 'true';
+    setBuyAgainMode(isBuyAgainMode);
+    
+    // Xóa flag chế độ mua lại khỏi sessionStorage
+    if (isBuyAgainMode) {
+      sessionStorage.removeItem('buyAgainMode');
+    }
+  }, []);
 
   React.useEffect(() => {
     // Chỉ fetch một lần duy nhất
@@ -40,6 +53,9 @@ export default function PaymentSuccessPage() {
 
     const fetchPaymentCallback = async () => {
       try {
+        // Kiểm tra chế độ mua lại từ sessionStorage
+        const buyAgainMode = sessionStorage.getItem('buyAgainMode') === 'true';
+        
         // Chuẩn bị payload cho API callback
         let payload: any = {
           items,
@@ -51,7 +67,9 @@ export default function PaymentSuccessPage() {
           id,
           cancel,
           status,
-          orderCode
+          orderCode,
+          buyAgainMode: buyAgainMode,
+          rebuyItems: rebuyItems ? JSON.parse(rebuyItems) : undefined
         };
 
         // Nếu là COD, sử dụng dữ liệu từ context
@@ -63,7 +81,9 @@ export default function PaymentSuccessPage() {
             amount: orderData.amount.toString(),
             shippingMethod: orderData.shippingMethod,
             paymentMethod: orderData.paymentMethod,
-            method: 'cod'
+            method: 'cod',
+            buyAgainMode: orderData.buyAgainMode || false, // Lấy từ orderData nếu có
+            rebuyItems: orderData.rebuyItems ? JSON.stringify(orderData.rebuyItems) : undefined, // Thêm rebuyItems
           };
         }
 
@@ -90,6 +110,13 @@ export default function PaymentSuccessPage() {
     };
     fetchPaymentCallback();
   }, [method, orderData]); // Loại bỏ hasFetched khỏi dependency array
+
+  const handleClearCartItems = () => {
+    // Nếu ở chế độ mua lại, không xóa items khỏi localStorage
+    if (!buyAgainMode) {
+      localStorage.removeItem('checkoutItems');
+    }
+  };
 
   if (paymentStatus === 'loading') {
     return (
@@ -122,6 +149,23 @@ export default function PaymentSuccessPage() {
             <path d="M7 13l3 3 7-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <h1 style={{ color: "#16a34a", marginTop: 24 }}>Thanh toán thành công!</h1>
+          
+          {/* Buy Again Mode Notice */}
+          {buyAgainMode && (
+            <div style={{
+              background: "#dcfce7",
+              border: "1px solid #bbf7d0",
+              borderRadius: "8px",
+              padding: "12px",
+              margin: "16px 0",
+              maxWidth: "400px",
+              textAlign: "center"
+            }}>
+              <p style={{ color: "#166534", margin: 0, fontSize: "14px" }}>
+                Chế độ mua lại: Sản phẩm vẫn còn trong giỏ hàng để bạn có thể mua lại dễ dàng!
+              </p>
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -135,19 +179,45 @@ export default function PaymentSuccessPage() {
       <p style={{ margin: "16px 0 32px 0", color: "#333", textAlign: "center", maxWidth: "400px" }}>
         {message}
       </p>
-      <Link href="/homepage">
-        <button style={{
-          background: paymentStatus === 'success' ? "#16a34a" : "#dc2626",
-          color: "#fff",
-          padding: "10px 24px",
-          border: "none",
-          borderRadius: 6,
-          fontSize: 16,
-          cursor: "pointer"
-        }}>
-          Về trang chủ
-        </button>
-      </Link>
+      
+      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+        <Link href="/homepage">
+          <button 
+            style={{
+              background: paymentStatus === 'success' ? "#16a34a" : "#dc2626",
+              color: "#fff",
+              padding: "10px 24px",
+              border: "none",
+              borderRadius: 6,
+              fontSize: 16,
+              cursor: "pointer"
+            }}
+            onClick={handleClearCartItems}
+          >
+            Về trang chủ
+          </button>
+        </Link>
+        
+        {/* Buy Again Button */}
+        {paymentStatus === 'success' && buyAgainMode && (
+          <Link href="/cart">
+            <button 
+              style={{
+                background: "#059669",
+                color: "#fff",
+                padding: "10px 24px",
+                border: "none",
+                borderRadius: 6,
+                fontSize: 16,
+                cursor: "pointer"
+              }}
+              onClick={handleClearCartItems}
+            >
+              Mua lại
+            </button>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

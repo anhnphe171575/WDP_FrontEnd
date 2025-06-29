@@ -13,6 +13,8 @@ interface OrderData {
   paymentMethod: string
   items: OrderItem[]
   amount: number
+  buyAgainMode?: boolean
+  rebuyItems?: OrderItem[]
 }
 
 interface OrderContextType {
