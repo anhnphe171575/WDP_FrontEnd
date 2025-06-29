@@ -296,67 +296,14 @@ function NotificationDropdown() {
   )
 }
 
-function UserDropdown() {
+function UserDropdown({ isLoggedIn, user }: { isLoggedIn: boolean, user: { name: string, email: string } | null }) {
   const { lang, setLang } = useLanguage();
   const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
-
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const [user, setUser] = React.useState<{ name: string, email: string } | null>(null);
-
-  React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Chỉ lấy token từ sessionStorage
-        const token = sessionStorage.getItem('token');
-
-        if (!token) {
-          setIsLoggedIn(false);
-          setUser(null);
-          return;
-        }
-
-        const axiosInstance = axios.create({
-          baseURL: 'http://localhost:5000',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const response = await axiosInstance.get('/api/auth/myprofile');
-
-        if (response.data.success) {
-          setUser(response.data.user);
-          setIsLoggedIn(true);
-        } else {
-          // Nếu token không hợp lệ, xóa token
-          sessionStorage.removeItem('token');
-          setIsLoggedIn(false);
-          setUser(null);
-        }
-      } catch (error: unknown) {
-        console.error('Error checking auth:', error);
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401 || error.response?.status === 403) {
-            // Token không hợp lệ hoặc hết hạn
-            sessionStorage.removeItem('token');
-          }
-        }
-        setIsLoggedIn(false);
-        setUser(null);
-      }
-    };
-
-    checkAuth();
-  }, []);
 
   const handleLogout = () => {
     try {
-      // Xóa token từ sessionStorage
       sessionStorage.removeItem('token');
-
-      // Xóa thông tin Google Sign-In nếu có
       if (typeof window !== 'undefined' && window.google?.accounts?.id) {
         try {
           window.google.accounts.id.disableAutoSelect();
@@ -364,16 +311,11 @@ function UserDropdown() {
           console.error('Error disabling Google auto select:', error);
         }
       }
-
       // Cập nhật trạng thái
-      setIsLoggedIn(false);
-      setUser(null);
-
       // Reload lại trang để cập nhật UI
       window.location.reload();
     } catch (error) {
       console.error('Error during logout:', error);
-      // Dù có lỗi vẫn reload lại trang
       window.location.reload();
     }
   }
@@ -443,6 +385,48 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const { lang, setLang } = useLanguage();
   const router = useRouter();
   const [showContacting, setShowContacting] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<{ name: string, email: string } | null>(null);
+
+  // Move auth check here
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+          setIsLoggedIn(false);
+          setUser(null);
+          return;
+        }
+        const axiosInstance = axios.create({
+          baseURL: 'http://localhost:5000',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const response = await axiosInstance.get('/api/auth/myprofile');
+        if (response.data.success) {
+          setUser(response.data.user);
+          setIsLoggedIn(true);
+        } else {
+          sessionStorage.removeItem('token');
+          setIsLoggedIn(false);
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            sessionStorage.removeItem('token');
+          }
+        }
+        setIsLoggedIn(false);
+        setUser(null);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Xử lý khi click vào nút chat
   const handleContactChatbot = () => {
@@ -480,6 +464,47 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             </div>
           </Link>
 
+          {/* Dropdown Menus for Product & Blog */}
+          <div className="hidden md:flex items-center space-x-6">
+            {/* Product Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
+                  <span>{lang === 'vi' ? 'Sản phẩm' : 'Product'}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[180px] animate-fade-in bg-white border border-gray-100">
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
+                  <Link href="/products">{lang === 'vi' ? 'Tất cả sản phẩm' : 'All Products'}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
+                  <Link href="/products/best-selling">{lang === 'vi' ? 'Bán chạy nhất' : 'Best Selling'}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
+                  <Link href="/products/search">{lang === 'vi' ? 'Tìm kiếm' : 'Search'}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
+                  <Link href="/category">{lang === 'vi' ? 'Danh mục' : 'Categories'}</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Blog Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
+                  <span>{lang === 'vi' ? 'Blog' : 'Blog'}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[180px] animate-fade-in bg-white border border-gray-100">
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
+                  <Link href="/blog">{lang === 'vi' ? 'Tất cả bài viết' : 'All Blog Posts'}</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
             <form className="relative" onSubmit={handleSearch}>
@@ -514,29 +539,27 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
               {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
-            {/* Nút Chatbot */}
-            <Button
-              onClick={handleContactChatbot}
-              variant="ghost"
-              size="sm"
-              className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
-              title="Chat với CSKH"
-            >
-              <MessageCircle className="h-5 w-5 mx-auto" />
-            </Button>
-
-            {/* Notifications và Chat chỉ hiển thị nếu đã đăng nhập */}
-            {React.useState(false) && <NotificationDropdown />}
-
-            {/* Cart chỉ hiển thị nếu đã đăng nhập */}
-            {React.useState(false) && <CartDropdown />}
-
+            {/* Nút Chatbot, Notification, Cart chỉ hiển thị nếu đã đăng nhập */}
+            {isLoggedIn && (
+              <>
+                <Button
+                  onClick={handleContactChatbot}
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
+                  title="Chat với CSKH"
+                >
+                  <MessageCircle className="h-5 w-5 mx-auto" />
+                </Button>
+                <NotificationDropdown />
+                <CartDropdown />
+              </>
+            )}
             {/* User Account */}
-            <UserDropdown />
+            <UserDropdown isLoggedIn={isLoggedIn} user={user} />
           </div>
         </div>
       </div>
-
       {/* Modal thông báo liên hệ CSKH */}
       {showContacting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -548,7 +571,6 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           </div>
         </div>
       )}
-
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>
