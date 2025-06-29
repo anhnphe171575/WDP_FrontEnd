@@ -111,6 +111,8 @@ export default function ProductsPage() {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [wishlistItems, setWishlistItems] = useState<string[]>([])
+  const [wishlistLoading, setWishlistLoading] = useState<Record<string, boolean>>({})
   const itemsPerPage = 9;
   const { addToCart } = useCart();
   const { lang } = useLanguage();
@@ -366,6 +368,41 @@ export default function ProductsPage() {
     });
   };
 
+  // Fetch wishlist items
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const res = await api.get('/wishlist')
+        if (res.data.success && res.data.products) {
+          setWishlistItems(res.data.products.map((p: any) => p._id))
+        }
+      } catch (err) {
+        console.error('Error fetching wishlist:', err)
+      }
+    }
+    fetchWishlist()
+  }, [])
+
+  const handleToggleWishlist = async (e: React.MouseEvent, productId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    setWishlistLoading(prev => ({ ...prev, [productId]: true }))
+    try {
+      if (wishlistItems.includes(productId)) {
+        await api.post('/wishlist/remove', { productId })
+        setWishlistItems(prev => prev.filter(id => id !== productId))
+      } else {
+        await api.post('/wishlist/add', { productId })
+        setWishlistItems(prev => [...prev, productId])
+      }
+    } catch (err) {
+      console.error('Error toggling wishlist:', err)
+    } finally {
+      setWishlistLoading(prev => ({ ...prev, [productId]: false }))
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -571,6 +608,21 @@ export default function ProductsPage() {
                     >
                       <CardContent className="p-4">
                         <div className="relative mb-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`absolute top-2 right-2 z-10 bg-white/80 hover:bg-white transition-all duration-200 ${
+                              wishlistItems.includes(product._id) ? 'text-red-500' : 'text-gray-600'
+                            }`}
+                            onClick={(e) => handleToggleWishlist(e, product._id)}
+                            disabled={wishlistLoading[product._id]}
+                          >
+                            {wishlistLoading[product._id] ? (
+                              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Heart className={`w-4 h-4 ${wishlistItems.includes(product._id) ? 'fill-red-500' : ''}`} />
+                            )}
+                          </Button>
                           <Image
                             src={product.variants?.[0]?.images?.[0]?.url || "/placeholder.svg"}
                             alt={product.name}
