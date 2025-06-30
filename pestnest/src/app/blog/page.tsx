@@ -42,7 +42,7 @@ export default function BlogPage() {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await api.get('/blogs');
+        const response = await api.get('/blogs/customer');
         setPosts(response.data.blogs);
       } catch (err: unknown) {
         const error = err as { response?: { data?: { message?: string } } };
