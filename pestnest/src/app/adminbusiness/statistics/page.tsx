@@ -72,7 +72,7 @@ export default function StatisticsPage() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      const response = await api.get(`/api/statistics/product-revenue?${params}`);
+      const response = await api.get(`/statistics/product-revenue?${params}`);
       
       if (response.data.success) {
         setProductStats(response.data.data.products);
@@ -91,7 +91,7 @@ export default function StatisticsPage() {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      const response = await api.get(`/api/statistics/revenue-by-time?${params}`);
+      const response = await api.get(`/statistics/revenue-by-time?${params}`);
       
       if (response.data.success) {
         setRevenueTimeData(response.data.data);
@@ -103,7 +103,7 @@ export default function StatisticsPage() {
 
   const fetchLowRevenueProducts = async () => {
     try {
-      const response = await api.get(`/api/statistics/low-revenue-products?limit=${limit}`);
+      const response = await api.get(`/statistics/low-revenue-products?limit=${limit}`);
       
       if (response.data.success) {
         setLowRevenueProducts(response.data.data);
@@ -204,7 +204,7 @@ export default function StatisticsPage() {
 
       {/* Summary Cards */}
       {summaryStats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Tổng Doanh thu</CardTitle>
@@ -221,9 +221,7 @@ export default function StatisticsPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${getProfitColor(summaryStats.totalProfit)}`}>
-                {formatCurrency(summaryStats.totalProfit)}
-              </div>
+              <div className={`text-2xl font-bold ${getProfitColor(summaryStats.totalProfit)}`}>{formatCurrency(summaryStats.totalProfit)}</div>
             </CardContent>
           </Card>
           
@@ -234,16 +232,6 @@ export default function StatisticsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatNumber(summaryStats.totalQuantity)}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tỷ lệ lãi TB</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatPercentage(summaryStats.averageProfitMargin)}</div>
             </CardContent>
           </Card>
         </div>
