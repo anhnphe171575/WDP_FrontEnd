@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
 import viConfig from '../../../../utils/petPagesConfig.vi';
 import enConfig from '../../../../utils/petPagesConfig.en';
+import React from "react";
     
 
 
@@ -118,6 +119,7 @@ export default function ProductsPage() {
   const { lang } = useLanguage();
   const config = lang === 'vi' ? viConfig : enConfig;
   const categoryPage = config.categoryPage;
+  const [breadcrumbHistory, setBreadcrumbHistory] = useState<Category[]>([]);
 
   // Tạo danh sách brand động từ allProducts
   const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
@@ -316,10 +318,8 @@ export default function ProductsPage() {
       setPriceRange(["", ""]);
       setSortBy("relevance");
 
-      // Update URL with new category ID
       router.push(`/category/${categoryId}`);
 
-      // Fetch new products from backend for the selected category
       const response = await api.get(`/products/productDetailsByCategory/${categoryId}`);
       if (response.data.success) {
         setAllProducts(response.data.data);
@@ -328,7 +328,6 @@ export default function ProductsPage() {
         throw new Error('Failed to fetch products');
       }
 
-      // Fetch new categories and attributes for the selected category
       const [categoriesResponse, attributesResponse] = await Promise.all([
         api.get(`/categories/childCategories/${categoryId}`),
         api.get(`/categories/attributes/${categoryId}`)
@@ -340,6 +339,12 @@ export default function ProductsPage() {
           ...categoriesResponse.data,
           attributes: attributesResponse.data.attributes
         }));
+        // Thêm category mới vào breadcrumbHistory và lưu localStorage
+        setBreadcrumbHistory(prev => {
+          const newHistory = [...prev, categoriesResponse.data.parent];
+          localStorage.setItem('breadcrumbHistory', JSON.stringify(newHistory));
+          return newHistory;
+        });
       }
     } catch (err) {
       console.error('Error fetching products:', err);
@@ -403,6 +408,30 @@ export default function ProductsPage() {
     }
   }
 
+  useEffect(() => {
+    const fetchCurrentCategory = async () => {
+      let history: Category[] = [];
+      try {
+        const stored = localStorage.getItem('breadcrumbHistory');
+        if (stored) {
+          history = JSON.parse(stored);
+        }
+      } catch {}
+      if (params.id) {
+        const res = await api.get(`/categories/childCategories/${params.id}`);
+        if (res.data.success && res.data.parent) {
+          // Nếu history rỗng hoặc category cuối khác category hiện tại, reset lại
+          if (!history.length || history[history.length - 1]._id !== res.data.parent._id) {
+            history = [res.data.parent];
+          }
+          setBreadcrumbHistory(history);
+          localStorage.setItem('breadcrumbHistory', JSON.stringify(history));
+        }
+      }
+    };
+    fetchCurrentCategory();
+  }, [params.id]);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -418,9 +447,34 @@ export default function ProductsPage() {
       <div className="bg-gray-50 py-3">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <button className="hover:text-blue-600">{categoryPage.breadcrumb.home}</button>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 font-medium">{categoryPage.breadcrumb.products}</span>
+            <Link href="/" className="hover:text-blue-600" onClick={() => {
+              setBreadcrumbHistory([]);
+              localStorage.removeItem('breadcrumbHistory');
+            }}>
+              {categoryPage.breadcrumb.home}
+            </Link>
+            {breadcrumbHistory.map((cat, idx) => (
+              <React.Fragment key={cat._id}>
+                <ChevronRight className="w-4 h-4" />
+                {idx < breadcrumbHistory.length - 1 ? (
+                  <Link
+                    href={`/category/${cat._id}`}
+                    className="hover:text-blue-600"
+                    onClick={e => {
+                      e.preventDefault();
+                      const newHistory = breadcrumbHistory.slice(0, idx + 1);
+                      setBreadcrumbHistory(newHistory);
+                      localStorage.setItem('breadcrumbHistory', JSON.stringify(newHistory));
+                      router.push(`/category/${cat._id}`);
+                    }}
+                  >
+                    {cat.name}
+                  </Link>
+                ) : (
+                  <span className="text-gray-900 font-medium">{cat.name}</span>
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </div>
@@ -544,31 +598,31 @@ export default function ProductsPage() {
               </Button>
             </div>
             {/* Customer Rating Filter */}
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.customerRating}</h3>
-              <div className="space-y-3">
-                {[4, 3, 2, 1].map((rating) => (
-                  <div key={`rating-${rating}`} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={selectedRating === rating}
-                        onChange={(e) => setSelectedRating(e.target.checked ? rating : null)}
-                        id={`rating-${rating}`}
-                      />
-                      <label htmlFor={`rating-${rating}`} className="flex items-center cursor-pointer">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={`star-${rating}-${star}`}
-                            className={`w-5 h-5 ${star <= rating ? "text-orange-400 fill-orange-400" : "text-gray-300"}`}
-                            fill={star <= rating ? "#f59e42" : "none"}
-                          />
-                        ))}
-                      </label>
+               {/* <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.customerRating}</h3>
+                <div className="space-y-3">
+                  {[4, 3, 2, 1].map((rating) => (
+                    <div key={`rating-${rating}`} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={selectedRating === rating}
+                          onChange={(e) => setSelectedRating(e.target.checked ? rating : null)}
+                          id={`rating-${rating}`}
+                        />
+                        <label htmlFor={`rating-${rating}`} className="flex items-center cursor-pointer">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={`star-${rating}-${star}`}
+                              className={`w-5 h-5 ${star <= rating ? "text-orange-400 fill-orange-400" : "text-gray-300"}`}
+                              fill={star <= rating ? "#f59e42" : "none"}
+                            />
+                          ))}
+                        </label>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </div>  */}
           </div>
           {/* Product Grid */}
           <div className="flex-1">
