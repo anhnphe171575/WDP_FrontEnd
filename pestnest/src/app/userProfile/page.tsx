@@ -107,7 +107,7 @@ const UserProfilePage = () => {
 
     const handleEdit = () => {
         if (!isEditing) {
-            setEditData(userData);
+            setEditData({ ...userData });
         }
         setIsEditing(!isEditing);
     };
@@ -154,6 +154,12 @@ const UserProfilePage = () => {
         router.push('/changepass');
     };
 
+    const getValidDateString = (dateStr?: string) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -192,10 +198,8 @@ const UserProfilePage = () => {
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold text-gray-800">
-                                        {isEditing ? editData?.name : userData.name}
+                                        { userData.name}
                                     </h1>
-                                    <p className="text-gray-500">Thành viên từ {isEditing ? editData?.joinDate : userData.joinDate}</p>
-                                    <h1 className="text-2xl font-bold text-gray-800">{userData.name}</h1>
                                     <p className="text-gray-500">{config.memberSince.replace('{joinDate}', userData.joinDate || '')}</p>
                                 </div>
                             </div>
@@ -229,20 +233,12 @@ const UserProfilePage = () => {
                                     <User className="w-6 h-6 text-blue-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-                                    <input
-                                        type="text"
-                                        value={isEditing ? editData?.name : userData.name}
-                                        onChange={e => isEditing && setEditData(editData => editData ? { ...editData, name: e.target.value } : null)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        disabled={!isEditing}
-                                    />
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.name}</label>
                                     {isEditing ? (
                                         <input
                                             type="text"
-                                            value={userData.name}
-                                            onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+                                            value={editData?.name ?? ''}
+                                            onChange={e => setEditData(editData => editData ? { ...editData, name: e.target.value } : null)}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     ) : (
@@ -257,19 +253,8 @@ const UserProfilePage = () => {
                                     <Mail className="w-6 h-6 text-green-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <p className="text-gray-900 text-lg">{userData.email}</p>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.email}</label>
-                                    {isEditing ? (
-                                        <input
-                                            type="email"
-                                            value={userData.email}
-                                            onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                        />
-                                    ) : (
-                                        <p className="text-gray-900 text-lg">{userData.email}</p>
-                                    )}
+                                    <p className="text-gray-900 text-lg">{userData.email}</p>
                                 </div>
                             </div>
 
@@ -279,21 +264,12 @@ const UserProfilePage = () => {
                                     <Phone className="w-6 h-6 text-purple-500" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                                    <input
-                                        type="tel"
-                                        value={isEditing ? editData?.phone : userData.phone}
-                                        onChange={e => isEditing && setEditData(editData => editData ? { ...editData, phone: e.target.value } : null)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                        disabled={!isEditing}
-                                    />
-
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.phone}</label>
                                     {isEditing ? (
                                         <input
                                             type="tel"
-                                            value={userData.phone}
-                                            onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                                            value={editData?.phone ?? ''}
+                                            onChange={e => setEditData(editData => editData ? { ...editData, phone: e.target.value } : null)}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                         />
                                     ) : (
@@ -316,7 +292,7 @@ const UserProfilePage = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="Số nhà, đường..."
-                                                    value={isEditing ? editData?.address?.street || '' : userData.address?.street || ''}
+                                                    value={isEditing ? editData?.address?.street ?? '' : userData.address?.street ?? ''}
                                                     onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, street: e.target.value } } : null)}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
                                                     disabled={!isEditing}
@@ -325,7 +301,7 @@ const UserProfilePage = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="Thành phố"
-                                                    value={isEditing ? editData?.address?.city || '' : userData.address?.city || ''}
+                                                    value={isEditing ? editData?.address?.city ?? '' : userData.address?.city ?? ''}
                                                     onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, city: e.target.value } } : null)}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
                                                     disabled={!isEditing}
@@ -334,7 +310,7 @@ const UserProfilePage = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="Tỉnh/Bang"
-                                                    value={isEditing ? editData?.address?.state || '' : userData.address?.state || ''}
+                                                    value={isEditing ? editData?.address?.state ?? '' : userData.address?.state ?? ''}
                                                     onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, state: e.target.value } } : null)}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
                                                     disabled={!isEditing}
@@ -343,7 +319,7 @@ const UserProfilePage = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="Mã bưu điện"
-                                                    value={isEditing ? editData?.address?.postalCode || '' : userData.address?.postalCode || ''}
+                                                    value={isEditing ? editData?.address?.postalCode ?? '' : userData.address?.postalCode ?? ''}
                                                     onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, postalCode: e.target.value } } : null)}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
                                                     disabled={!isEditing}
@@ -352,7 +328,7 @@ const UserProfilePage = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="Quốc gia"
-                                                    value={isEditing ? editData?.address?.country || '' : userData.address?.country || ''}
+                                                    value={isEditing ? editData?.address?.country ?? '' : userData.address?.country ?? ''}
                                                     onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, country: e.target.value } } : null)}
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                                                     disabled={!isEditing}
@@ -379,7 +355,7 @@ const UserProfilePage = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
                                     <input
                                         type="date"
-                                        value={isEditing ? (editData?.birthday ? new Date(editData.birthday).toISOString().split('T')[0] : '') : (userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : '')}
+                                        value={isEditing ? getValidDateString(editData?.birthday ?? '') : getValidDateString(userData.birthday)}
                                         onChange={e => isEditing && setEditData(editData => editData ? { ...editData, birthday: e.target.value } : null)}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                                         disabled={!isEditing}
