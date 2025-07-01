@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api } from "../../../utils/axios"
+import { da } from "date-fns/locale"
 
 // Mock data for user registrations by month
 const monthlyRegistrations = [
@@ -337,18 +338,32 @@ export default function UserManagementDashboard() {
       tier: string
       avatar?: string
     }>,
-    
-topCustomersByRevenue: Array<{
+
+    topCustomersByRevenue: Array<{
       id: number
       userEmail: string
       totalRevenue: number
       orderCount: number
-averageOrderValue: number
+      averageOrderValue: number
       userName: string
+      avatar?: string
+    }>,
+    topUsersByCancellations: Array<{
+      id: number
+      userName: string
+      userEmail: string
+      cancelledOrderCount: number
+      totalCancelledValue: number
+      cancelRate: number
+      reasons: string[]
       avatar?: string
     }>,
     userRegistrationByMonth: Array<{
       month: string,
+      count: number
+    }>,
+    userRegistrationByYear: Array<{
+      _id: string,
       count: number
     }>,
     potentialCustomers: Array<{
@@ -521,12 +536,12 @@ averageOrderValue: number
                     <Bar dataKey="count" fill="#8884d8" />
                   </BarChart>
                 ) : (
-                  <LineChart data={yearlyRegistrations}>
+                  <LineChart data={dashboardData?.userRegistrationByYear}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
+                    <XAxis dataKey="_id" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="users" stroke="#8884d8" strokeWidth={2} />
+                    <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
                   </LineChart>
                 )}
               </ResponsiveContainer>
@@ -535,7 +550,7 @@ averageOrderValue: number
         </Card>
 
         {/* Customer Analysis Tabs */}
-        <Tabs defaultValue="vip-customers" className="space-y-4">
+        <Tabs defaultValue="potential-customers" className="space-y-4">
           <TabsList>
             <TabsTrigger value="potential-customers">Khách Hàng Tiềm Năng</TabsTrigger>
             <TabsTrigger value="top-buyers">Mua Hàng Nhiều Nhất</TabsTrigger>
@@ -737,30 +752,28 @@ averageOrderValue: number
                       <TableHead>Tổng đơn</TableHead>
                       <TableHead>Đơn hủy</TableHead>
                       <TableHead>Tỷ lệ hủy</TableHead>
-                      <TableHead>Lần hủy cuối</TableHead>
                       <TableHead>Lý do chính</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedCancelUsers.map((user) => (
+                    {dashboardData?.topUsersByCancellations.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="flex items-center space-x-3">
                           <Avatar>
                             <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{user.userName.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">{user.email}</div>
+                            <div className="font-medium">{user.userName}</div>
+                            <div className="text-sm text-muted-foreground">{user.userEmail}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{user.totalOrders}</TableCell>
-                        <TableCell className="text-red-600 font-medium">{user.cancelledOrders}</TableCell>
+                        <TableCell>{user.totalCancelledValue}</TableCell>
+                        <TableCell className="text-red-600 font-medium">{user.cancelledOrderCount}</TableCell>
                         <TableCell>
                           <Badge variant={user.cancelRate > 40 ? "destructive" : "secondary"}>{user.cancelRate}%</Badge>
                         </TableCell>
-                        <TableCell>{new Date(user.lastCancel).toLocaleDateString("vi-VN")}</TableCell>
-                        <TableCell className="text-sm">{user.reason}</TableCell>
+                        <TableCell className="text-sm">{user.reasons?.[0] || ""}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
