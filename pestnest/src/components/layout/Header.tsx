@@ -10,6 +10,8 @@ import {
   ChevronDown,
   Package,
   LogOut,
+  MessageCircle,
+  Trash2,
 } from "lucide-react"
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
@@ -27,7 +29,6 @@ import { api } from "../../../utils/axios"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
-import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '@/context/LanguageContext';
 import { io, Socket } from "socket.io-client";
 import axios from 'axios'
@@ -184,20 +185,29 @@ function CartDropdown() {
 function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
 
+  // Lấy notification
   useEffect(() => {
-    setLoading(true);
-    api.get('/notification')
-      .then(res => {
-        // Giả sử API trả về mảng notification ở res.data.data
+    const fetchNotifications = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = sessionStorage.getItem("token");
+        const res = await api.get('/notification', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setNotifications(res.data || []);
-      })
-      .catch(err => {
-        console.error("Failed to fetch notifications:", err);
+      } catch {
+        setError("Không thể tải thông báo.");
         setNotifications([]);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
   }, []);
 
   // Lắng nghe socket để nhận notification mới
@@ -208,33 +218,55 @@ function NotificationDropdown() {
     if (token) {
       const decoded = jwtDecode<{ id: string }>(token);
       userId = decoded.id;
-      console.log(userId);
-
     }
     if (userId) {
       socket.emit("join", userId);
     }
-
     socket.on("notification", (notification: Notification) => {
-      console.log("New notification received:", notification);
       setNotifications(prev => [notification, ...prev]);
     });
-
-    socket.on("connect", () => {
-      console.log("Socket connected, id:", socket.id);
-    });
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err);
-    });
-
     return () => {
       socket.off("notification");
-      socket.off("connect");
-      socket.off("connect_error");
     };
   }, []);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // Đánh dấu đã đọc
+  const handleMarkAsRead = async (notification: Notification) => {
+    if (!notification.isRead) {
+      try {
+        const token = sessionStorage.getItem("token");
+        await api.patch(`/notification/${notification._id}`, { isRead: true }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setNotifications(prev =>
+          prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n)
+        );
+      } catch {
+        // Có thể hiện toast lỗi ở đây
+      }
+    }
+    if (notification.orderId) {
+      router.push(`/myorder/${notification.orderId}`);
+    }
+  };
+
+  // Xóa notification theo id
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const token = sessionStorage.getItem("token");
+      await api.delete(`/notification/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(prev => prev.filter(n => n._id !== id));
+    } catch {
+      // Có thể hiện toast lỗi ở đây
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -250,45 +282,49 @@ function NotificationDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <div className="p-4">
-          <h3 className="font-semibold mb-3">Notifications</h3>
+          <h3 className="font-semibold mb-3">Thông báo</h3>
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {loading ? (
-              <div>Loading...</div>
+              <div>Đang tải...</div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
             ) : notifications.length === 0 ? (
-              <div>No notifications</div>
+              <div>Không có thông báo nào</div>
             ) : (
               notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`p-3 rounded-lg border ${!notification.isRead ? "bg-blue-50 border-blue-200" : "bg-gray-50"} cursor-pointer`}
-                  onClick={async () => {
-                    try {
-                      if (!notification.isRead) {
-                        await api.patch(`/notification/${notification._id}`, { isRead: true });
-                        setNotifications(prev => prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n));
-                      }
-                      if (notification.orderId) {
-                        router.push(`/myorder/${notification.orderId}`);
-                      }
-                    } catch (err) {
-                      console.error('Failed to mark notification as read:', err);
-                    }
-                  }}
+                  className={`p-3 rounded-lg border ${!notification.isRead ? "bg-blue-50 border-blue-200" : "bg-gray-50"} cursor-pointer flex justify-between items-start gap-2`}
                 >
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-sm font-medium">{notification.title}</h4>
-                    {!notification.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                  <div className="flex-1" onClick={() => handleMarkAsRead(notification)}>
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-sm font-medium">{notification.title}</h4>
+                      {!notification.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">{notification.description}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(notification.createdAt).toLocaleString()}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">{notification.description}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(notification.createdAt).toLocaleString()}</p>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-2 text-red-500 hover:bg-red-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(notification._id);
+                    }}
+                    disabled={deletingId === notification._id}
+                    title="Xóa thông báo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               ))
             )}
           </div>
           <Separator className="my-3" />
-          {/* <Button variant="outline" size="sm" className="w-full">
-            View All Notifications
-          </Button> */}
+          <Button variant="outline" size="sm" className="w-full" onClick={() => {}}>
+            Xóa tất cả thông báo
+          </Button>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -381,9 +417,9 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
   const { lang, setLang } = useLanguage();
   const router = useRouter();
-  const [showContacting, setShowContacting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ name: string, email: string } | null>(null);
+  const [userRole, setUserRole] = useState<number | null>(null);
 
   // Move auth check here
   React.useEffect(() => {
@@ -424,6 +460,20 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     };
     checkAuth();
   }, []);
+
+  React.useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode<{ role?: number }>(token);
+        setUserRole(decoded.role ?? null);
+      } catch {
+        setUserRole(null);
+      }
+    } else {
+      setUserRole(null);
+    }
+  }, [isLoggedIn]);
 
   // Xử lý khi click vào nút chat
   const handleContactChatbot = () => {
@@ -533,17 +583,19 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
               {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
             {/* Nút Chatbot, Notification, Cart chỉ hiển thị nếu đã đăng nhập */}
+            {isLoggedIn && userRole === 1 && (
+              <Button
+                onClick={handleContactChatbot}
+                variant="ghost"
+                size="sm"
+                className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
+                title="Chat với CSKH"
+              >
+                <MessageCircle className="h-5 w-5 mx-auto" />
+              </Button>
+            )}
             {isLoggedIn && (
               <>
-                <Button
-                  onClick={handleContactChatbot}
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
-                  title="Chat với CSKH"
-                >
-                  <MessageCircle className="h-5 w-5 mx-auto" />
-                </Button>
                 <NotificationDropdown />
                 <CartDropdown />
               </>
@@ -553,17 +605,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           </div>
         </div>
       </div>
-      {/* Modal thông báo liên hệ CSKH */}
-      {showContacting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-lg shadow-lg px-8 py-6 text-center animate-fade-in">
-            <p className="text-lg font-semibold text-blue-600 mb-1">Đang liên hệ tới nhân viên chăm sóc khách hàng...</p>
-            <div className="flex justify-center mt-2">
-              <span className="inline-block w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
-            </div>
-          </div>
-        </div>
-      )}
+    
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>
