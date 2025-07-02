@@ -21,6 +21,7 @@ import {
   Star,
   Package,
   ListTree,
+  ListChecks,
 } from "lucide-react"
 
 import {
@@ -80,6 +81,11 @@ const menuItems = [
     title: "Manage Category",
     url: "/admin/category",
     icon: ListTree,
+  },
+  {
+    title: "Manage Attribute",
+    url: "/admin/attribute",
+    icon: ListChecks,
   },
 ]
 
