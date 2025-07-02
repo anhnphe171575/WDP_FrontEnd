@@ -53,7 +53,7 @@ export default function LoginPage() {
               router.push('/admin/dashboard');
               break;
             case 2: // ORDER_MANAGER
-              router.push('/order');
+              router.push('/ordermanager');
               break;
             case 4: // MARKETING_MANAGER
               router.push('/marketing');
