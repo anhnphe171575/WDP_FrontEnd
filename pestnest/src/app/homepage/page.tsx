@@ -39,6 +39,7 @@ interface Banner {
   startDate: string;
   endDate: string;
   link: string;
+  status:string
 }
 
 interface TopSellingProduct {
@@ -137,7 +138,7 @@ export default function HomePage() {
         const activeBanners = bannersData.filter(banner => {
           const startDate = new Date(banner.startDate);
           const endDate = new Date(banner.endDate);
-          return now >= startDate && now <= endDate;
+          return banner.status === "active" && now >= startDate && now <= endDate;
         });
         setBanners(activeBanners);
       } catch (err: unknown) {

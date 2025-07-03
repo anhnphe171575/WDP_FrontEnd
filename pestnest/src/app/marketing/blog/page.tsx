@@ -361,7 +361,7 @@ export default function BlogPage() {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const response = await request(() => api.get('/blogs'));
+      const response = await request(() => api.get('/blogs/marketing'));
       if (response.success) {
         setBlogs(response.blogs || []);
       } else {

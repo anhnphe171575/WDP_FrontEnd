@@ -15,6 +15,7 @@ import {
   Mail,
   Share2,
   Languages,
+  MessageCircle,
 } from "lucide-react"
 
 import {
@@ -95,6 +96,11 @@ const menuItems = [
     url: "/marketing/review",
     icon: FileText,
   },
+  {
+    title: "Chăm Sóc Khách Hàng",
+    url: "/messages",
+    icon: MessageCircle,
+  }
 ]
 
 const settingsItems = [

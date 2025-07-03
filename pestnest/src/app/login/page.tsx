@@ -52,11 +52,12 @@ export default function LoginPage() {
           // Chuyển hướng theo role
           switch (role) {
             case 0: // ADMIN_DEVELOPER
-            case 8: // ADMIN_BUSINESS
               router.push('/admin/dashboard');
+            case 8: // ADMIN_BUSINESS
+              router.push('/adminbusiness');
               break;
             case 2: // ORDER_MANAGER
-              router.push('/order');
+              router.push('/ordermanager');
               break;
             case 4: // MARKETING_MANAGER
               router.push('/marketing');
