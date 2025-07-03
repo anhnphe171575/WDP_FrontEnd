@@ -31,6 +31,7 @@ export default function RegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
 
   const validatePhoneNumber = (phone: string): boolean => {
@@ -67,8 +68,11 @@ export default function RegisterPage() {
       });
 
       if (response.data.success) {
-        // Show success message or redirect
-        router.push('/login?registered=true');
+        setSuccessMessage('Đăng ký thành công! Vui lòng xác minh email để đăng nhập. Đang chuyển hướng đến trang đăng nhập...');
+        setTimeout(() => {
+          router.push('/login?registered=true');
+        }, 2000);
+        return;
       }
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponse>;
@@ -115,6 +119,11 @@ export default function RegisterPage() {
           <div className="text-center">
             <h2 className={styles.title}>Tạo tài khoản mới</h2>
           </div>
+          {successMessage && (
+            <div className={styles.success}>
+              {successMessage}
+            </div>
+          )}
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>

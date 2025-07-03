@@ -19,6 +19,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import viConfig from '../../../../utils/petPagesConfig.vi';
 import enConfig from '../../../../utils/petPagesConfig.en';
 import React from "react";
+import ChatBot from "@/components/chatbot/ChatBot"
     
 
 
@@ -739,6 +740,7 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
+      <ChatBot/>
     </div>
   )
 }

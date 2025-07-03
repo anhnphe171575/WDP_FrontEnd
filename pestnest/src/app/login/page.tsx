@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../utils/axios';
 import Image from 'next/image';
@@ -24,6 +24,9 @@ export default function LoginPage() {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const registered = searchParams.get('registered') === 'true';
+  const [showVerifyNotice, setShowVerifyNotice] = useState(registered);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -200,6 +203,19 @@ export default function LoginPage() {
             </p>
           </div>
           
+          {showVerifyNotice && (
+            <div className={styles.success}>
+              Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản trước khi đăng nhập.
+              <button
+                type="button"
+                className="ml-2 text-blue-600 underline text-sm"
+                onClick={() => setShowVerifyNotice(false)}
+              >
+                Đóng
+              </button>
+            </div>
+          )}
+
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               {error && (
@@ -315,23 +331,24 @@ export default function LoginPage() {
 
       {/* Verification Modal */}
       {showVerificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold mb-4">Tài khoản chưa được xác minh</h3>
-            <p className="text-gray-600 mb-6">
-              Tài khoản của bạn chưa được xác minh email. Vui lòng kiểm tra hộp thư của bạn để kích hoạt tài khoản.
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <h3 className={styles.modalTitle}>Tài khoản chưa được xác minh</h3>
+            <p className={styles.modalText}>
+              Tài khoản của bạn chưa được xác minh email. Vui lòng kiểm tra hộp thư của bạn để kích hoạt tài khoản.<br/>
+              Nếu chưa nhận được email, bạn có thể gửi lại bên dưới.
             </p>
-            <div className="flex justify-end space-x-4">
+            <div className={styles.modalActions}>
               <button
                 onClick={() => setShowVerificationModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className={styles.modalCloseBtn}
               >
                 Đóng
               </button>
               <button
                 onClick={handleResendVerification}
                 disabled={resendLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                className={styles.modalResendBtn}
               >
                 {resendLoading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
