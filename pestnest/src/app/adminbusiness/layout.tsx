@@ -62,14 +62,10 @@ const menuItems = [
     url: "/adminbusiness/statistics",
     icon: BarChart3,
   },
-  {
-    title: "Quản lý đơn hàng",
-    url: "/adminbusiness/orders",
-    icon: ShoppingCart,
-  },
+
   {
     title: "Quản lý khách hàng",
-    url: "/adminbusiness/customers",
+    url: "/adminbusiness/user",
     icon: Users,
   },
   {
@@ -82,21 +78,7 @@ const menuItems = [
     url: "/adminbusiness/analytics",
     icon: BarChart3,
   },
-  {
-    title: "Lịch làm việc",
-    url: "/adminbusiness/schedule",
-    icon: Calendar,
-  },
-  {
-    title: "Quản lý kho",
-    url: "/adminbusiness/inventory",
-    icon: FileText,
-  },
-  {
-    title: "Cài đặt doanh nghiệp",
-    url: "/adminbusiness/settings",
-    icon: Building,
-  },
+
 ]
 
 const settingsItems = [

@@ -27,6 +27,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Ban,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -37,33 +38,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { api } from "../../../utils/axios"
+import { api } from "../../../../utils/axios";
 import { da } from "date-fns/locale"
 
-// Mock data for user registrations by month
-const monthlyRegistrations = [
-  { month: "Jan", users: 120, year: 2024 },
-  { month: "Feb", users: 150, year: 2024 },
-  { month: "Mar", users: 180, year: 2024 },
-  { month: "Apr", users: 220, year: 2024 },
-  { month: "May", users: 190, year: 2024 },
-  { month: "Jun", users: 250, year: 2024 },
-  { month: "Jul", users: 280, year: 2024 },
-  { month: "Aug", users: 320, year: 2024 },
-  { month: "Sep", users: 290, year: 2024 },
-  { month: "Oct", users: 350, year: 2024 },
-  { month: "Nov", users: 380, year: 2024 },
-  { month: "Dec", users: 420, year: 2024 },
-]
-
-// Mock data for yearly registrations
-const yearlyRegistrations = [
-  { year: "2020", users: 1200 },
-  { year: "2021", users: 1800 },
-  { year: "2022", users: 2400 },
-  { year: "2023", users: 2800 },
-  { year: "2024", users: 3200 },
-]
 
 // Mock data for VIP customers
 const vipCustomers = [
@@ -207,18 +184,6 @@ const cancellationReasons = [
   { name: "Khác", value: 5, color: "#00ff00" },
 ]
 
-const getTierColor = (tier: string) => {
-  switch (tier) {
-    case "Diamond":
-      return "bg-blue-100 text-blue-800"
-    case "Platinum":
-      return "bg-gray-100 text-gray-800"
-    case "Gold":
-      return "bg-yellow-100 text-yellow-800"
-    default:
-      return "bg-green-100 text-green-800"
-  }
-}
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("vi-VN", {
@@ -753,6 +718,8 @@ export default function UserManagementDashboard() {
                       <TableHead>Đơn hủy</TableHead>
                       <TableHead>Tỷ lệ hủy</TableHead>
                       <TableHead>Lý do chính</TableHead>
+                      <TableHead></TableHead>
+
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -774,6 +741,11 @@ export default function UserManagementDashboard() {
                           <Badge variant={user.cancelRate > 40 ? "destructive" : "secondary"}>{user.cancelRate}%</Badge>
                         </TableCell>
                         <TableCell className="text-sm">{user.reasons?.[0] || ""}</TableCell>
+                        <TableCell>
+                          <Button variant="outline" size="icon" className="bg-red-500 text-white" >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

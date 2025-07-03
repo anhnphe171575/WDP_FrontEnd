@@ -643,6 +643,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         </div>
       </div>
       {/* Modal thông báo liên hệ CSKH */}
+    
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>
