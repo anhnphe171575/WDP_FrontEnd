@@ -643,16 +643,6 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         </div>
       </div>
       {/* Modal thông báo liên hệ CSKH */}
-      {showContacting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="bg-white rounded-lg shadow-lg px-8 py-6 text-center animate-fade-in">
-            <p className="text-lg font-semibold text-blue-600 mb-1">Đang liên hệ tới nhân viên chăm sóc khách hàng...</p>
-            <div className="flex justify-center mt-2">
-              <span className="inline-block w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>
