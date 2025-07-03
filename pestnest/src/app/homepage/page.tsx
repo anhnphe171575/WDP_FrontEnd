@@ -14,6 +14,7 @@ import Footer from '@/components/layout/Footer';
 import { useLanguage } from '@/context/LanguageContext';
 import viConfig from '../../../utils/petPagesConfig.vi';
 import enConfig from '../../../utils/petPagesConfig.en';
+import ChatBot from '@/components/chatbot/ChatBot';
 
 interface Category {
   _id: string;
@@ -555,8 +556,9 @@ export default function HomePage() {
 
       {/* Newsletter Section */}
       
-
+      <ChatBot/>
     </div>
+   
   );
 }
 

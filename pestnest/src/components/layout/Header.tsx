@@ -326,7 +326,7 @@ function UserDropdown({ isLoggedIn, user }: { isLoggedIn: boolean, user: { name:
           <Link href="/login">{config.user.login}</Link>
         </Button>
         <Button size="sm" asChild>
-          <Link href="/signup">{config.user.signup}</Link>
+          <Link href="/register">{config.user.signup}</Link>
         </Button>
       </div>
     )
