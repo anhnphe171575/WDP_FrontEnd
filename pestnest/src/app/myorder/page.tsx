@@ -67,6 +67,9 @@ const MyOrderPage = () => {
     const [returnItems, setReturnItems] = useState<Map<string, number>>(new Map());
     const [rejectionReasonOrder, setRejectionReasonOrder] = useState<Order | null>(null);
 
+    // Thêm state cho lý do khác
+    const [otherCancelReason, setOtherCancelReason] = useState("");
+
     const fetchOrders = useCallback(async () => {
         const token = sessionStorage.getItem('token');
         if (!token) {
@@ -276,6 +279,8 @@ const MyOrderPage = () => {
                 return 'bg-red-100 text-red-800';
             case 'reject-return':
                 return 'bg-purple-100 text-purple-800';
+            case 'shipped':
+                return 'bg-green-100 text-green-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -402,10 +407,8 @@ const MyOrderPage = () => {
                                                 className="w-full border rounded-lg px-3 py-2"
                                             >
                                                 <option value="">Tất cả</option>
-                                                <option value="credit_card">Thẻ tín dụng</option>
-                                                <option value="cash">Tiền mặt</option>
-                                                <option value="momo">Ví MoMo</option>
-                                                <option value="bank_transfer">Chuyển khoản</option>
+                                                <option value="PayOs">Chuyển khoản</option>
+                                                <option value="cod">Thanh toán khi nhận hàng</option>
                                             </select>
                                         </div>
                                         <div>
@@ -528,13 +531,14 @@ const MyOrderPage = () => {
                                                                 order.status === 'processing' ? 'Đang xử lý' :
                                                                 order.status ==='pending'? 'Chờ xử lý':
                                                                 order.status === 'returned' ? 'Hoàn hàng' : 
-                                                                order.status === 'reject-return' ? 'Từ chối trả hàng' : "Đang chờ xử lý"}
+                                                                order.status === 'reject-return' ? 'Từ chối trả hàng' :
+                                                                order.status === 'shipped' ?'Đang giao hàng':"Đang chờ xử lý"}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {order.paymentMethod === 'credit_card' ? 'Thẻ tín dụng' :
-                                                        order.paymentMethod === 'cash' ? 'Tiền mặt' :
-                                                            order.paymentMethod === 'momo' ? 'Ví MoMo' : 'Chuyển khoản'}
+                                                    {order.paymentMethod === 'PayOs' ? 'Chuyển khoản' :
+                                                        order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' :
+                                                            'lỗi phương thức'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     <button
@@ -605,14 +609,28 @@ const MyOrderPage = () => {
                             <label htmlFor="cancelReason" className="block text-sm font-medium text-gray-700 mb-1">
                                 Lý do hủy
                             </label>
-                            <textarea
+                            <select
                                 id="cancelReason"
                                 value={cancelReason}
                                 onChange={(e) => setCancelReason(e.target.value)}
-                                rows={3}
                                 className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Nhập lý do hủy đơn hàng..."
-                            />
+                            >
+                                <option value="">Chọn lý do</option>
+                                <option value="Thay đổi ý định mua hàng">Thay đổi ý định mua hàng</option>
+                                <option value="Đặt nhầm">Đặt nhầm</option>
+                                <option value="Phát hiện sai sót trong thông tin đặt hàng">Phát hiện sai sót trong thông tin đặt hàng</option>
+                                <option value="other">Lý do khác</option>
+                            </select>
+                            {cancelReason === "other" && (
+                                <textarea
+                                    id="otherCancelReason"
+                                    value={otherCancelReason}
+                                    onChange={(e) => setOtherCancelReason(e.target.value)}
+                                    rows={3}
+                                    className="w-full border rounded-lg px-3 py-2 mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nhập lý do hủy đơn hàng..."
+                                />
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-4">
