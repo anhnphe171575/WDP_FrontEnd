@@ -309,6 +309,7 @@ const pagesConfig = {
         myOrders: "My Orders",
         wishlist: "Wishlist",
         settings: "Settings",
+        requestSupport: "Request Support",
         logout: "Logout"
       },
       language: {

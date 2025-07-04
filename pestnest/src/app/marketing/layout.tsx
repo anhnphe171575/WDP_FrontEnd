@@ -16,6 +16,7 @@ import {
   Share2,
   Languages,
   MessageCircle,
+  LifeBuoy,
 } from "lucide-react"
 
 import {
@@ -100,6 +101,11 @@ const menuItems = [
     title: "Chăm Sóc Khách Hàng",
     url: "/messages",
     icon: MessageCircle,
+  },
+  {
+    title: "Yêu cầu hỗ trợ",
+    url: "/marketing/supportrequest",
+    icon: LifeBuoy,
   }
 ]
 
