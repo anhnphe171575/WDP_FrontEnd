@@ -67,6 +67,19 @@ interface Notification {
   createdAt: string;
 }
 
+// Thêm interface cho category
+interface CategoryMenu {
+  _id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  children?: CategoryMenu[];
+}
+interface ParentCategoryMenu {
+  parent: CategoryMenu;
+  children: CategoryMenu[];
+}
+
 // Sample cart items
 
 
@@ -426,6 +439,9 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ name: string, email: string } | null>(null);
   const [userRole, setUserRole] = useState<number | null>(null);
+  const [categories, setCategories] = useState<ParentCategoryMenu[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [errorCategories, setErrorCategories] = useState<string | null>(null);
 
   // Move auth check here
   React.useEffect(() => {
@@ -480,6 +496,19 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
       setUserRole(null);
     }
   }, [isLoggedIn]);
+  // Fetch categories for menu
+  useEffect(() => {
+    setLoadingCategories(true);
+    api.get('/categories/childCategories')
+      .then((res) => {
+        setCategories(res.data);
+        setLoadingCategories(false);
+      })
+      .catch((err) => {
+        setErrorCategories(err.message || 'Lỗi lấy danh mục');
+        setLoadingCategories(false);
+      });
+  }, []);
 
   // Xử lý khi click vào nút chat
   const handleContactChatbot = () => {
@@ -512,47 +541,6 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
               <span className="text-xl font-bold">{lang === 'vi' ? pagesConfigVi.header.brand.full : pagesConfigEn.header.brand.full}</span>
             </div>
           </Link>
-
-          {/* Dropdown Menus for Product & Blog */}
-          <div className="hidden md:flex items-center space-x-6">
-            {/* Product Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
-                  <span>{lang === 'vi' ? 'Sản phẩm' : 'Product'}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[180px] animate-fade-in bg-white border border-gray-100">
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
-                  <Link href="/products">{lang === 'vi' ? 'Tất cả sản phẩm' : 'All Products'}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
-                  <Link href="/products/best-selling">{lang === 'vi' ? 'Bán chạy nhất' : 'Best Selling'}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
-                  <Link href="/products/search">{lang === 'vi' ? 'Tìm kiếm' : 'Search'}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
-                  <Link href="/category">{lang === 'vi' ? 'Danh mục' : 'Categories'}</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Blog Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
-                  <span>{lang === 'vi' ? 'Blog' : 'Blog'}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[180px] animate-fade-in bg-white border border-gray-100">
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2 hover:bg-primary/10 hover:text-primary font-medium cursor-pointer transition-colors">
-                  <Link href="/blog">{lang === 'vi' ? 'Tất cả bài viết' : 'All Blog Posts'}</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
           {/* Search Bar */}
           <div className="flex-1 max-w-2xl mx-8 hidden md:block">
@@ -611,7 +599,66 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           </div>
         </div>
       </div>
-
+      {/* Thanh menu category cha */}
+      <div className="w-full bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 flex items-center gap-2 min-h-[48px]">
+          {loadingCategories ? (
+            <div className="px-4 py-2 text-sm">Đang tải danh mục...</div>
+          ) : errorCategories ? (
+            <div className="px-4 py-2 text-sm text-red-500">{errorCategories}</div>
+          ) : (
+            categories.map((cat) => (
+              <DropdownMenu key={cat.parent._id}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
+                    <span>{cat.parent.name}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[300px] animate-fade-in bg-white border border-gray-100">
+                  <ul>
+                    {cat.children.map((child) => (
+                      <li key={child._id}>
+                        <div
+                          className="font-medium cursor-pointer hover:underline flex items-center pl-2"
+                          onClick={() => router.push(`/category/${child._id}`)}
+                        >
+                          {child.name}
+                          {child.children && child.children.length > 0 && (
+                            <span className="ml-1">&gt;</span>
+                          )}
+                        </div>
+                        <ul>
+                          {child.children?.map((grand) => (
+                            <li
+                              key={grand._id}
+                              className="mb-1 hover:underline cursor-pointer text-sm pl-4"
+                              onClick={() => router.push(`/category/${grand._id}`)}
+                            >
+                              {grand.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ))
+          )}
+        </div>
+      </div>
+      {/* Modal thông báo liên hệ CSKH */}
+      {showContacting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg px-8 py-6 text-center animate-fade-in">
+            <p className="text-lg font-semibold text-blue-600 mb-1">Đang liên hệ tới nhân viên chăm sóc khách hàng...</p>
+            <div className="flex justify-center mt-2">
+              <span className="inline-block w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>

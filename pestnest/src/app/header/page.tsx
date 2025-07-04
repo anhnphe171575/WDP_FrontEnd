@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Định nghĩa kiểu dữ liệu category
 interface Category {
@@ -21,6 +22,7 @@ const Header: React.FC = () => {
   const [categories, setCategories] = useState<ParentCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Gọi API backend lấy category cha-con-cháu
@@ -47,7 +49,10 @@ const Header: React.FC = () => {
       <ul className="flex gap-8">
         {categories.map((cat) => (
           <li key={cat.parent._id} className="relative group">
-            <button className="font-semibold flex items-center gap-1 focus:outline-none mr-3 mt-1">
+            <button
+              className="font-semibold flex items-center gap-1 focus:outline-none mr-3 mt-1"
+              onClick={() => router.push(`/category/${cat.parent._id}`)}
+            >
               {cat.parent.name}
               <span className="ml-1">▼</span>
             </button>
@@ -56,7 +61,10 @@ const Header: React.FC = () => {
               <div className="grid grid-cols-4 gap-8">
                 {cat.children.map((child) => (
                   <div key={child._id}>
-                    <div className="font-bold mb-2 flex items-center">
+                    <div
+                      className="font-bold mb-2 flex items-center cursor-pointer hover:underline"
+                      onClick={() => router.push(`/category/${child._id}`)}
+                    >
                       {child.name}
                       {child.children && child.children.length > 0 && (
                         <span className="ml-1">&gt;</span>
@@ -64,7 +72,11 @@ const Header: React.FC = () => {
                     </div>
                     <ul>
                       {child.children?.map((grand) => (
-                        <li key={grand._id} className="mb-1 hover:underline cursor-pointer text-sm pl-2">
+                        <li
+                          key={grand._id}
+                          className="mb-1 hover:underline cursor-pointer text-sm pl-2"
+                          onClick={() => router.push(`/category/${grand._id}`)}
+                        >
                           {grand.name}
                         </li>
                       ))}
