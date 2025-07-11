@@ -610,35 +610,54 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             categories.map((cat) => (
               <DropdownMenu key={cat.parent._id}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
-                    <span>{cat.parent.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors rounded-xl px-4 py-2 shadow-sm border border-transparent hover:border-primary/30"
+                  >
+                    {cat.parent.image && (
+                      <img src={cat.parent.image} alt={cat.parent.name} className="w-6 h-6 rounded-full object-cover mr-2" />
+                    )}
+                    <span className="text-primary font-bold">{cat.parent.name}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[300px] animate-fade-in bg-white border border-gray-100">
+                <DropdownMenuContent
+                  align="start"
+                  className="rounded-2xl shadow-2xl p-2 min-w-[320px] animate-fade-in bg-white border border-gray-100 mt-2"
+                  style={{ zIndex: 50 }}
+                >
                   <ul>
                     {cat.children.map((child) => (
-                      <li key={child._id}>
+                      <li key={child._id} className="mb-1">
                         <div
-                          className="font-medium cursor-pointer hover:underline flex items-center pl-2"
+                          className="font-medium cursor-pointer hover:underline flex items-center pl-2 py-2 rounded-lg hover:bg-primary/10 transition-colors group"
                           onClick={() => router.push(`/category/${child._id}`)}
                         >
-                          {child.name}
+                          {child.image && (
+                            <img src={child.image} alt={child.name} className="w-5 h-5 rounded object-cover mr-2" />
+                          )}
+                          <span className="group-hover:text-primary font-semibold">{child.name}</span>
                           {child.children && child.children.length > 0 && (
-                            <span className="ml-1">&gt;</span>
+                            <span className="ml-1 text-gray-400">&gt;</span>
                           )}
                         </div>
-                        <ul>
-                          {child.children?.map((grand) => (
-                            <li
-                              key={grand._id}
-                              className="mb-1 hover:underline cursor-pointer text-sm pl-4"
-                              onClick={() => router.push(`/category/${grand._id}`)}
-                            >
-                              {grand.name}
-                            </li>
-                          ))}
-                        </ul>
+                        {child.children && child.children.length > 0 && (
+                          <ul className="ml-7 mt-1">
+                            {child.children.map((grand) => (
+                              <li
+                                key={grand._id}
+                                className="mb-1 hover:underline cursor-pointer text-sm pl-2 py-1 rounded hover:bg-primary/5 transition-colors flex items-center"
+                                onClick={() => router.push(`/category/${grand._id}`)}
+                              >
+                                {grand.image && (
+                                  <img src={grand.image} alt={grand.name} className="w-4 h-4 rounded object-cover mr-2" />
+                                )}
+                                <span>{grand.name}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>

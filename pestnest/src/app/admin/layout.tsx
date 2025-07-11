@@ -109,6 +109,17 @@ function AppSidebar() {
     setLang(lang === 'vi' ? 'en' : 'vi');
   };
 
+  // Hàm xử lý logout
+  const handleLogout = () => {
+    // Xóa token/session nếu có
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('token');
+      // Nếu bạn lưu token ở nơi khác, hãy xóa ở đó
+    }
+    // Chuyển hướng về trang đăng nhập
+    window.location.href = '/login';
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -204,7 +215,7 @@ function AppSidebar() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
