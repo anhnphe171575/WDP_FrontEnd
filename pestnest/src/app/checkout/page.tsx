@@ -62,6 +62,19 @@ function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
+// Thêm hàm chỉnh sửa địa chỉ
+async function updateAddress(addressId: string, addressData: Partial<Address>) {
+  try {
+    const response = await axiosInstance.put(`/users/addresses/${addressId}`, addressData)
+    return response.data
+  } catch (error) {
+    console.error('Error updating address:', error)
+    throw error
+  }
+}
+
+export { updateAddress }
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { setOrderData } = useOrder()
@@ -74,6 +87,39 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [paymentError, setPaymentError] = useState("")
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null)
+  const [editAddressData, setEditAddressData] = useState({
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+  })
+
+  // Thêm hàm fetchAddresses để lấy lại danh sách địa chỉ mới nhất thay vì chỉ cập nhật state cục bộ
+  const fetchAddresses = async () => {
+    try {
+      const addressesResponse = await axiosInstance.get('/users/addresses')
+      if (addressesResponse.data.success) {
+        const userAddresses = addressesResponse.data.data.map((addr: any) => ({
+          _id: addr._id,
+          id: addr._id, // For UI compatibility
+          street: addr.street,
+          city: addr.city,
+          state: addr.state,
+          postalCode: addr.postalCode,
+          country: addr.country,
+          name: `${addr.street}, ${addr.city}`,
+          fullName: addr.fullName || '',
+          phone: addr.phone || '',
+          address: `${addr.street}, ${addr.city}, ${addr.state}, ${addr.postalCode}, ${addr.country}`,
+          isDefault: addr.isDefault || false
+        }))
+        setAddresses(userAddresses)
+      }
+    } catch (err) {
+      console.error('Error fetching addresses:', err)
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -338,7 +384,20 @@ export default function CheckoutPage() {
                             </div>
                           </Label>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                setEditingAddress(address)
+                                setEditAddressData({
+                                  street: address.street,
+                                  city: address.city,
+                                  state: address.state,
+                                  postalCode: address.postalCode,
+                                })
+                              }}
+                            >
                               <Edit className="h-3 w-3" />
                             </Button>
                             <Button
@@ -354,6 +413,69 @@ export default function CheckoutPage() {
                       </div>
                     ))}
                   </RadioGroup>
+                </div>
+              )}
+
+              {editingAddress && (
+                <div className="border rounded-lg p-4 space-y-4 mt-4">
+                  <h4 className="font-medium">Chỉnh sửa địa chỉ</h4>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-street">Đường</Label>
+                    <Input
+                      id="edit-street"
+                      value={editAddressData.street}
+                      onChange={e => setEditAddressData({ ...editAddressData, street: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-city">Thành phố</Label>
+                      <Input
+                        id="edit-city"
+                        value={editAddressData.city}
+                        onChange={e => setEditAddressData({ ...editAddressData, city: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-state">Tỉnh/Thành</Label>
+                      <Input
+                        id="edit-state"
+                        value={editAddressData.state}
+                        onChange={e => setEditAddressData({ ...editAddressData, state: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-postalCode">Mã bưu điện</Label>
+                    <Input
+                      id="edit-postalCode"
+                      value={editAddressData.postalCode}
+                      onChange={e => setEditAddressData({ ...editAddressData, postalCode: e.target.value })}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1"
+                      onClick={async () => {
+                        try {
+                          await updateAddress(editingAddress.id, editAddressData)
+                          await fetchAddresses()
+                          setEditingAddress(null)
+                        } catch (error) {
+                          alert('Cập nhật địa chỉ thất bại!')
+                        }
+                      }}
+                    >
+                      Lưu thay đổi
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setEditingAddress(null)}
+                    >
+                      Hủy
+                    </Button>
+                  </div>
                 </div>
               )}
 

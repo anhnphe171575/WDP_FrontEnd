@@ -52,51 +52,24 @@ const menuItems = [
     url: "/adminbusiness/dashboard",
     icon: Home,
   },
-  {
-    title: "Quản lý sản phẩm",
-    url: "/adminbusiness/manageproduct",
-    icon: Package,
-  },
+
   {
     title: "Thống kê doanh thu",
     url: "/adminbusiness/statistics",
     icon: BarChart3,
   },
+
   {
-    title: "Quản lý đơn hàng",
-    url: "/adminbusiness/orders",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Quản lý khách hàng",
-    url: "/adminbusiness/customers",
+    title: " Thống kê khách hàng",
+    url: "/adminbusiness/user",
     icon: Users,
-  },
-  {
-    title: "Quản lý doanh thu",
-    url: "/adminbusiness/revenue",
-    icon: DollarSign,
   },
   {
     title: "Báo cáo & Phân tích",
     url: "/adminbusiness/analytics",
     icon: BarChart3,
   },
-  {
-    title: "Lịch làm việc",
-    url: "/adminbusiness/schedule",
-    icon: Calendar,
-  },
-  {
-    title: "Quản lý kho",
-    url: "/adminbusiness/inventory",
-    icon: FileText,
-  },
-  {
-    title: "Cài đặt doanh nghiệp",
-    url: "/adminbusiness/settings",
-    icon: Building,
-  },
+
 ]
 
 const settingsItems = [

@@ -535,7 +535,7 @@ export default function OrderPage() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
+                      {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -548,7 +548,7 @@ export default function OrderPage() {
                         disabled={!order._id}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </Button> */}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -658,16 +658,114 @@ export default function OrderPage() {
             Previous
           </Button>
           <div className="flex items-center gap-1">
-            {[...Array(Math.ceil(filteredOrders.length / itemsPerPage))].map((_, index) => (
-              <Button
-                key={index + 1}
-                variant={currentPage === index + 1 ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </Button>
-            ))}
+            {(() => {
+              const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+              const pages = [];
+              if (totalPages <= 5) {
+                for (let i = 1; i <= totalPages; i++) {
+                  pages.push(
+                    <Button
+                      key={i}
+                      variant={currentPage === i ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(i)}
+                    >
+                      {i}
+                    </Button>
+                  );
+                }
+              } else {
+                // Always show first and last page
+                if (currentPage <= 3) {
+                  // Show first 3, ... , last
+                  for (let i = 1; i <= 3; i++) {
+                    pages.push(
+                      <Button
+                        key={i}
+                        variant={currentPage === i ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(i)}
+                      >
+                        {i}
+                      </Button>
+                    );
+                  }
+                  pages.push(<span key="start-ellipsis">...</span>);
+                  pages.push(
+                    <Button
+                      key={totalPages}
+                      variant={currentPage === totalPages ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                    >
+                      {totalPages}
+                    </Button>
+                  );
+                } else if (currentPage >= totalPages - 2) {
+                  // Show first, ... , last 3
+                  pages.push(
+                    <Button
+                      key={1}
+                      variant={currentPage === 1 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                    >
+                      1
+                    </Button>
+                  );
+                  pages.push(<span key="end-ellipsis">...</span>);
+                  for (let i = totalPages - 2; i <= totalPages; i++) {
+                    pages.push(
+                      <Button
+                        key={i}
+                        variant={currentPage === i ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(i)}
+                      >
+                        {i}
+                      </Button>
+                    );
+                  }
+                } else {
+                  // Show first, ... , current-1, current, current+1, ... , last
+                  pages.push(
+                    <Button
+                      key={1}
+                      variant={currentPage === 1 ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                    >
+                      1
+                    </Button>
+                  );
+                  pages.push(<span key="mid-ellipsis-1">...</span>);
+                  for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    pages.push(
+                      <Button
+                        key={i}
+                        variant={currentPage === i ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(i)}
+                      >
+                        {i}
+                      </Button>
+                    );
+                  }
+                  pages.push(<span key="mid-ellipsis-2">...</span>);
+                  pages.push(
+                    <Button
+                      key={totalPages}
+                      variant={currentPage === totalPages ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                    >
+                      {totalPages}
+                    </Button>
+                  );
+                }
+              }
+              return pages;
+            })()}
           </div>
           <Button
             variant="outline"

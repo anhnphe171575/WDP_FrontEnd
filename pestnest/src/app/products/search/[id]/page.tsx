@@ -22,6 +22,17 @@ import enConfig from '../../../../../utils/petPagesConfig.en'
 
 
 
+interface Review {
+  _id: string;
+  userId: any;
+  productId: string;
+  rating: number;
+  comment: string;
+  images: { url: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -46,6 +57,7 @@ interface Product {
     totalQuantity: number;
   }[];
   brand: string;
+  reviews?: Review[];
 }
 
 interface Category {
@@ -119,6 +131,13 @@ const mapBestSellingProduct = (item: any): Product => ({
     },
   ],
 });
+
+// Helper: Tính điểm đánh giá trung bình
+const getAverageRating = (product: Product): number => {
+  if (!product.reviews || product.reviews.length === 0) return 0;
+  const total = product.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+  return total / product.reviews.length;
+};
 
 export default function ProductsPage() {
   const params = useParams();
@@ -217,6 +236,14 @@ export default function ProductsPage() {
       filtered = filtered.filter(p => (p.variants?.[0]?.sellPrice || 0) <= max);
     }
 
+    // Lọc theo rating trung bình
+    if (selectedRating !== null) {
+      filtered = filtered.filter(p => {
+        const avg = getAverageRating(p);
+        return avg >= selectedRating && avg < selectedRating + 1;
+      });
+    }
+
     // Sắp xếp
     let sorted = [...filtered];
     switch (sortBy) {
@@ -227,7 +254,7 @@ export default function ProductsPage() {
         sorted.sort((a, b) => (b.variants?.[0]?.sellPrice || 0) - (a.variants?.[0]?.sellPrice || 0));
         break;
       case 'rating':
-        // sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        sorted.sort((a, b) => getAverageRating(b) - getAverageRating(a));
         break;
       case 'newest':
         sorted.sort((a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime());
@@ -241,7 +268,7 @@ export default function ProductsPage() {
 
     setProducts(sorted);
     setCurrentPage(1);
-  }, [allProducts, selectedBrands, priceRange, sortBy, searchTerm, categories, selectedCategory]);
+  }, [allProducts, selectedBrands, priceRange, sortBy, searchTerm, categories, selectedCategory, selectedRating]);
 
   const handleAttributeChange = (attributeId: string, childId: string) => {
     setSelectedAttributes(prev => {
