@@ -208,8 +208,8 @@ export default function Component() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || 'null'} VND</div>
-              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage}% from last month</p>
+              <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || '0'} VND</div>
+              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage === 0 ? 'No revenue current month' : `${revenueData?.monthlyGrowthPercentage} % from last month`} </p>
             </CardContent>
           </Card>
           <Card>
