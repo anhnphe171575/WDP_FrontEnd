@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Eye, Edit, Trash2, Check } from 'lucide-react';
 import { api } from "../../../../utils/axios";
+import { io, type Socket } from "socket.io-client";
+import toast from "react-hot-toast";
 
 
 interface SupportRequest {
@@ -37,6 +39,8 @@ const STATUS_OPTIONS = [
   { value: 'rejected', label: 'Từ chối' },
 ];
 const PAGE_SIZE = 5;
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+let socket: Socket | null = null;
 
 function SupportRequestDetail({ request, isOpen, onClose, reload }: { request: SupportRequest; isOpen: boolean; onClose: () => void; reload: () => void }) {
   const [editStatus, setEditStatus] = useState(false);
@@ -192,6 +196,39 @@ export default function SupportRequestPage() {
   const [tickets, setTickets] = useState<SupportRequest[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const id = sessionStorage.getItem("userId") || "";
+      setUserId(id);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    if (socket) {
+      socket.disconnect();
+    }
+    socket = io(SOCKET_URL, {
+      auth: {
+        token: sessionStorage.getItem("token"),
+      },
+      transports: ["websocket", "polling"],
+    });
+    socket.on("connect", () => {
+      socket?.emit("join", userId);
+    });
+    socket.on("notification", (notification) => {
+      toast.success(notification.title + ': ' + notification.description);
+    });
+    return () => {
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+      }
+    };
+  }, [userId]);
 
   useEffect(() => {
     setLoading(true);
