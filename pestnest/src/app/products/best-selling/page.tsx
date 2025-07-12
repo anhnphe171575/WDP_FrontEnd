@@ -42,6 +42,7 @@ interface Product {
     totalQuantity: number;
   }[];
   brand: string;
+  averageRating?: number;
 }
 
 interface Category {
@@ -114,6 +115,7 @@ const mapBestSellingProduct = (item: any): Product => ({
       totalQuantity: item.totalQuantity || 0,
     },
   ],
+  averageRating: item.averageRating || 0,
 });
 
 export default function ProductsPage() {
@@ -196,6 +198,15 @@ export default function ProductsPage() {
       );
     }
 
+    // Lọc theo selectedRating (chỉ 1 số sao)
+    if (selectedRating) {
+      filtered = filtered.filter(p =>
+        p.averageRating != null &&
+        p.averageRating >= selectedRating &&
+        p.averageRating < selectedRating + 1
+      );
+    }
+
     // Sắp xếp
     let sorted = [...filtered];
     switch (sortBy) {
@@ -222,7 +233,7 @@ export default function ProductsPage() {
 
     setProducts(sorted);
     setCurrentPage(1); // reset về trang đầu khi filter
-  }, [allProducts, selectedBrands, priceRange, sortBy, searchTerm, categories]);
+  }, [allProducts, selectedBrands, priceRange, sortBy, searchTerm, categories, selectedRating]);
 
   const handleAttributeChange = (attributeId: string, childId: string) => {
     setSelectedAttributes(prev => {
@@ -478,6 +489,7 @@ export default function ProductsPage() {
                   )}
                 </Button>
               </div>
+              {/* Đảm bảo chỉ còn filter customer rating (checkbox với sao) ở sidebar */}
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <h3 className="font-bold text-lg mb-4 text-gray-900">{config.sidebar.customerRating}</h3>
                 <div className="space-y-3">

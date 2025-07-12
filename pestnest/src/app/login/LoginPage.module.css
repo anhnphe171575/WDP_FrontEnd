@@ -114,4 +114,83 @@
   text-align: center;
   margin-top: 0.5rem;
   font-size: 0.95rem;
+}
+
+/* Modal overlay with blur */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalBox {
+  background: #fff;
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px 0 rgba(60,60,60,0.18);
+  padding: 2.5rem 2rem 2rem 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  animation: modalFadeIn 0.25s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modalTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #2D3748;
+  margin-bottom: 1rem;
+}
+
+.modalText {
+  color: #4A5568;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modalCloseBtn {
+  padding: 0.5rem 1.1rem;
+  background: #e2e8f0;
+  color: #2D3748;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.modalCloseBtn:hover {
+  background: #cbd5e1;
+}
+
+.modalResendBtn {
+  padding: 0.5rem 1.1rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.modalResendBtn:hover:enabled {
+  background: #1d4ed8;
+}
+.modalResendBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 } 

@@ -164,38 +164,75 @@ export default function Component() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{ordersData?.totalOrders || 'null'} </div>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <p className="text-xs text-muted-foreground">
+                {(() => {
+                  const currentMonth = new Date().getMonth() + 1;
+                  const currentYear = new Date().getFullYear();
+                  const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+                  const lastYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+                  
+                  const currentMonthData = ordersData?.ordersByYear
+                    ?.find((y: any) => y.year === currentYear)
+                    ?.months?.find((m: any) => m.month === currentMonth);
+                  
+                  const lastMonthData = ordersData?.ordersByYear
+                    ?.find((y: any) => y.year === lastYear)
+                    ?.months?.find((m: any) => m.month === lastMonth);
+                  
+                  const currentCount = currentMonthData?.count || 0;
+                  const lastCount = lastMonthData?.count || 0;
+                  
+                  if (lastCount === 0) return "No data from last month";
+                  
+                  const percentageChange = ((currentCount - lastCount) / lastCount * 100);
+                  const sign = percentageChange >= 0 ? "+" : "";
+                  return `${sign}${percentageChange.toFixed(1)}% from last month`;
+                })()}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold"> {revenueData?.totalRevenue || 'null'} VND</div>
-              <p className="text-xs text-muted-foreground">+8% from last month</p>
+              <p className="text-xs text-muted-foreground">total revenue order completed</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+              <CardTitle className="text-sm font-medium">Revenue Current Month</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || 'null'} VND</div>
-              <p className="text-xs text-muted-foreground">+3% from last month</p>
+              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage}% from last month</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+              <CardTitle className="text-sm font-medium">Revenue Current Years</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1000 VND</div>
-              <p className="text-xs text-muted-foreground">+3% from last month</p>
+              <div className="text-2xl font-bold">{revenueData?.revenueByYear.find((r: any) => r._id === new Date().getFullYear())?.yearlyRevenue || 0} VND</div>
+              <p className="text-xs text-muted-foreground">
+                {(() => {
+                  const currentYear = new Date().getFullYear();
+                  const lastYear = currentYear - 1;
+                  const currentRevenue = revenueData?.revenueByYear.find((r: any) => r._id === currentYear)?.yearlyRevenue || 0;
+                  const lastYearRevenue = revenueData?.revenueByYear.find((r: any) => r._id === lastYear)?.yearlyRevenue || 0;
+                  
+                  if (lastYearRevenue === 0) return "No data from last year";
+                  
+                  const percentageChange = ((currentRevenue - lastYearRevenue) / lastYearRevenue * 100);
+                  const sign = percentageChange >= 0 ? "+" : "";
+                  return `${sign}${percentageChange.toFixed(1)}% from last year`;
+                })()}
+              </p>
             </CardContent>
           </Card>
         </div>
