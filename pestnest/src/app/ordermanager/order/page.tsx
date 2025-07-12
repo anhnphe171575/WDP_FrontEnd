@@ -146,21 +146,17 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
                 {formData.status === 'pending' && (
                   <>
                     <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                   </>
                 )}
                 {formData.status === 'processing' && (
                   <>
                     <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="shipped">Shipped</SelectItem>
                   </>
                 )}
                 {formData.status === 'shipped' && (
                   <>
                     <SelectItem value="shipped">Shipped</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </>
                 )}
                 {formData.status === 'completed' && (

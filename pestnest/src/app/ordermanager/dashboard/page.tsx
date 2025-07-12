@@ -4,6 +4,8 @@ import * as React from "react"
 
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import {
+  ArrowDownIcon,
+  ArrowUpIcon,
   Package,
   ShoppingCart,
   TrendingUp,
@@ -21,7 +23,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const statusColors = {
   pending: "#f59e0b",
   processing: "#3b82f6",
-  shipped: "#06b6d4",
+  shipping: "#06b6d4",
   cancelled: "#ef4444",
   completed: "#22c55e",
   returned: "#f97316"
@@ -80,7 +82,60 @@ function formatOrdersData(ordersData: any, year: number) {
     orders: m.count,
   }));
 }
+function ProductRecommendationCard({ product }: { product: Product }) {
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              src={ "/placeholder.svg"}
+              alt={product.name}
+              className="w-20 h-20 rounded-lg object-cover border"
+            />
+          </div>
+          
 
+            {/* <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <p className="text-sm text-gray-500">Current Stock</p>
+                <p className="font-semibold text-red-600">{product.currentStock} units</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Monthly Sales</p>
+                <p className="font-semibold">{product.avgMonthlySales} units</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Revenue</p>
+                <p className="font-semibold text-green-600">${product.revenue.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Profit Margin</p>
+                <p className="font-semibold">{product.profitMargin}%</p>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg mb-3">
+              <p className="text-sm text-gray-600 mb-1">
+                <strong>Recommendation:</strong> Order {product.recommendedOrder} units
+              </p>
+              <p className="text-xs text-gray-500">
+                Supplier: {product.supplier} • Lead time: {product.leadTime}
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-700">
+                <strong>Why:</strong> {product.reason}
+              </p>
+            </div> */}
+
+            
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function Component() {
   const [selectedYear, setSelectedYear] = React.useState<string>("2025")
@@ -114,7 +169,6 @@ export default function Component() {
       setLoading(false);
     }
   };
-
   // Fetch best-selling and worst-selling products
   const fetchProductTables = async () => {
     setLoadingProducts(true)
@@ -236,6 +290,53 @@ export default function Component() {
             </CardContent>
           </Card>
         </div>
+        {/* Product Recommendation Section */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-blue-900">
+                  🤔 Nên nhập sản phẩm nào? / Which products should we import?
+                </CardTitle>
+                <CardDescription className="text-blue-700">
+                  AI-powered recommendations based on sales data, stock levels, and market trends
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+              {bestSelling.map((product) => (
+                <ProductRecommendationCard key={product._id} product={product} />
+              ))}
+            </div>
+
+            <div className="mt-6 p-4 bg-white rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-gray-900 mb-2">📊 Recommendation Criteria:</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span>Low Stock Alert</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span>High Sales Volume</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Good Profit Margin</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span>Trending Up</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Charts */}
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
