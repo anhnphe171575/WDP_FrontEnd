@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -59,7 +59,8 @@ interface CartItem {
 
 interface Notification {
   _id: string;
-  orderId: string;
+  orderId?: string;
+  ticketId?: string;
   title: string;
   description: string;
   type: string;
@@ -260,8 +261,12 @@ function NotificationDropdown() {
         // Có thể hiện toast lỗi ở đây
       }
     }
+    console.log('notification:', notification);
     if (notification.orderId) {
       router.push(`/myorder/${notification.orderId}`);
+    }
+    if (notification.type === 'ticket' && notification.ticketId) {
+      router.push(`/requestsupport/${notification.ticketId}`);
     }
   };
 
@@ -442,6 +447,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const [categories, setCategories] = useState<ParentCategoryMenu[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errorCategories, setErrorCategories] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Đọc số lượng tin nhắn chưa đọc từ localStorage khi khởi tạo
+  useEffect(() => {
+    const saved = localStorage.getItem('unreadMessages');
+    if (saved) setUnreadMessages(Number(saved));
+  }, []);
 
   // Move auth check here
   React.useEffect(() => {
@@ -528,6 +541,43 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     }
   };
 
+  // Lắng nghe socket để nhận tin nhắn mới
+  useEffect(() => {
+    if (!isLoggedIn || userRole !== 1) return;
+    const socket = getSocket();
+    const token = sessionStorage.getItem("token");
+    let userId = null;
+    if (token) {
+      const decoded = jwtDecode<{ id: string }>(token);
+      userId = decoded.id;
+    }
+    if (userId) {
+      socket.emit("join", userId);
+    }
+    // Lắng nghe tin nhắn mới
+    socket.on("newMessage", () => {
+      // Nếu user không ở trang /messages thì tăng số chưa đọc
+      if (pathname !== "/messages") {
+        setUnreadMessages((prev) => {
+          const newCount = prev + 1;
+          localStorage.setItem('unreadMessages', newCount.toString());
+          return newCount;
+        });
+      }
+    });
+    return () => {
+      socket.off("newMessage");
+    };
+  }, [isLoggedIn, userRole, pathname]);
+
+  // Reset số lượng chưa đọc khi vào trang /messages
+  useEffect(() => {
+    if (pathname === "/messages") {
+      setUnreadMessages(0);
+      localStorage.setItem('unreadMessages', '0');
+    }
+  }, [pathname]);
+
   return (
     <div className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Main header */}
@@ -582,10 +632,15 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
                 onClick={handleContactChatbot}
                 variant="ghost"
                 size="sm"
-                className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
+                className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200 relative"
                 title="Chat với CSKH"
               >
                 <MessageCircle className="h-5 w-5 mx-auto" />
+                {unreadMessages > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    {unreadMessages}
+                  </Badge>
+                )}
               </Button>
             )}
             {isLoggedIn && (
@@ -667,9 +722,6 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           )}
         </div>
       </div>
-      {/* Modal thông báo liên hệ CSKH */}
-    
-      {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>
           <Input

@@ -5,6 +5,7 @@ import axios from 'axios';
 import Header from '@/components/layout/Header';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { api } from '../../../../utils/axios';
 
 interface OrderItem {
     _id: string;
@@ -60,14 +61,15 @@ const OrderDetailsPage = ({ params }: { params: Promise<{ id: string }> }) => {
 
         const fetchOrderDetails = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/users/orders/${resolvedParams.id}`, {
+                const response = await api.get(`/users/orders/${resolvedParams.id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-
                 if (response.data.success) {
                     setOrder(response.data.data);
+                } else {
+                    setError('Không thể tải thông tin đơn hàng. Vui lòng thử lại sau.');
                 }
             } catch (err) {
                 setError('Không thể tải thông tin đơn hàng. Vui lòng thử lại sau.');
