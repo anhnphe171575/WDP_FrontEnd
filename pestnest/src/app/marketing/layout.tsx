@@ -232,7 +232,7 @@ function MarketingSidebar() {
                 align="start"
                 sideOffset={4}
               >
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.location.href = '/userProfile'}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Hồ sơ</span>
                 </DropdownMenuItem>
