@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Eye, Edit, Trash2, Check } from 'lucide-react';
+import { Eye, Check } from 'lucide-react';
 import { api } from "../../../../utils/axios";
 import { io, type Socket } from "socket.io-client";
 import toast from "react-hot-toast";
@@ -322,12 +322,6 @@ export default function SupportRequestPage() {
                       <div className="flex items-center justify-end space-x-2">
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Xem chi tiết" onClick={() => { setSelected(req); setDetailOpen(true); }}>
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Sửa" disabled>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" title="Xóa" disabled>
-                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
