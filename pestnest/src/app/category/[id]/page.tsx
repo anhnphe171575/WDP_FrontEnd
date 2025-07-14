@@ -75,7 +75,7 @@ interface FilterParams {
   categoryId: string;
   priceRange?: [number, number];
   attributes?: Record<string, string[]>;
-  rating?: number;
+  rating?: number | undefined;
   sortBy?: string;
 }
 
@@ -196,9 +196,15 @@ export default function ProductsPage() {
       }
 
       // Filter by rating (if implemented in your backend)
-      if (filterParams.rating) {
-        // This would need to be implemented based on your rating system
-        // For now, we'll skip this filter
+      if (typeof filterParams.rating === 'number') {
+        filteredProducts = filteredProducts.filter(product => {
+          const avg = (product as any).averageRating;
+          if (typeof avg !== 'number') return false;
+          if (filterParams.rating === 5) {
+            return avg === 5;
+          }
+          return avg >= filterParams.rating! && avg < filterParams.rating! + 1;
+        });
       }
 
       // Sort products
@@ -599,7 +605,7 @@ export default function ProductsPage() {
               </Button>
             </div>
             {/* Customer Rating Filter */}
-               {/* <div className="bg-white p-4 rounded-lg border border-gray-200">
+               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <h3 className="font-bold text-lg mb-4 text-gray-900">{categoryPage.sidebar.customerRating}</h3>
                 <div className="space-y-3">
                   {[4, 3, 2, 1].map((rating) => (
@@ -623,7 +629,7 @@ export default function ProductsPage() {
                     </div>
                   ))}
                 </div>
-              </div>  */}
+              </div> 
           </div>
           {/* Product Grid */}
           <div className="flex-1">

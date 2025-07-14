@@ -129,6 +129,23 @@ function MarketingSidebar() {
     setLang(lang === 'vi' ? 'en' : 'vi');
   };
 
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem('token');
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (error) {
+          console.error('Error disabling Google auto select:', error);
+        }
+      }
+      window.location.reload();
+    } catch (error) {
+      console.error('Error during logout:', error);
+      window.location.reload();
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -215,7 +232,7 @@ function MarketingSidebar() {
                 align="start"
                 sideOffset={4}
               >
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.location.href = '/userProfile'}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Hồ sơ</span>
                 </DropdownMenuItem>
@@ -224,7 +241,7 @@ function MarketingSidebar() {
                   <span>Cài đặt</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Đăng xuất</span>
                 </DropdownMenuItem>

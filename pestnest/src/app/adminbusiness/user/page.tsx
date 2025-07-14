@@ -644,65 +644,7 @@ export default function UserManagementDashboard() {
           </TabsContent>
 
           <TabsContent value="cancellation-analysis" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lý Do Hủy Đơn Hàng</CardTitle>
-                  <CardDescription>Phân tích các lý do chính khiến khách hàng hủy đơn</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={cancellationReasons}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {cancellationReasons.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Khách Hàng Hủy Đơn Nhiều Nhất</CardTitle>
-                  <CardDescription>Danh sách khách hàng có tỷ lệ hủy đơn cao</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {topCancelUsers.slice(0, 5).map((user, index) => (
-                      <div key={user.id} className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-3 flex-1">
-                          <Avatar>
-                            <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {user.cancelledOrders}/{user.totalOrders} đơn hủy
-                            </div>
-                          </div>
-                        </div>
-                        <Badge variant={user.cancelRate > 40 ? "destructive" : "secondary"}>{user.cancelRate}%</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            
 
             <Card>
               <CardHeader>

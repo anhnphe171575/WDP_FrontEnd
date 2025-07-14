@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { useCart } from '@/context/CartContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -59,7 +59,8 @@ interface CartItem {
 
 interface Notification {
   _id: string;
-  orderId: string;
+  orderId?: string;
+  ticketId?: string;
   title: string;
   description: string;
   type: string;
@@ -260,8 +261,12 @@ function NotificationDropdown() {
         // Có thể hiện toast lỗi ở đây
       }
     }
+    console.log('notification:', notification);
     if (notification.orderId) {
       router.push(`/myorder/${notification.orderId}`);
+    }
+    if (notification.type === 'ticket' && notification.ticketId) {
+      router.push(`/requestsupport/${notification.ticketId}`);
     }
   };
 
@@ -442,6 +447,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
   const [categories, setCategories] = useState<ParentCategoryMenu[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errorCategories, setErrorCategories] = useState<string | null>(null);
+  const pathname = usePathname();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Đọc số lượng tin nhắn chưa đọc từ localStorage khi khởi tạo
+  useEffect(() => {
+    const saved = localStorage.getItem('unreadMessages');
+    if (saved) setUnreadMessages(Number(saved));
+  }, []);
 
   // Move auth check here
   React.useEffect(() => {
@@ -528,6 +541,43 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     }
   };
 
+  // Lắng nghe socket để nhận tin nhắn mới
+  useEffect(() => {
+    if (!isLoggedIn || userRole !== 1) return;
+    const socket = getSocket();
+    const token = sessionStorage.getItem("token");
+    let userId = null;
+    if (token) {
+      const decoded = jwtDecode<{ id: string }>(token);
+      userId = decoded.id;
+    }
+    if (userId) {
+      socket.emit("join", userId);
+    }
+    // Lắng nghe tin nhắn mới
+    socket.on("newMessage", () => {
+      // Nếu user không ở trang /messages thì tăng số chưa đọc
+      if (pathname !== "/messages") {
+        setUnreadMessages((prev) => {
+          const newCount = prev + 1;
+          localStorage.setItem('unreadMessages', newCount.toString());
+          return newCount;
+        });
+      }
+    });
+    return () => {
+      socket.off("newMessage");
+    };
+  }, [isLoggedIn, userRole, pathname]);
+
+  // Reset số lượng chưa đọc khi vào trang /messages
+  useEffect(() => {
+    if (pathname === "/messages") {
+      setUnreadMessages(0);
+      localStorage.setItem('unreadMessages', '0');
+    }
+  }, [pathname]);
+
   return (
     <div className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       {/* Main header */}
@@ -582,10 +632,15 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
                 onClick={handleContactChatbot}
                 variant="ghost"
                 size="sm"
-                className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200"
+                className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200 relative"
                 title="Chat với CSKH"
               >
                 <MessageCircle className="h-5 w-5 mx-auto" />
+                {unreadMessages > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                    {unreadMessages}
+                  </Badge>
+                )}
               </Button>
             )}
             {isLoggedIn && (
@@ -610,35 +665,54 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             categories.map((cat) => (
               <DropdownMenu key={cat.parent._id}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors">
-                    <span>{cat.parent.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center space-x-1 font-semibold text-base hover:bg-primary/10 transition-colors rounded-xl px-4 py-2 shadow-sm border border-transparent hover:border-primary/30"
+                  >
+                    {cat.parent.image && (
+                      <img src={cat.parent.image} alt={cat.parent.name} className="w-6 h-6 rounded-full object-cover mr-2" />
+                    )}
+                    <span className="text-primary font-bold">{cat.parent.name}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="rounded-xl shadow-xl p-2 min-w-[300px] animate-fade-in bg-white border border-gray-100">
+                <DropdownMenuContent
+                  align="start"
+                  className="rounded-2xl shadow-2xl p-2 min-w-[320px] animate-fade-in bg-white border border-gray-100 mt-2"
+                  style={{ zIndex: 50 }}
+                >
                   <ul>
                     {cat.children.map((child) => (
-                      <li key={child._id}>
+                      <li key={child._id} className="mb-1">
                         <div
-                          className="font-medium cursor-pointer hover:underline flex items-center pl-2"
+                          className="font-medium cursor-pointer hover:underline flex items-center pl-2 py-2 rounded-lg hover:bg-primary/10 transition-colors group"
                           onClick={() => router.push(`/category/${child._id}`)}
                         >
-                          {child.name}
+                          {child.image && (
+                            <img src={child.image} alt={child.name} className="w-5 h-5 rounded object-cover mr-2" />
+                          )}
+                          <span className="group-hover:text-primary font-semibold">{child.name}</span>
                           {child.children && child.children.length > 0 && (
-                            <span className="ml-1">&gt;</span>
+                            <span className="ml-1 text-gray-400">&gt;</span>
                           )}
                         </div>
-                        <ul>
-                          {child.children?.map((grand) => (
-                            <li
-                              key={grand._id}
-                              className="mb-1 hover:underline cursor-pointer text-sm pl-4"
-                              onClick={() => router.push(`/category/${grand._id}`)}
-                            >
-                              {grand.name}
-                            </li>
-                          ))}
-                        </ul>
+                        {child.children && child.children.length > 0 && (
+                          <ul className="ml-7 mt-1">
+                            {child.children.map((grand) => (
+                              <li
+                                key={grand._id}
+                                className="mb-1 hover:underline cursor-pointer text-sm pl-2 py-1 rounded hover:bg-primary/5 transition-colors flex items-center"
+                                onClick={() => router.push(`/category/${grand._id}`)}
+                              >
+                                {grand.image && (
+                                  <img src={grand.image} alt={grand.name} className="w-4 h-4 rounded object-cover mr-2" />
+                                )}
+                                <span>{grand.name}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -648,9 +722,6 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           )}
         </div>
       </div>
-      {/* Modal thông báo liên hệ CSKH */}
-    
-      {/* Mobile Search Bar */}
       <div className="md:hidden border-t p-4">
         <form className="relative" onSubmit={handleSearch}>
           <Input

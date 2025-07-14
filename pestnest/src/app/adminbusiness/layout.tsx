@@ -52,11 +52,7 @@ const menuItems = [
     url: "/adminbusiness/dashboard",
     icon: Home,
   },
-  {
-    title: "Quản lý sản phẩm",
-    url: "/adminbusiness/manageproduct",
-    icon: Package,
-  },
+
   {
     title: "Thống kê doanh thu",
     url: "/adminbusiness/statistics",
@@ -64,14 +60,9 @@ const menuItems = [
   },
 
   {
-    title: "Quản lý khách hàng",
+    title: " Thống kê khách hàng",
     url: "/adminbusiness/user",
     icon: Users,
-  },
-  {
-    title: "Quản lý doanh thu",
-    url: "/adminbusiness/revenue",
-    icon: DollarSign,
   },
   {
     title: "Báo cáo & Phân tích",
