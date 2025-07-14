@@ -40,6 +40,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api } from "../../../../utils/axios";
 import { da } from "date-fns/locale"
+import { useLanguage } from '@/context/LanguageContext';
+import pagesConfigEn from '../../../../utils/petPagesConfig.en';
+import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
+
 
 
 // Mock data for VIP customers
@@ -279,6 +283,8 @@ const Pagination = ({
 }
 
 export default function UserManagementDashboard() {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.userstatistics : pagesConfigVi.userstatistics;
   const [activeTab, setActiveTab] = useState("overview")
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -413,16 +419,16 @@ export default function UserManagementDashboard() {
         {/* Header */}
         <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard Quản Lý Người Dùng</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{config.pageTitle}</h1>
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
               <Filter className="mr-2 h-4 w-4" />
-              Bộ lọc
+              {config.filter}
             </Button>
             <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
-              Xuất báo cáo
+              {config.export}
             </Button>
           </div>
         </div>
@@ -431,7 +437,7 @@ export default function UserManagementDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng khách hàng</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.totalUsers}</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -440,7 +446,7 @@ export default function UserManagementDashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Khách hàng tháng này</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.currentMonthUsers}</CardTitle>
               <Crown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -449,7 +455,7 @@ export default function UserManagementDashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Khách hàng tiềm năng</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.potentialCustomers}</CardTitle>
               <XCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -458,7 +464,7 @@ export default function UserManagementDashboard() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Khách hàng thân quen</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.loyalCustomers}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -472,16 +478,16 @@ export default function UserManagementDashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Thống Kê Đăng Ký Người Dùng</CardTitle>
-                <CardDescription>Theo dõi số lượng người dùng đăng ký theo thời gian</CardDescription>
+                <CardTitle>{config.registrationStats.title}</CardTitle>
+                <CardDescription>{config.registrationStats.description}</CardDescription>
               </div>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Chọn khoảng thời gian" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Theo tháng</SelectItem>
-                  <SelectItem value="yearly">Theo năm</SelectItem>
+                  <SelectItem value="monthly">{config.registrationStats.monthly}</SelectItem>
+                  <SelectItem value="yearly">{config.registrationStats.yearly}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -517,25 +523,24 @@ export default function UserManagementDashboard() {
         {/* Customer Analysis Tabs */}
         <Tabs defaultValue="potential-customers" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="potential-customers">Khách Hàng Tiềm Năng</TabsTrigger>
-            <TabsTrigger value="top-buyers">Mua Hàng Nhiều Nhất</TabsTrigger>
-            <TabsTrigger value="cancellation-analysis">Phân Tích Hủy Đơn</TabsTrigger>
+            <TabsTrigger value="potential-customers">{config.tabs.potential}</TabsTrigger>
+            <TabsTrigger value="top-buyers">{config.tabs.topBuyers}</TabsTrigger>
+            <TabsTrigger value="cancellation-analysis">{config.tabs.cancellation}</TabsTrigger>
           </TabsList>
-
 
           <TabsContent value="potential-customers" className="space-y-4">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Khách Hàng Tiềm Năng</CardTitle>
-                    <CardDescription>Danh sách khách hàng có khả năng chuyển đổi cao</CardDescription>
+                    <CardTitle>{config.tabs.potential}</CardTitle>
+                    <CardDescription>{config.potentialCustomers}</CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Tìm kiếm khách hàng..."
+                        placeholder={config.searchPlaceholder}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-8 w-[300px]"
@@ -548,10 +553,10 @@ export default function UserManagementDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Khách hàng</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Điện Thoại</TableHead>
-                      <TableHead>Ngày đăng ký tài khoản</TableHead>
+                      <TableHead>{config.table.customer}</TableHead>
+                      <TableHead>{config.table.email}</TableHead>
+                      <TableHead>{config.table.phone}</TableHead>
+                      <TableHead>{config.table.createdAt}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -590,18 +595,18 @@ export default function UserManagementDashboard() {
           <TabsContent value="top-buyers" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Top Khách Hàng Mua Nhiều Nhất</CardTitle>
-                <CardDescription>Xếp hạng theo số lượng đơn hàng và giá trị mua</CardDescription>
+                <CardTitle>{config.tabs.topBuyers}</CardTitle>
+                <CardDescription>{config.loyalCustomers}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Xếp hạng</TableHead>
-                      <TableHead>Khách hàng</TableHead>
-                      <TableHead>Số đơn hàng</TableHead>
-                      <TableHead>Tổng chi tiêu</TableHead>
-                      <TableHead>Trung bình/đơn</TableHead>
+                      <TableHead>{config.table.ranking}</TableHead>
+                      <TableHead>{config.table.customer}</TableHead>
+                      <TableHead>{config.table.orders}</TableHead>
+                      <TableHead>{config.table.totalSpent}</TableHead>
+                      <TableHead>{config.table.avgOrder}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -644,24 +649,21 @@ export default function UserManagementDashboard() {
           </TabsContent>
 
           <TabsContent value="cancellation-analysis" className="space-y-4">
-            
-
             <Card>
               <CardHeader>
-                <CardTitle>Chi Tiết Khách Hàng Hủy Đơn</CardTitle>
-                <CardDescription>Thông tin chi tiết về các khách hàng có tỷ lệ hủy đơn cao</CardDescription>
+                <CardTitle>{config.details.cancellationTitle}</CardTitle>
+                <CardDescription>{config.details.cancellationDesc}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Khách hàng</TableHead>
-                      <TableHead>Tổng đơn</TableHead>
-                      <TableHead>Đơn hủy</TableHead>
-                      <TableHead>Tỷ lệ hủy</TableHead>
-                      <TableHead>Lý do chính</TableHead>
+                      <TableHead>{config.table.customer}</TableHead>
+                      <TableHead>{config.table.totalOrders}</TableHead>
+                      <TableHead>{config.table.cancelledOrders}</TableHead>
+                      <TableHead>{config.table.cancelRate}</TableHead>
+                      <TableHead>{config.table.mainReason}</TableHead>
                       <TableHead></TableHead>
-
                     </TableRow>
                   </TableHeader>
                   <TableBody>

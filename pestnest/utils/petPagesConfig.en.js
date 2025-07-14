@@ -492,8 +492,105 @@ const pagesConfig = {
         price: "{price}₫",
         addToWishlist: "Add to wishlist"
       }
+    },
+    statistics: {
+      pageTitle: "Revenue & Profit Statistics",
+      pageDescription: "Analyze product performance and revenue",
+      filter: {
+        title: "Filters",
+        fromDate: "From date",
+        toDate: "To date",
+        sortBy: "Sort by",
+        limit: "Display limit",
+        top5: "Top 5",
+        top10: "Top 10",
+        top20: "Top 20",
+        top50: "Top 50"
+      },
+      summary: {
+        totalRevenue: "Total Revenue",
+        totalProfit: "Total Profit",
+        totalQuantity: "Total Quantity"
+      },
+      tabs: {
+        bestSelling: "Best Selling Products",
+        slowSelling: "Slow Selling Products",
+        revenueOverTime: "Revenue Over Time"
+      },
+      bestSelling: {
+        title: "Top Revenue Products",
+        description: "List of products with highest revenue and profit"
+      },
+      slowSelling: {
+        title: "Slow Selling Products",
+        description: "List of products with lowest revenue"
+      },
+      revenueOverTime: {
+        title: "Revenue Over Time",
+        description: "Revenue chart over time",
+        timePeriod: "Time period",
+        byDay: "By day",
+        byWeek: "By week",
+        byMonth: "By month"
+      },
+      loading: "Loading data...",
+      table: {
+        product: "Product",
+        quantity: "Quantity Sold",
+        revenue: "Revenue",
+        cost: "Cost",
+        profit: "Profit",
+        profitMargin: "Profit Margin",
+        orderCount: "Order Count"
+      }
+    },
+    userstatistics: {
+      pageTitle: "User Management Dashboard",
+      filter: "Filter",
+      export: "Export report",
+      totalUsers: "Total customers",
+      currentMonthUsers: "Customers this month",
+      potentialCustomers: "Potential customers",
+      loyalCustomers: "Loyal customers",
+      registrationStats: {
+        title: "User Registration Statistics",
+        description: "Track the number of user registrations over time",
+        monthly: "Monthly",
+        yearly: "Yearly"
+      },
+      tabs: {
+        potential: "Potential Customers",
+        topBuyers: "Top Buyers",
+        cancellation: "Cancellation Analysis"
+      },
+      searchPlaceholder: "Search customers...",
+      table: {
+        customer: "Customer",
+        email: "Email",
+        phone: "Phone",
+        createdAt: "Account Created",
+        ranking: "Ranking",
+        orders: "Orders",
+        totalSpent: "Total Spent",
+        avgOrder: "Avg/Order",
+        totalOrders: "Total Orders",
+        cancelledOrders: "Cancelled Orders",
+        cancelRate: "Cancel Rate",
+        mainReason: "Main Reason"
+      },
+      pagination: {
+        show: "Show",
+        of: "of",
+        results: "results",
+        page: "Page",
+        previous: "Previous",
+        next: "Next"
+      },
+      details: {
+        cancellationTitle: "Customer Cancellation Details",
+        cancellationDesc: "Detailed information about customers with high cancellation rates"
+      }
     }
-    
   };
   
   export default pagesConfig;

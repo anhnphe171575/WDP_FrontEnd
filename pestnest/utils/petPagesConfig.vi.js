@@ -495,7 +495,105 @@ searchPage: {
     price: "{price}₫",
     addToWishlist: "Thêm vào yêu thích"
   }
-}
+},
+statistics: {
+  pageTitle: "Thống kê Doanh thu & Lãi",
+  pageDescription: "Phân tích hiệu suất sản phẩm và doanh thu",
+  filter: {
+    title: "Bộ lọc",
+    fromDate: "Từ ngày",
+    toDate: "Đến ngày",
+    sortBy: "Sắp xếp theo",
+    limit: "Số lượng hiển thị",
+    top5: "Top 5",
+    top10: "Top 10",
+    top20: "Top 20",
+    top50: "Top 50"
+  },
+  summary: {
+    totalRevenue: "Tổng Doanh thu",
+    totalProfit: "Tổng Lãi",
+    totalQuantity: "Tổng Số lượng"
+  },
+  tabs: {
+    bestSelling: "Sản phẩm bán chạy",
+    slowSelling: "Sản phẩm bán chậm",
+    revenueOverTime: "Doanh thu theo thời gian"
+  },
+  bestSelling: {
+    title: "Sản phẩm có doanh thu cao nhất",
+    description: "Danh sách sản phẩm mang lại doanh thu và lãi cao nhất"
+  },
+  slowSelling: {
+    title: "Sản phẩm bán chậm",
+    description: "Danh sách sản phẩm có doanh thu thấp nhất"
+  },
+  revenueOverTime: {
+    title: "Doanh thu theo thời gian",
+    description: "Biểu đồ doanh thu theo thời gian",
+    timePeriod: "Chu kỳ thời gian",
+    byDay: "Theo ngày",
+    byWeek: "Theo tuần",
+    byMonth: "Theo tháng"
+  },
+  loading: "Đang tải dữ liệu...",
+  table: {
+    product: "Sản phẩm",
+    quantity: "Số lượng bán",
+    revenue: "Doanh thu",
+    cost: "Chi phí",
+    profit: "Lãi",
+    profitMargin: "Tỷ lệ lãi",
+    orderCount: "Số đơn hàng"
+  }
+},
+userstatistics: {
+  pageTitle: "Dashboard Quản Lý Người Dùng",
+  filter: "Bộ lọc",
+  export: "Xuất báo cáo",
+  totalUsers: "Tổng khách hàng",
+  currentMonthUsers: "Khách hàng tháng này",
+  potentialCustomers: "Khách hàng tiềm năng",
+  loyalCustomers: "Khách hàng thân quen",
+  registrationStats: {
+    title: "Thống Kê Đăng Ký Người Dùng",
+    description: "Theo dõi số lượng người dùng đăng ký theo thời gian",
+    monthly: "Theo tháng",
+    yearly: "Theo năm"
+  },
+  tabs: {
+    potential: "Khách Hàng Tiềm Năng",
+    topBuyers: "Mua Hàng Nhiều Nhất",
+    cancellation: "Phân Tích Hủy Đơn"
+  },
+  searchPlaceholder: "Tìm kiếm khách hàng...",
+  table: {
+    customer: "Khách hàng",
+    email: "Email",
+    phone: "Điện Thoại",
+    createdAt: "Ngày đăng ký tài khoản",
+    ranking: "Xếp hạng",
+    orders: "Số đơn hàng",
+    totalSpent: "Tổng chi tiêu",
+    avgOrder: "Trung bình/đơn",
+    totalOrders: "Tổng đơn",
+    cancelledOrders: "Đơn hủy",
+    cancelRate: "Tỷ lệ hủy",
+    mainReason: "Lý do chính"
+  },
+  pagination: {
+    show: "Hiển thị",
+    of: "của",
+    results: "kết quả",
+    page: "Trang",
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  details: {
+    cancellationTitle: "Chi Tiết Khách Hàng Hủy Đơn",
+    cancellationDesc: "Thông tin chi tiết về các khách hàng có tỷ lệ hủy đơn cao"
+  }
+},
 };
 
 export default pagesConfig;
