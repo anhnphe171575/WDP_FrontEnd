@@ -46,7 +46,7 @@ interface Order {
     status:string
 }[];
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled' | 'reject-return';
+  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
   paymentMethod: string;
   voucher?: string[];
   createAt?: Date;
@@ -72,10 +72,7 @@ interface Order {
 const ORDER_STATUS = {
   PENDING: 'pending',
   PROCESSING: 'processing',
-  SHIPPED: 'shipped',
   COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-  REJECT_RETURN: 'reject-return',
 } as const;
 
 const ORDER_STATUS_COLORS = {
@@ -84,7 +81,6 @@ const ORDER_STATUS_COLORS = {
   shipped: "bg-purple-100 text-purple-800",
   completed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
-  "reject-return": "bg-fuchsia-100 text-fuchsia-800",
 } as const;
 
 
@@ -146,21 +142,17 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
                 {formData.status === 'pending' && (
                   <>
                     <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                   </>
                 )}
                 {formData.status === 'processing' && (
                   <>
                     <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="shipped">Shipped</SelectItem>
                   </>
                 )}
                 {formData.status === 'shipped' && (
                   <>
                     <SelectItem value="shipped">Shipped</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </>
                 )}
                 {formData.status === 'completed' && (
@@ -501,17 +493,7 @@ export default function OrderPage() {
                             <span role="img" aria-label="Cancelled">❌</span> Xem hàng đã hủy
                           </span>
                         )}
-                         {order.status === 'reject-return' && (
-                           <span
-                           className="flex items-center text-fuchsia-600 text-xs gap-1 cursor-pointer underline"
-                           onClick={() => {
-                             setSelectedOrder(order);
-                             setIsViewReasonDialogOpen(true);
-                           }}
-                         >
-                           <span role="img" aria-label="Rejected">❗️</span> Xem lý do từ chối
-                         </span>
-                        )}
+                         
                       </div>
                   </TableCell>
                   <TableCell>{order.createAt ? new Date(order.createAt).toLocaleDateString() : "N/A"}</TableCell>

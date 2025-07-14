@@ -4,6 +4,8 @@ import * as React from "react"
 
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import {
+  ArrowDownIcon,
+  ArrowUpIcon,
   Package,
   ShoppingCart,
   TrendingUp,
@@ -21,7 +23,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const statusColors = {
   pending: "#f59e0b",
   processing: "#3b82f6",
-  shipped: "#06b6d4",
+  shipping: "#06b6d4",
   cancelled: "#ef4444",
   completed: "#22c55e",
   returned: "#f97316"
@@ -52,6 +54,21 @@ interface Product {
   totalQuantity?: number;
 }
 
+// Add Recommendation interface for recommendation data
+interface Recommendation {
+  productId: string;
+  variantId: string;
+  img: string;
+  productName: string;
+  currentStock: number;
+  averageMonthlySales: number;
+  shouldImport: boolean;
+  suggestedQuantity: number;
+  category: string;
+  brand: string;
+  attributeNames:string;
+}
+
 function formatOrderStatusData(data: any, year: number, month: number) {
   if (!data?.ordersStatusByYearMonth) return [];
 
@@ -80,7 +97,70 @@ function formatOrdersData(ordersData: any, year: number) {
     orders: m.count,
   }));
 }
+function ProductRecommendationCard({ product }: { product: Recommendation }) {
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              src={product.img || "/placeholder.svg"}
+              alt={product.productName}
+              className="w-20 h-20 rounded-lg object-cover border"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">{product.productName}</h3>
+              <div className="flex items-center space-x-1">
+                {product.shouldImport ? (
+                  <ArrowUpIcon className="h-4 w-4 text-green-500" />
+                ) : (
+                  <ArrowDownIcon className="h-4 w-4 text-red-500" />
+                )}
+                <span className={`text-sm font-medium ${product.shouldImport ? 'text-green-600' : 'text-red-600'}`}>
+                  {product.shouldImport ? 'Import' : 'No Import'}
+                </span>
+              </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <p className="text-sm text-gray-500">Current Stock</p>
+                <p className="font-semibold text-red-600">{product.currentStock} units</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Monthly Sales</p>
+                <p className="font-semibold">{product.averageMonthlySales} units</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Brand</p>
+                <p className="font-semibold text-blue-600">{product.brand}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Suggest Quantity </p>
+                <p className="font-semibold text-purple-600">{product.suggestedQuantity}</p>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg mb-3">
+              
+              <p className="text-xs text-gray-500">
+              <strong>Import Type: </strong> {product.attributeNames} 
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-700">
+                <strong>Why:</strong> {product.shouldImport ? 'Low stock with high demand - recommended to import' : 'Stock levels are adequate'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function Component() {
   const [selectedYear, setSelectedYear] = React.useState<string>("2025")
@@ -91,6 +171,7 @@ export default function Component() {
   const [year, setYear] = React.useState<number[]>([2024, 2025, 2022])
   const [bestSelling, setBestSelling] = React.useState<Product[]>([])
   const [worstSelling, setWorstSelling] = React.useState<Product[]>([])
+  const [recommendProducts, setRecommendProducts] = React.useState<Recommendation[]>([])
   const [loadingProducts, setLoadingProducts] = React.useState(true)
   const [errorProducts, setErrorProducts] = React.useState<string | null>(null)
   const [revenueData, setRevenueData] = React.useState<any>(null)
@@ -114,21 +195,22 @@ export default function Component() {
       setLoading(false);
     }
   };
-
   // Fetch best-selling and worst-selling products
   const fetchProductTables = async () => {
     setLoadingProducts(true)
     setErrorProducts(null)
     try {
-      const [best, worst, revenue] = await Promise.all([
+      const [best, worst, revenue, recommend] = await Promise.all([
         api.get('/products/best-selling'),
         api.get('/products/worst-selling'),
-        api.get('/orders/revenue')
+        api.get('/orders/revenue'),
+        api.get('/orders/recommend-imports')
       ])
       setBestSelling(best.data.data?.slice(0, 5) || [])
       setWorstSelling(worst.data.data?.slice(0, 5) || [])
+      setRecommendProducts(recommend.data.recommendations || [])
       setRevenueData(revenue.data)
-      console.log(revenue.data);
+      console.log(recommend.data.recommendations);
     } catch (err: any) {
       setErrorProducts(err?.message || 'Error fetching product tables')
     } finally {
@@ -208,8 +290,8 @@ export default function Component() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || 'null'} VND</div>
-              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage}% from last month</p>
+              <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || '0'} VND</div>
+              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage === 0 ? 'No revenue current month' : `${revenueData?.monthlyGrowthPercentage} % from last month`} </p>
             </CardContent>
           </Card>
           <Card>
@@ -236,6 +318,32 @@ export default function Component() {
             </CardContent>
           </Card>
         </div>
+        {/* Product Recommendation Section */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-blue-900">
+                  🤔 Nên nhập sản phẩm nào? / Which products should we import?
+                </CardTitle>
+                <CardDescription className="text-blue-700">
+                  AI-powered recommendations based on sales data, stock levels, and market trends
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+              {recommendProducts.map((product) => (
+                <ProductRecommendationCard key={product.productId} product={product} />
+              ))}
+            </div>
+
+          </CardContent>
+        </Card>
 
         {/* Charts */}
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
