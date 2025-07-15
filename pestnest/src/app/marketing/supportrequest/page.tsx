@@ -187,6 +187,71 @@ function Pagination({ total, page, setPage }: { total: number; page: number; set
   );
 }
 
+// Thêm component StatusBadge để đổi trạng thái trực tiếp trong bảng
+function StatusBadge({ request, reload }: { request: SupportRequest, reload: () => void }) {
+  const [edit, setEdit] = useState(false);
+  const [status, setStatus] = useState(request.status);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setStatus(request.status);
+    setEdit(false);
+  }, [request]);
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    try {
+      await api.patch(`/tickets/${request._id}`, { status });
+      setEdit(false);
+      reload();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      alert(error?.response?.data?.message || error?.message || 'Cập nhật trạng thái thất bại!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (edit) {
+    return (
+      <div className="flex items-center gap-2">
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map(opt => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button size="sm" onClick={handleUpdate} disabled={loading} className="bg-green-600 text-white hover:bg-green-700">Lưu</Button>
+        <Button size="sm" variant="outline" onClick={() => { setEdit(false); setStatus(request.status); }}>Huỷ</Button>
+      </div>
+    );
+  }
+
+  return (
+    <Badge
+      variant={
+        request.status === 'resolved' ? 'default' :
+        request.status === 'processing' ? 'secondary' :
+        request.status === 'new' ? 'outline' : 'secondary'
+      }
+      className="cursor-pointer"
+      onClick={() => setEdit(true)}
+      title="Cập nhật trạng thái"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setEdit(true); }}
+    >
+      {request.status === 'new' ? 'Mới' :
+        request.status === 'processing' ? 'Đang xử lý' :
+        request.status === 'resolved' ? 'Đã xử lý' :
+        request.status}
+    </Badge>
+  );
+}
+
 export default function SupportRequestPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('Tất cả');
@@ -307,16 +372,7 @@ export default function SupportRequestPage() {
                     <TableCell>{req.content}</TableCell>
                     <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Badge variant={
-                        req.status === 'resolved' ? 'default' :
-                        req.status === 'processing' ? 'secondary' :
-                        req.status === 'new' ? 'outline' : 'secondary'
-                      }>
-                        {req.status === 'new' ? 'Mới' :
-                          req.status === 'processing' ? 'Đang xử lý' :
-                          req.status === 'resolved' ? 'Đã xử lý' :
-                          req.status}
-                      </Badge>
+                      <StatusBadge request={req} reload={() => window.location.reload()} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">

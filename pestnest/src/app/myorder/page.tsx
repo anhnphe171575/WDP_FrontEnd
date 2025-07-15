@@ -468,79 +468,53 @@ const MyOrderPage = () => {
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full border border-gray-200 rounded-lg shadow-md overflow-hidden">
+                                    <thead className="bg-gradient-to-r from-blue-50 to-blue-100">
                                         <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                STT
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Mã đơn hàng
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
-                                                Sản phẩm
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Ngày đặt
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Tổng tiền
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Trạng thái
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Phương thức thanh toán
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Thao tác
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Hành động
-                                            </th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">STT</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Mã đơn hàng</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200 w-64">Sản phẩm</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Ngày đặt</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Tổng tiền</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Trạng thái</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Phương thức thanh toán</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Thao tác</th>
+                                            <th className="px-6 py-4 text-center text-xs font-bold text-blue-700 uppercase tracking-wider border-b border-gray-200">Hành động</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white">
                                         {filteredOrders.map((order, index) => (
-                                            <tr key={order._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    #{order._id.slice(-6)}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 w-64">
-                                                    <div className="space-y-1">
+                                            <tr key={order._id} className="hover:bg-blue-50 transition-colors duration-200">
+                                                <td className="px-6 py-4 text-center text-sm font-medium text-gray-900">{index + 1}</td>
+                                                <td className="px-6 py-4 text-center text-sm text-gray-500">#{order._id.slice(-6)}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-700 w-64">
+                                                    <div className="flex flex-col gap-1">
                                                         {order.items.map((item, idx) => (
-                                                            <div key={idx}>
+                                                            <span key={idx} className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
                                                                 {item.productName}
-                                                            </div>
+                                                            </span>
                                                         ))}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {formatDate(order.createAt)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {formatCurrency(order.finalTotal !== undefined ? order.finalTotal : order.total)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                <td className="px-6 py-4 text-center text-sm text-gray-500">{formatDate(order.createAt)}</td>
+                                                <td className="px-6 py-4 text-center text-sm text-gray-900">{formatCurrency(order.finalTotal !== undefined ? order.finalTotal : order.total)}</td>
+                                                <td className="px-6 py-4 text-center whitespace-nowrap min-w-[120px]">
                                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                                                         {order.status === 'cancelled' ? 'Đã hủy' :
                                                             order.status === 'completed' ? 'Hoàn thành' :
-                                                                order.status === 'processing' ? 'Đang xử lý' :
-                                                                order.status ==='pending'? 'Chờ xử lý':
-                                                                order.status === 'returned' ? 'Hoàn hàng' : 
-                                                                order.status === 'reject-return' ? 'Từ chối trả hàng' :
-                                                                order.status === 'shipped' ?'Đang giao hàng':"Đang chờ xử lý"}
+                                                            order.status === 'processing' ? 'Đang xử lý' :
+                                                            order.status ==='pending'? 'Chờ xử lý':
+                                                            order.status === 'returned' ? 'Hoàn hàng' : 
+                                                            order.status === 'reject-return' ? 'Từ chối trả hàng' :
+                                                            order.status === 'shipped' ?'Đang giao hàng':"Đang chờ xử lý"}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 text-center text-sm text-gray-500">
                                                     {order.paymentMethod === 'PayOs' ? 'Chuyển khoản' :
                                                         order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' :
-                                                            'lỗi phương thức'}
+                                                        'lỗi phương thức'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-6 py-4 text-center text-sm text-gray-500">
                                                     <button
                                                         onClick={() => window.location.href = `/myorder/${order._id}`}
                                                         className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -549,7 +523,7 @@ const MyOrderPage = () => {
                                                         Xem chi tiết
                                                     </button>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-y-2">
+                                                <td className="px-6 py-4 text-center text-sm text-gray-500 space-y-2">
                                                     {order.items.every((o) => o.status === 'returned-requested') ? (
                                                         <p className="text-gray-400 text-xs">Đã yêu cầu trả hàng</p>
                                                     ) : order.items.every((o) => o.status === 'cancelled-requested') ? (
