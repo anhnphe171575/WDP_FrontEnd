@@ -505,10 +505,64 @@ export default function UserPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>User Management</CardTitle>
-            <Button onClick={() => {
-              setSelectedUser(undefined);
-              setIsFormOpen(true);
-            }}>Add New User</Button>
+            <div className="flex gap-2">
+              <Button onClick={() => {
+                setSelectedUser(undefined);
+                setIsFormOpen(true);
+              }}>Add New User</Button>
+              {/* Import Users Button */}
+              <input
+                type="file"
+                accept=".csv"
+                id="import-users-csv"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  try {
+                    const response = await api.post('/users/import-csv', formData, {
+                      headers: { 'Content-Type': 'multipart/form-data' },
+                    });
+                    alert('Import successful!');
+                    fetchUsers();
+                  } catch (err: any) {
+                    alert('Import failed: ' + (err.response?.data?.message || err.message));
+                  } finally {
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const input = document.getElementById('import-users-csv') as HTMLInputElement;
+                  if (input) input.click();
+                }}
+              >
+                Import with CSV 
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const response = await api.get('/users/export-csv', { responseType: 'blob' });
+                    const url = window.URL.createObjectURL(new Blob([response.data]));                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'users.csv');
+                    document.body.appendChild(link);
+                    link.click();
+                    link.parentNode?.removeChild(link);
+                  } catch (err: any) {
+                    alert('Export failed: ' + (err.response?.data?.message || err.message));
+                  }
+                }}
+              >
+                Export All Users
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -536,7 +590,7 @@ export default function UserPage() {
               </SelectContent>
             </Select>
           </div>
-
+                // 
           {loading ? (
             <div>Loading...</div>
           ) : error ? (

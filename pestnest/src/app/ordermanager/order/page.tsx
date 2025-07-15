@@ -354,6 +354,23 @@ export default function OrderPage() {
     return 'Chi tiết đơn hàng';
   };
 
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      await api.post('/orders/import-csv', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      fetchOrders(); // Refresh user list
+      alert('Import thành công!');
+    } catch (err: any) {
+      alert('Import thất bại: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
       <Card>
@@ -403,6 +420,19 @@ export default function OrderPage() {
                 <Button onClick={handleBulkUpdate}>Update Selected</Button>
               </div>
             )}
+            <Button
+              variant="outline"
+              onClick={() => document.getElementById('csv-upload-input')?.click()}
+            >
+              Import User with CSV
+            </Button>
+            <input
+              id="csv-upload-input"
+              type="file"
+              accept=".csv"
+              style={{ display: 'none' }}
+              onChange={handleImportCSV}
+            />
           </div>
 
           {loading ? (
