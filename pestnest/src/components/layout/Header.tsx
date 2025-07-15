@@ -140,6 +140,17 @@ function CartDropdown() {
     };
 
     fetchCartData();
+
+    // Lắng nghe sự kiện cartUpdated để fetch lại giỏ hàng
+    const handleCartUpdate = () => {
+      fetchCartData();
+    };
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
   }, []);
 
   return (

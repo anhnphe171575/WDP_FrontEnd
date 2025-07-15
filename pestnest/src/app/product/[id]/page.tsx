@@ -193,6 +193,8 @@ export default function ProductPage() {
       if (response.data.success) {
         // Show success message
         alert(config.addToCartSuccess);
+        // Phát sự kiện custom để thông báo giỏ hàng đã thay đổi
+        window.dispatchEvent(new Event('cartUpdated'));
       } else {
         throw new Error(response.data.message || config.addToCartFail);
       }
