@@ -360,7 +360,7 @@ function NotificationDropdown() {
   )
 }
 
-function UserDropdown({ isLoggedIn, user }: { isLoggedIn: boolean, user: { name: string, email: string } | null }) {
+function UserDropdown({ isLoggedIn, user, userRole }: { isLoggedIn: boolean, user: { name: string, email: string } | null, userRole: number | null }) {
   const { lang, setLang } = useLanguage();
   const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
   const router = useRouter();
@@ -432,12 +432,14 @@ function UserDropdown({ isLoggedIn, user }: { isLoggedIn: boolean, user: { name:
             {config.user.wishlist}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/requestsupport" className="flex items-center">
-            <Package className="mr-2 h-4 w-4" />
-            {config.user.requestSupport}
-          </Link>
-        </DropdownMenuItem>
+        {userRole === 1 && (
+          <DropdownMenuItem asChild>
+            <Link href="/requestsupport" className="flex items-center">
+              <Package className="mr-2 h-4 w-4" />
+              {config.user.requestSupport}
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
@@ -661,7 +663,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
               </>
             )}
             {/* User Account */}
-            <UserDropdown isLoggedIn={isLoggedIn} user={user} />
+            <UserDropdown isLoggedIn={isLoggedIn} user={user} userRole={userRole} />
           </div>
         </div>
       </div>
