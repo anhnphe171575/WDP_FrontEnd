@@ -754,4 +754,4 @@ export default function AttributePage() {
       )}
     </div>
   );
-} 
+};

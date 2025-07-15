@@ -646,7 +646,7 @@ export default function CategoryPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await request(() => api.get('/categories/parent'));
+        const response = await request(() => api.get('/categories/admin/parent'));
         if (response && response.success) {
           setCategories(response.data);
         } else {
@@ -705,7 +705,7 @@ export default function CategoryPage() {
       
       if (response.success) {
         // Refresh the categories list
-        const categoriesResponse = await request(() => api.get('/categories/parent'));
+        const categoriesResponse = await request(() => api.get('/categories/admin/parent'));
         if (categoriesResponse && categoriesResponse.success) {
           setCategories(categoriesResponse.data);
         }
@@ -726,7 +726,7 @@ export default function CategoryPage() {
   const handleSaveCategory = async (newCategory: Category) => {
     try {
       // Refresh the categories list
-      const categoriesResponse = await request(() => api.get('/categories/parent'));
+      const categoriesResponse = await request(() => api.get('/categories/admin/parent'));
       if (categoriesResponse && categoriesResponse.success) {
         setCategories(categoriesResponse.data);
       }
@@ -973,4 +973,4 @@ export default function CategoryPage() {
       )}
     </div>
   );
-}
+};
