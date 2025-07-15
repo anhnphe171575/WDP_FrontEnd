@@ -254,11 +254,11 @@ export default function ReviewManagement() {
                   <SelectValue placeholder={config.search.ratingPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{config.commentsDialog.ratingFilter.all}</SelectItem>
-                  <SelectItem value="4+">4+ {config.commentsDialog.ratingFilter.four}</SelectItem>
-                  <SelectItem value="3+">3+ {config.commentsDialog.ratingFilter.three}</SelectItem>
-                  <SelectItem value="2+">2+ {config.commentsDialog.ratingFilter.two}</SelectItem>
-                  <SelectItem value="1+">1+ {config.commentsDialog.ratingFilter.one}</SelectItem>
+                  <SelectItem value="all">{config.commentsDialog.ratingFilter.all}</SelectItem>;
+                  <SelectItem value="4+">4+ {config.commentsDialog.ratingFilter.four}</SelectItem>;
+                  <SelectItem value="3+">3+ {config.commentsDialog.ratingFilter.three}</SelectItem>;
+                  <SelectItem value="2+">2+ {config.commentsDialog.ratingFilter.two}</SelectItem>;
+                  <SelectItem value="1+">1+ {config.commentsDialog.ratingFilter.one}</SelectItem>;
                 </SelectContent>
               </Select>
             </div>
