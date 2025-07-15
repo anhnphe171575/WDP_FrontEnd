@@ -10,6 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, DollarSign, Package, BarChart3, Calendar } from "lucide-react";
 import { api } from "../../../../utils/axios";
+import { useLanguage } from '@/context/LanguageContext';
+import pagesConfigEn from '../../../../utils/petPagesConfig.en';
+import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
 
 interface ProductStat {
   productId: string;
@@ -35,6 +38,8 @@ interface RevenueTimeData {
 }
 
 export default function StatisticsPage() {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.statistics : pagesConfigVi.statistics;
   const [productStats, setProductStats] = useState<ProductStat[]>([]);
   const [summaryStats, setSummaryStats] = useState<SummaryStats | null>(null);
   const [revenueTimeData, setRevenueTimeData] = useState<RevenueTimeData[]>([]);
@@ -140,20 +145,20 @@ export default function StatisticsPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Thống kê Doanh thu & Lãi</h1>
-          <p className="text-muted-foreground">Phân tích hiệu suất sản phẩm và doanh thu</p>
+          <h1 className="text-3xl font-bold">{config.pageTitle}</h1>
+          <p className="text-muted-foreground">{config.pageDescription}</p>
         </div>
       </div>
 
       {/* Filter Controls */}
       <Card>
         <CardHeader>
-          <CardTitle>Bộ lọc</CardTitle>
+          <CardTitle>{config.filter.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="startDate">Từ ngày</Label>
+              <Label htmlFor="startDate">{config.filter.fromDate}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -162,7 +167,7 @@ export default function StatisticsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="endDate">Đến ngày</Label>
+              <Label htmlFor="endDate">{config.filter.toDate}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -171,30 +176,30 @@ export default function StatisticsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="sortBy">Sắp xếp theo</Label>
+              <Label htmlFor="sortBy">{config.filter.sortBy}</Label>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="revenue">Doanh thu</SelectItem>
-                  <SelectItem value="profit">Lãi</SelectItem>
-                  <SelectItem value="quantity">Số lượng</SelectItem>
-                  <SelectItem value="profitMargin">Tỷ lệ lãi</SelectItem>
+                  <SelectItem value="revenue">{config.table.revenue}</SelectItem>
+                  <SelectItem value="profit">{config.table.profit}</SelectItem>
+                  <SelectItem value="quantity">{config.table.quantity}</SelectItem>
+                  <SelectItem value="profitMargin">{config.table.profitMargin}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="limit">Số lượng hiển thị</Label>
+              <Label htmlFor="limit">{config.filter.limit}</Label>
               <Select value={limit} onValueChange={setLimit}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">Top 5</SelectItem>
-                  <SelectItem value="10">Top 10</SelectItem>
-                  <SelectItem value="20">Top 20</SelectItem>
-                  <SelectItem value="50">Top 50</SelectItem>
+                  <SelectItem value="5">{config.filter.top5}</SelectItem>
+                  <SelectItem value="10">{config.filter.top10}</SelectItem>
+                  <SelectItem value="20">{config.filter.top20}</SelectItem>
+                  <SelectItem value="50">{config.filter.top50}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -207,7 +212,7 @@ export default function StatisticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng Doanh thu</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.summary.totalRevenue}</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -217,7 +222,7 @@ export default function StatisticsPage() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng Lãi</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.summary.totalProfit}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -227,7 +232,7 @@ export default function StatisticsPage() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng Số lượng</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.summary.totalQuantity}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -243,19 +248,19 @@ export default function StatisticsPage() {
           variant={activeTab === 'revenue' ? 'default' : 'outline'}
           onClick={() => setActiveTab('revenue')}
         >
-          Sản phẩm bán chạy
+          {config.tabs.bestSelling}
         </Button>
         <Button
           variant={activeTab === 'low' ? 'default' : 'outline'}
           onClick={() => setActiveTab('low')}
         >
-          Sản phẩm bán chậm
+          {config.tabs.slowSelling}
         </Button>
         <Button
           variant={activeTab === 'time' ? 'default' : 'outline'}
           onClick={() => setActiveTab('time')}
         >
-          Doanh thu theo thời gian
+          {config.tabs.revenueOverTime}
         </Button>
       </div>
 
@@ -263,25 +268,25 @@ export default function StatisticsPage() {
       {activeTab === 'revenue' && (
         <Card>
           <CardHeader>
-            <CardTitle>Sản phẩm có doanh thu cao nhất</CardTitle>
+            <CardTitle>{config.bestSelling.title}</CardTitle>
             <CardDescription>
-              Danh sách sản phẩm mang lại doanh thu và lãi cao nhất
+              {config.bestSelling.description}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8">Đang tải dữ liệu...</div>
+              <div className="text-center py-8">{config.loading}</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Sản phẩm</TableHead>
-                    <TableHead>Số lượng bán</TableHead>
-                    <TableHead>Doanh thu</TableHead>
-                    <TableHead>Chi phí</TableHead>
-                    <TableHead>Lãi</TableHead>
-                    <TableHead>Tỷ lệ lãi</TableHead>
-                    <TableHead>Số đơn hàng</TableHead>
+                    <TableHead>{config.table.product}</TableHead>
+                    <TableHead>{config.table.quantity}</TableHead>
+                    <TableHead>{config.table.revenue}</TableHead>
+                    <TableHead>{config.table.cost}</TableHead>
+                    <TableHead>{config.table.profit}</TableHead>
+                    <TableHead>{config.table.profitMargin}</TableHead>
+                    <TableHead>{config.table.orderCount}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -315,22 +320,22 @@ export default function StatisticsPage() {
       {activeTab === 'low' && (
         <Card>
           <CardHeader>
-            <CardTitle>Sản phẩm bán chậm</CardTitle>
+            <CardTitle>{config.slowSelling.title}</CardTitle>
             <CardDescription>
-              Danh sách sản phẩm có doanh thu thấp nhất
+              {config.slowSelling.description}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Sản phẩm</TableHead>
-                  <TableHead>Số lượng bán</TableHead>
-                  <TableHead>Doanh thu</TableHead>
-                  <TableHead>Chi phí</TableHead>
-                  <TableHead>Lãi</TableHead>
-                  <TableHead>Tỷ lệ lãi</TableHead>
-                  <TableHead>Số đơn hàng</TableHead>
+                  <TableHead>{config.table.product}</TableHead>
+                  <TableHead>{config.table.quantity}</TableHead>
+                  <TableHead>{config.table.revenue}</TableHead>
+                  <TableHead>{config.table.cost}</TableHead>
+                  <TableHead>{config.table.profit}</TableHead>
+                  <TableHead>{config.table.profitMargin}</TableHead>
+                  <TableHead>{config.table.orderCount}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -363,22 +368,22 @@ export default function StatisticsPage() {
       {activeTab === 'time' && (
         <Card>
           <CardHeader>
-            <CardTitle>Doanh thu theo thời gian</CardTitle>
+            <CardTitle>{config.revenueOverTime.title}</CardTitle>
             <CardDescription>
-              Biểu đồ doanh thu theo thời gian
+              {config.revenueOverTime.description}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Label htmlFor="timePeriod">Chu kỳ thời gian</Label>
+              <Label htmlFor="timePeriod">{config.revenueOverTime.timePeriod}</Label>
               <Select value={timePeriod} onValueChange={setTimePeriod}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="day">Theo ngày</SelectItem>
-                  <SelectItem value="week">Theo tuần</SelectItem>
-                  <SelectItem value="month">Theo tháng</SelectItem>
+                  <SelectItem value="day">{config.revenueOverTime.byDay}</SelectItem>
+                  <SelectItem value="week">{config.revenueOverTime.byWeek}</SelectItem>
+                  <SelectItem value="month">{config.revenueOverTime.byMonth}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
