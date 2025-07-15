@@ -311,6 +311,7 @@ header: {
     myOrders: "Đơn hàng của tôi",
     wishlist: "Yêu thích",
     settings: "Cài đặt",
+    requestSupport: "Yêu cầu hỗ trợ",
     logout: "Đăng xuất"
   },
   language: {

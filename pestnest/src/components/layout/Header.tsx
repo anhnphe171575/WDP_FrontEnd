@@ -59,7 +59,7 @@ interface CartItem {
 
 interface Notification {
   _id: string;
-  orderId:string;
+  orderId: string;
   title: string;
   description: string;
   type: string;
@@ -335,7 +335,7 @@ function NotificationDropdown() {
             )}
           </div>
           <Separator className="my-3" />
-          <Button variant="outline" size="sm" className="w-full" onClick={() => {}}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => { }}>
             Xóa tất cả thông báo
           </Button>
         </div>
@@ -414,6 +414,12 @@ function UserDropdown({ isLoggedIn, user }: { isLoggedIn: boolean, user: { name:
           <Link href="/wishlist" className="flex items-center">
             <Heart className="mr-2 h-4 w-4" />
             {config.user.wishlist}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/requestsupport" className="flex items-center">
+            <Package className="mr-2 h-4 w-4" />
+            {config.user.requestSupport}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -593,7 +599,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           </div>
         </div>
       </div>
-          {/* Thanh menu category cha */}
+      {/* Thanh menu category cha */}
       <div className="w-full bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto px-4 flex items-center gap-2 min-h-[48px]">
           {loadingCategories ? (
