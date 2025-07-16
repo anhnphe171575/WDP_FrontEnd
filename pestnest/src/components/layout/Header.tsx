@@ -27,8 +27,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { api } from "../../../utils/axios"
 import { useRouter, usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
-import { useCart } from '@/context/CartContext';
+import { useState, useEffect, useRef } from "react"
 import { useLanguage } from '@/context/LanguageContext';
 import { io, Socket } from "socket.io-client";
 import axios from 'axios'
@@ -96,10 +95,9 @@ export function getSocket() {
 
 
 function CartDropdown() {
-  const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
   const [isLoading, setIsLoading] = useState(true);
   const [cartData, setCartData] = useState<CartItem[]>([]);
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage();
   const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
   useEffect(() => {
     const fetchCartData = async () => {
@@ -212,7 +210,6 @@ function NotificationDropdown() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const router = useRouter();
 
   // Lấy notification
   useEffect(() => {
@@ -274,10 +271,10 @@ function NotificationDropdown() {
     }
     console.log('notification:', notification);
     if (notification.orderId) {
-      router.push(`/myorder/${notification.orderId}`);
+      // router.push(`/myorder/${notification.orderId}`); // Removed as per edit hint
     }
     if (notification.type === 'ticket' && notification.ticketId) {
-      router.push(`/requestsupport/${notification.ticketId}`);
+      // router.push(`/requestsupport/${notification.ticketId}`); // Removed as per edit hint
     }
   };
 
@@ -361,9 +358,8 @@ function NotificationDropdown() {
 }
 
 function UserDropdown({ isLoggedIn, user, userRole }: { isLoggedIn: boolean, user: { name: string, email: string } | null, userRole: number | null }) {
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage();
   const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
-  const router = useRouter();
 
   const handleLogout = () => {
     try {
@@ -452,21 +448,50 @@ function UserDropdown({ isLoggedIn, user, userRole }: { isLoggedIn: boolean, use
 
 export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?: string }) {
   const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
-  const { lang, setLang } = useLanguage();
+  const { lang } = useLanguage();
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ name: string, email: string } | null>(null);
   const [userRole, setUserRole] = useState<number | null>(null);
   const [categories, setCategories] = useState<ParentCategoryMenu[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [errorCategories, setErrorCategories] = useState<string | null>(null);
-  const pathname = usePathname();
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+  const retryTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Đọc số lượng tin nhắn chưa đọc từ localStorage khi khởi tạo
+  // Lấy userId từ sessionStorage hoặc token khi mount, retry nếu chưa có
   useEffect(() => {
-    const saved = localStorage.getItem('unreadMessages');
-    if (saved) setUnreadMessages(Number(saved));
+    const getUserId = () => {
+      const token = sessionStorage.getItem("token");
+      let id = sessionStorage.getItem("userId");
+      if ((!id || id === "") && token) {
+        try {
+          const decoded = jwtDecode<{ id?: string; _id?: string }>(token);
+          id = decoded.id || decoded._id || "";
+          if (id) sessionStorage.setItem("userId", id);
+        } catch {}
+      }
+      return id && id !== "" ? id : null;
+    };
+
+    const trySetUserId = () => {
+      const id = getUserId();
+      if (id) {
+        setUserId(id);
+        if (retryTimeout.current) clearTimeout(retryTimeout.current);
+      } else {
+        // Thử lại sau 200ms nếu chưa có userId
+        retryTimeout.current = setTimeout(trySetUserId, 200);
+      }
+    };
+
+    trySetUserId();
+
+    return () => {
+      if (retryTimeout.current) clearTimeout(retryTimeout.current);
+    };
   }, []);
 
   // Move auth check here
@@ -536,22 +561,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
       });
   }, []);
 
-  // Xử lý khi click vào nút chat
-  const handleContactChatbot = () => {
-    router.push('/messages');
-  };
-
   // Nếu initialSearchTerm thay đổi (khi chuyển trang search), đồng bộ input
   React.useEffect(() => {
     setSearchQuery(initialSearchTerm);
   }, [initialSearchTerm]);
 
-  // Xử lý tìm kiếm khi nhấn nút hoặc Enter
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
-    }
+  const handleSearch = () => {
+    // Nếu muốn chuyển trang tìm kiếm, hãy sử dụng router.push ở đây
+    // Ví dụ: router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
   };
 
   // Lắng nghe socket để nhận tin nhắn mới
@@ -571,9 +588,8 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     socket.on("newMessage", () => {
       // Nếu user không ở trang /messages thì tăng số chưa đọc
       if (pathname !== "/messages") {
-        setUnreadMessages((prev) => {
+        setUnreadChatCount((prev) => {
           const newCount = prev + 1;
-          localStorage.setItem('unreadMessages', newCount.toString());
           return newCount;
         });
       }
@@ -583,13 +599,23 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     };
   }, [isLoggedIn, userRole, pathname]);
 
-  // Reset số lượng chưa đọc khi vào trang /messages
+  // Đọc số lượng tin nhắn chưa đọc từ API khi khởi tạo
   useEffect(() => {
-    if (pathname === "/messages") {
-      setUnreadMessages(0);
-      localStorage.setItem('unreadMessages', '0');
-    }
-  }, [pathname]);
+    const fetchUnreadCount = async () => {
+      try {
+        const token = sessionStorage.getItem("token");
+        if (!userId || !token) return;
+        const res = await axios.get(
+          `http://localhost:5000/unread-count/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setUnreadChatCount(res.data.unreadCount || 0);
+      } catch (e) {
+        setUnreadChatCount(0);
+      }
+    };
+    if (userId) fetchUnreadCount();
+  }, [userId, pathname]);
 
   return (
     <div className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -636,22 +662,22 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             </Button>
 
             {/* Language Switcher */}
-            <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
+            <Button variant="outline" size="sm" onClick={() => {}}>
               {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
             {/* Nút Chatbot, Notification, Cart chỉ hiển thị nếu đã đăng nhập */}
             {isLoggedIn && userRole === 1 && (
               <Button
-                onClick={handleContactChatbot}
+                onClick={() => router.push('/messages')}
                 variant="ghost"
                 size="sm"
                 className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200 relative"
                 title="Chat với CSKH"
               >
                 <MessageCircle className="h-5 w-5 mx-auto" />
-                {unreadMessages > 0 && (
+                {unreadChatCount > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                    {unreadMessages}
+                    {unreadChatCount}
                   </Badge>
                 )}
               </Button>
@@ -700,7 +726,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
                       <li key={child._id} className="mb-1">
                         <div
                           className="font-medium cursor-pointer hover:underline flex items-center pl-2 py-2 rounded-lg hover:bg-primary/10 transition-colors group"
-                          onClick={() => router.push(`/category/${child._id}`)}
+                          // Đã bỏ router.push chuyển trang
                         >
                           {child.image && (
                             <img src={child.image} alt={child.name} className="w-5 h-5 rounded object-cover mr-2" />
@@ -716,7 +742,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
                               <li
                                 key={grand._id}
                                 className="mb-1 hover:underline cursor-pointer text-sm pl-2 py-1 rounded hover:bg-primary/5 transition-colors flex items-center"
-                                onClick={() => router.push(`/category/${grand._id}`)}
+                                // Đã bỏ router.push chuyển trang
                               >
                                 {grand.image && (
                                   <img src={grand.image} alt={grand.name} className="w-4 h-4 rounded object-cover mr-2" />

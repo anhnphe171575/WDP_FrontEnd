@@ -18,6 +18,7 @@ interface Message {
   content: string
   conversationId: string
   createdAt?: string
+  isRead?: boolean
 }
 
 interface Conversation {
@@ -26,13 +27,6 @@ interface Conversation {
   staffId: string
   lastMessageAt?: string
   status: string
-}
-
-interface User {
-  _id: string
-  name?: string
-  email?: string
-  role: number
 }
 
 interface ApiError {
