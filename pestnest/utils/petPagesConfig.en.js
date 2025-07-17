@@ -590,6 +590,125 @@ const pagesConfig = {
         cancellationTitle: "Customer Cancellation Details",
         cancellationDesc: "Detailed information about customers with high cancellation rates"
       }
+    },
+    voucherManagement: {
+      title: "Voucher Management",
+      addNewButton: "Add New Voucher",
+      form: {
+        addTitle: "Add New Voucher",
+        editTitle: "Edit Voucher",
+        fields: {
+          code: "Voucher Code",
+          discountAmount: "Discount Amount",
+          discountPercent: "Discount Percent",
+          validFrom: "Start Time",
+          validTo: "End Time",
+          usageLimit: "Usage Limit"
+        },
+        buttons: {
+          cancel: "Cancel",
+          add: "Create Voucher",
+          save: "Update Voucher"
+        }
+      },
+      search: {
+        placeholder: "Search voucher..."
+      },
+      table: {
+        headers: {
+          no: "No.",
+          code: "Voucher Code",
+          discount: "Discount",
+          validTime: "Validity Period",
+          usage: "Usage",
+          actions: "Actions"
+        },
+        validFrom: "From:",
+        validTo: "To:",
+        edit: "Edit",
+        delete: "Delete"
+      },
+      error: {
+        fetch: "Error loading voucher list",
+        duplicateCode: "Voucher code already exists",
+        invalidStartDate: "Start time must be today or later",
+        create: "Error creating voucher",
+        discountType: "Only one type of discount can be entered",
+        update: "Error updating voucher",
+        delete: "Error deleting voucher"
+      },
+      success: {
+        create: "Voucher created successfully",
+        update: "Voucher updated successfully",
+        delete: "Voucher deleted successfully"
+      },
+      confirm: {
+        delete: "Are you sure you want to delete this voucher?"
+      },
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      }
+    },
+    suportRequest: {
+      pageTitle: "Support Request List",
+      search: {
+        placeholder: "Search by title, description...",
+        statusPlaceholder: "Status",
+        all: "All"
+      },
+      table: {
+        headers: {
+          no: "No.",
+          title: "Title",
+          description: "Description",
+          createdAt: "Created Date",
+          status: "Status",
+          actions: "Actions"
+        },
+        noData: "No matching requests found."
+      },
+      status: {
+        new: "New",
+        processing: "Processing",
+        resolved: "Resolved",
+        rejected: "Rejected"
+      },
+      priority: {
+        urgent: "Urgent",
+        high: "High",
+        normal: "Normal"
+      },
+      detail: {
+        title: "Support Request Detail",
+        fields: {
+          title: "Title",
+          noTitle: "(None)",
+          content: "Content",
+          status: "Status",
+          priority: "Priority",
+          handler: "Handler",
+          noHandler: "(None)",
+          createdAt: "Created At",
+          updatedAt: "Updated At",
+          response: "Response",
+          internalNote: "Internal Note"
+        },
+        buttons: {
+          save: "Save",
+          cancel: "Cancel",
+          close: "Close"
+        },
+        updateStatus: "Update status"
+      },
+      actions: {
+        viewDetail: "View detail"
+      },
+      loading: "Loading data...",
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      }
     }
   };
   

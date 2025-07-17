@@ -594,6 +594,125 @@ userstatistics: {
     cancellationDesc: "Thông tin chi tiết về các khách hàng có tỷ lệ hủy đơn cao"
   }
 },
+voucherManagement: {
+  title: "Quản lý Voucher",
+  addNewButton: "Tạo Voucher Mới",
+  form: {
+    addTitle: "Tạo Voucher Mới",
+    editTitle: "Chỉnh sửa Voucher",
+    fields: {
+      code: "Mã Voucher",
+      discountAmount: "Số tiền giảm giá",
+      discountPercent: "Phần trăm giảm giá",
+      validFrom: "Thời gian bắt đầu",
+      validTo: "Thời gian kết thúc",
+      usageLimit: "Số lần sử dụng tối đa"
+    },
+    buttons: {
+      cancel: "Hủy",
+      add: "Tạo Voucher",
+      save: "Cập nhật Voucher"
+    }
+  },
+  search: {
+    placeholder: "Tìm kiếm voucher..."
+  },
+  table: {
+    headers: {
+      no: "STT",
+      code: "Mã Voucher",
+      discount: "Giảm giá",
+      validTime: "Thời gian hiệu lực",
+      usage: "Số lần sử dụng",
+      actions: "Thao tác"
+    },
+    validFrom: "Từ:",
+    validTo: "Đến:",
+    edit: "Chỉnh sửa",
+    delete: "Xóa"
+  },
+  error: {
+    fetch: "Lỗi khi tải danh sách voucher",
+    duplicateCode: "Mã voucher đã tồn tại",
+    invalidStartDate: "Thời gian bắt đầu phải từ ngày hôm nay trở đi",
+    create: "Lỗi khi tạo voucher",
+    discountType: "Chỉ được nhập một loại giảm giá",
+    update: "Lỗi khi cập nhật voucher",
+    delete: "Lỗi khi xóa voucher"
+  },
+  success: {
+    create: "Tạo voucher thành công",
+    update: "Cập nhật voucher thành công",
+    delete: "Xóa voucher thành công"
+  },
+  confirm: {
+    delete: "Bạn có chắc chắn muốn xóa voucher này?"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Sau"
+  }
+},
+suportRequest: {
+  pageTitle: "Danh sách yêu cầu Hỗ trợ",
+  search: {
+    placeholder: "Tìm kiếm theo tiêu đề, mô tả...",
+    statusPlaceholder: "Trạng thái",
+    all: "Tất cả"
+  },
+  table: {
+    headers: {
+      no: "STT",
+      title: "Tiêu đề",
+      description: "Mô tả",
+      createdAt: "Ngày giao",
+      status: "Trạng thái",
+      actions: "Thao tác"
+    },
+    noData: "Không có request nào phù hợp."
+  },
+  status: {
+    new: "Mới",
+    processing: "Đang xử lý",
+    resolved: "Đã xử lý",
+    rejected: "Từ chối"
+  },
+  priority: {
+    urgent: "Khẩn cấp",
+    high: "Cao",
+    normal: "Bình thường"
+  },
+  detail: {
+    title: "Chi tiết Yêu cầu hỗ trợ",
+    fields: {
+      title: "Tiêu đề",
+      noTitle: "(Không có)",
+      content: "Nội dung",
+      status: "Trạng thái",
+      priority: "Mức độ ưu tiên",
+      handler: "Người xử lý",
+      noHandler: "(Chưa có)",
+      createdAt: "Ngày tạo",
+      updatedAt: "Ngày cập nhật",
+      response: "Phản hồi",
+      internalNote: "Ghi chú nội bộ"
+    },
+    buttons: {
+      save: "Lưu",
+      cancel: "Huỷ",
+      close: "Đóng"
+    },
+    updateStatus: "Cập nhật trạng thái"
+  },
+  actions: {
+    viewDetail: "Xem chi tiết"
+  },
+  loading: "Đang tải dữ liệu...",
+  pagination: {
+    previous: "Trước",
+    next: "Sau"
+  }
+},
 };
 
 export default pagesConfig;

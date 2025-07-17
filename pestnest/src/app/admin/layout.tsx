@@ -241,6 +241,7 @@ export default function AdminLayout({
           <SidebarTrigger className="ml-2" />
         </div>
       <SidebarInset>
+        {/* Không render Footer ở admin */}
         {children}
       </SidebarInset>
     </SidebarProvider>

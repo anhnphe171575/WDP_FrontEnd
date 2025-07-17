@@ -48,39 +48,9 @@ import { useLanguage } from "@/context/LanguageContext"
 // Menu items for the sidebar
 const menuItems = [
   {
-    title: "Bảng điều khiển",
-    url: "/marketing/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Chiến dịch",
-    url: "/marketing/campaigns",
-    icon: Megaphone,
-  },
-  {
-    title: "Phân tích",
-    url: "/marketing/analytics",
-    icon: BarChart3,
-  },
-  {
-    title: "Đối tượng mục tiêu",
-    url: "/marketing/audience",
-    icon: Target,
-  },
-  {
     title: "Email Marketing",
     url: "/marketing/email",
     icon: Mail,
-  },
-  {
-    title: "Mạng xã hội",
-    url: "/marketing/social",
-    icon: Share2,
-  },
-  {
-    title: "Nội dung",
-    url: "/marketing/content",
-    icon: FileText,
   },
   {
     title: "Manage Blog",
@@ -267,6 +237,7 @@ export default function MarketingLayout({
           <SidebarTrigger className="ml-2" />
         </div>
       <SidebarInset>
+        {/* Không render Footer ở marketing */}
         {children}
       </SidebarInset>
     </SidebarProvider>
