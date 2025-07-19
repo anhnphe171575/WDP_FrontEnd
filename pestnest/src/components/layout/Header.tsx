@@ -448,7 +448,7 @@ function UserDropdown({ isLoggedIn, user, userRole }: { isLoggedIn: boolean, use
 
 export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?: string }) {
   const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
-  const { lang } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -662,7 +662,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             </Button>
 
             {/* Language Switcher */}
-            <Button variant="outline" size="sm" onClick={() => {}}>
+            <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
               {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
             {/* Nút Chatbot, Notification, Cart chỉ hiển thị nếu đã đăng nhập */}
