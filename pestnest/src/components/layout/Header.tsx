@@ -448,7 +448,7 @@ function UserDropdown({ isLoggedIn, user, userRole }: { isLoggedIn: boolean, use
 
 export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?: string }) {
   const [searchQuery, setSearchQuery] = React.useState(initialSearchTerm)
-  const { lang } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -606,10 +606,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         const token = sessionStorage.getItem("token");
         if (!userId || !token) return;
         const res = await axios.get(
-          `http://localhost:5000/unread-count/${userId}`,
+          `http://localhost:5000/conversation/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setUnreadChatCount(res.data.unreadCount || 0);
+        // Tổng số tin nhắn chưa đọc từ tất cả conversation
+        const totalUnread = Array.isArray(res.data)
+          ? res.data.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+          : 0;
+        setUnreadChatCount(totalUnread);
       } catch (e) {
         setUnreadChatCount(0);
       }
@@ -662,7 +666,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             </Button>
 
             {/* Language Switcher */}
-            <Button variant="outline" size="sm" onClick={() => {}}>
+            <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
               {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
             {/* Nút Chatbot, Notification, Cart chỉ hiển thị nếu đã đăng nhập */}

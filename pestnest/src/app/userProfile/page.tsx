@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { api } from '../../../utils/axios';
 import Header from '@/components/layout/Header';
 import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
@@ -10,6 +10,7 @@ import viConfig from '../../../utils/petPagesConfig.vi';
 import enConfig from '../../../utils/petPagesConfig.en';
 
 interface Address {
+    _id?: string; // Added _id for potential backend compatibility
     street?: string;
     city?: string;
     state?: string;
@@ -21,25 +22,9 @@ interface UserProfile {
     name: string;
     email: string;
     phone: string;
-    address: Address;
+    address: Address[]; // đổi từ Address thành Address[]
     joinDate?: string;
     birthday?: string;
-}
-
-interface ApiResponse {
-    success: boolean;
-    message: string;
-    user: {
-        id: string;
-        name: string;
-        email: string;
-        phone: string;
-        role: number;
-        address?: string;
-        verified: boolean;
-        createdAt: string;
-        birthday?: string;
-    }
 }
 
 const UserProfilePage = () => {
@@ -50,11 +35,12 @@ const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [userData, setUserData] = useState<UserProfile>({
         name: '',
         email: '',
         phone: '',
-        address: {},
+        address: [], // đổi từ {} thành []
         joinDate: '',
         birthday: ''
     });
@@ -63,30 +49,21 @@ const UserProfilePage = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const token = sessionStorage.getItem('token');
-                if (!token) {
-                    throw new Error(config.notFoundToken);
-                }
-
-                const response = await axios.get<ApiResponse>('http://localhost:5000/api/auth/myprofile', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const response = await api.get('/auth/myprofile');
 
                 if (response.data.success) {
                     const profileData = response.data.user;
-                    let addressObj: Address = {};
-                    if (Array.isArray(profileData.address) && profileData.address.length > 0) {
-                        addressObj = profileData.address[0];
-                    } else if (typeof profileData.address === 'object') {
-                        addressObj = profileData.address;
+                    let addressArr: Address[] = [];
+                    if (Array.isArray(profileData.address)) {
+                        addressArr = profileData.address;
+                    } else if (typeof profileData.address === 'object' && profileData.address !== null) {
+                        addressArr = [profileData.address];
                     }
                     setUserData({
                         name: profileData.name,
                         email: profileData.email,
                         phone: profileData.phone,
-                        address: addressObj || config.notUpdatedAddress,
+                        address: addressArr,
                         joinDate: new Date(profileData.createdAt).toLocaleDateString(lang === 'vi' ? 'vi-VN' : 'en-US', {
                             month: 'long',
                             year: 'numeric'
@@ -117,10 +94,6 @@ const UserProfilePage = () => {
         try {
             setLoading(true);
             setError(null);
-            const token = sessionStorage.getItem('token');
-            if (!token) {
-                throw new Error('Không tìm thấy token');
-            }
             const payload: Record<string, unknown> = {
                 name: editData.name,
                 phone: editData.phone,
@@ -128,15 +101,11 @@ const UserProfilePage = () => {
                 address: editData.address
             };
             Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
-            await axios.put('http://localhost:5000/api/users/edit-profile', payload, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            await api.put('/users/edit-profile', payload);
             setUserData(editData);
             setIsEditing(false);
             setEditData(null);
+            setSuccessMsg('Cập nhật thông tin thành công!');
         } catch (err) {
             setError('Không thể cập nhật thông tin. Vui lòng thử lại sau.');
             console.error('Error updating profile:', err);
@@ -159,6 +128,43 @@ const UserProfilePage = () => {
         const d = new Date(dateStr);
         return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
     };
+
+    const handleAddAddress = async () => {
+        try {
+            const newAddress = { street: '', city: '', state: '', postalCode: '', country: '' };
+            const response = await api.post('/users/addresses', newAddress);
+            if (response.data.success) {
+                setEditData(editData => editData ? { ...editData, address: response.data.data } : null);
+                setUserData(userData => ({ ...userData, address: response.data.data }));
+                setSuccessMsg('Thêm địa chỉ thành công!');
+            }
+        } catch (err) {
+            setError('Không thể thêm địa chỉ. Vui lòng thử lại sau.');
+            console.error('Error adding address:', err);
+        }
+    };
+
+    const handleDeleteAddress = async (addressId: string) => {
+        try {
+            const response = await api.delete(`/users/addresses/${addressId}`);
+            if (response.data.success) {
+                setEditData(editData => editData ? { ...editData, address: response.data.data } : null);
+                setUserData(userData => ({ ...userData, address: response.data.data }));
+                setSuccessMsg('Xóa địa chỉ thành công!');
+            }
+        } catch (err) {
+            setError('Không thể xóa địa chỉ. Vui lòng thử lại sau.');
+            console.error('Error deleting address:', err);
+        }
+    };
+
+    // Tự động ẩn thông báo sau 2.5 giây
+    useEffect(() => {
+        if (successMsg) {
+            const timer = setTimeout(() => setSuccessMsg(null), 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [successMsg]);
 
     if (loading) {
         return (
@@ -187,6 +193,11 @@ const UserProfilePage = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <Header />
+            {successMsg && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded shadow-lg animate-fade-in">
+                    {successMsg}
+                </div>
+            )}
             <main className="container mx-auto px-4 py-8">
                 <div className="max-w-3xl mx-auto">
                     {/* Profile Header */}
@@ -287,59 +298,135 @@ const UserProfilePage = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.address}</label>
                                     {isEditing ? (
                                         <>
-                                            <div className="space-y-2">
-                                                <label className="block text-sm text-gray-700">Đường</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Số nhà, đường..."
-                                                    value={isEditing ? editData?.address?.street ?? '' : userData.address?.street ?? ''}
-                                                    onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, street: e.target.value } } : null)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
-                                                    disabled={!isEditing}
-                                                />
-                                                <label className="block text-sm text-gray-700">Thành phố</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Thành phố"
-                                                    value={isEditing ? editData?.address?.city ?? '' : userData.address?.city ?? ''}
-                                                    onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, city: e.target.value } } : null)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
-                                                    disabled={!isEditing}
-                                                />
-                                                <label className="block text-sm text-gray-700">Tỉnh/Bang</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Tỉnh/Bang"
-                                                    value={isEditing ? editData?.address?.state ?? '' : userData.address?.state ?? ''}
-                                                    onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, state: e.target.value } } : null)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
-                                                    disabled={!isEditing}
-                                                />
-                                                <label className="block text-sm text-gray-700">Mã bưu điện</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Mã bưu điện"
-                                                    value={isEditing ? editData?.address?.postalCode ?? '' : userData.address?.postalCode ?? ''}
-                                                    onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, postalCode: e.target.value } } : null)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 mb-1"
-                                                    disabled={!isEditing}
-                                                />
-                                                <label className="block text-sm text-gray-700">Quốc gia</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Quốc gia"
-                                                    value={isEditing ? editData?.address?.country ?? '' : userData.address?.country ?? ''}
-                                                    onChange={e => isEditing && setEditData(editData => editData ? { ...editData, address: { ...editData.address, country: e.target.value } } : null)}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                                    disabled={!isEditing}
-                                                />
-                                            </div>
+                                            {editData?.address.map((addr, idx) => (
+                                                <div key={addr._id || idx} className="mb-4 p-3 border rounded-lg bg-gray-50">
+                                                    <div className="mb-2 font-semibold">Địa chỉ {idx + 1}</div>
+                                                    <label className="block text-sm text-gray-700">Đường</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Số nhà, đường..."
+                                                        value={addr.street ?? ''}
+                                                        onChange={e =>
+                                                            setEditData(editData =>
+                                                                editData
+                                                                    ? {
+                                                                        ...editData,
+                                                                        address: editData.address.map((a, i) =>
+                                                                            i === idx ? { ...a, street: e.target.value } : a
+                                                                        ),
+                                                                    }
+                                                                    : null
+                                                            )
+                                                        }
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-1"
+                                                    />
+                                                    <label className="block text-sm text-gray-700">Thành phố</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Thành phố"
+                                                        value={addr.city ?? ''}
+                                                        onChange={e =>
+                                                            setEditData(editData =>
+                                                                editData
+                                                                    ? {
+                                                                        ...editData,
+                                                                        address: editData.address.map((a, i) =>
+                                                                            i === idx ? { ...a, city: e.target.value } : a
+                                                                        ),
+                                                                    }
+                                                                    : null
+                                                            )
+                                                        }
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-1"
+                                                    />
+                                                    <label className="block text-sm text-gray-700">Tỉnh/Bang</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Tỉnh/Bang"
+                                                        value={addr.state ?? ''}
+                                                        onChange={e =>
+                                                            setEditData(editData =>
+                                                                editData
+                                                                    ? {
+                                                                        ...editData,
+                                                                        address: editData.address.map((a, i) =>
+                                                                            i === idx ? { ...a, state: e.target.value } : a
+                                                                        ),
+                                                                    }
+                                                                    : null
+                                                            )
+                                                        }
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-1"
+                                                    />
+                                                    <label className="block text-sm text-gray-700">Mã bưu điện</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Mã bưu điện"
+                                                        value={addr.postalCode ?? ''}
+                                                        onChange={e =>
+                                                            setEditData(editData =>
+                                                                editData
+                                                                    ? {
+                                                                        ...editData,
+                                                                        address: editData.address.map((a, i) =>
+                                                                            i === idx ? { ...a, postalCode: e.target.value } : a
+                                                                        ),
+                                                                    }
+                                                                    : null
+                                                            )
+                                                        }
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-1"
+                                                    />
+                                                    <label className="block text-sm text-gray-700">Quốc gia</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Quốc gia"
+                                                        value={addr.country ?? ''}
+                                                        onChange={e =>
+                                                            setEditData(editData =>
+                                                                editData
+                                                                    ? {
+                                                                        ...editData,
+                                                                        address: editData.address.map((a, i) =>
+                                                                            i === idx ? { ...a, country: e.target.value } : a
+                                                                        ),
+                                                                    }
+                                                                    : null
+                                                            )
+                                                        }
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                                                    />
+                                                    {/* Nút xóa địa chỉ */}
+                                                    {editData.address.length > 1 && addr._id && (
+                                                        <button
+                                                            type="button"
+                                                            className="mt-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                                            onClick={() => handleDeleteAddress(addr._id!)}
+                                                        >
+                                                            Xóa địa chỉ này
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {/* Nút thêm địa chỉ mới */}
+                                            <button
+                                                type="button"
+                                                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                                                onClick={handleAddAddress}
+                                            >
+                                                Thêm địa chỉ mới
+                                            </button>
                                         </>
                                     ) : (
-                                        userData.address && (userData.address.street || userData.address.city || userData.address.state || userData.address.postalCode || userData.address.country) ? (
-                                            <p className="text-gray-900 text-lg">
-                                                {[userData.address.street, userData.address.city, userData.address.state, userData.address.postalCode, userData.address.country].filter(Boolean).join(', ')}
-                                            </p>
+                                        userData.address && userData.address.length > 0 ? (
+                                            <ul className="space-y-2">
+                                                {userData.address.map((addr, idx) => (
+                                                    <li key={addr._id || idx} className="text-gray-900 text-lg">
+                                                        <span className="mr-2">-</span>
+                                                        {[addr.street, addr.city, addr.state, addr.postalCode, addr.country].filter(Boolean).join(', ')}
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         ) : (
                                             <p className="text-gray-500">Chưa cập nhật địa chỉ</p>
                                         )

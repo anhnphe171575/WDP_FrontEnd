@@ -14,6 +14,9 @@ import Header from "@/components/layout/Header"
 import { useRouter } from "next/navigation"
 import axiosInstance from "../../../utils/axios"
 import { useOrder } from "@/context/OrderContext"
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../utils/petPagesConfig.vi';
+import enConfig from '../../../utils/petPagesConfig.en';
 
 interface CartItem {
   _id: string
@@ -76,6 +79,9 @@ async function updateAddress(addressId: string, addressData: Partial<Address>) {
 export { updateAddress }
 
 export default function CheckoutPage() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const checkoutConfig = pagesConfig.checkout;
   const router = useRouter()
   const { setOrderData } = useOrder()
   const [shippingMethod, setShippingMethod] = useState("standard")
@@ -282,12 +288,12 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) {
-      alert('Vui lòng chọn địa chỉ giao hàng!')
+      alert(checkoutConfig.errorSelectAddress)
       return
     }
     
     if (!paymentMethod) {
-      setPaymentError('Vui lòng chọn phương thức thanh toán!')
+      setPaymentError(checkoutConfig.errorSelectPayment)
       setPaymentError("")
       return
     }
@@ -331,11 +337,11 @@ export default function CheckoutPage() {
           // Xóa flag chế độ mua lại khỏi localStorage
           window.location.href = response.data.url
         } else {
-          alert('Không thể tạo thanh toán. Vui lòng thử lại!')
+          alert(checkoutConfig.errorCreatePayment)
         }
       }
     } catch (error) {
-      alert('Có lỗi xảy ra khi đặt hàng!')
+      alert(checkoutConfig.errorPlaceOrder)
       console.error(error)
     } finally {
       setIsPlacingOrder(false)
@@ -361,8 +367,8 @@ export default function CheckoutPage() {
           {/* Cart Items */}
           <Card>
             <CardHeader>
-              <CardTitle>Sản phẩm</CardTitle>
-              <CardDescription>Xem lại sản phẩm trước khi thanh toán</CardDescription>
+              <CardTitle>{checkoutConfig.productTitle}</CardTitle>
+              <CardDescription>{checkoutConfig.productDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {cartItems.map((item) => (
@@ -377,7 +383,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-medium">{item.product.name}</h3>
-                    <p className="text-sm text-muted-foreground">SL: {item.quantity}</p>
+                    <p className="text-sm text-muted-foreground">{checkoutConfig.productQuantity.replace('{item.quantity}', String(item.quantity))}</p>
                   </div>
                   <div className="font-medium">
                     {formatCurrency(item.product.selectedVariant.price * item.quantity)}
@@ -390,8 +396,8 @@ export default function CheckoutPage() {
           {/* Address Selection */}
           <Card>
             <CardHeader>
-              <CardTitle>Địa chỉ giao hàng</CardTitle>
-              <CardDescription>Chọn địa chỉ giao hàng hoặc thêm địa chỉ mới</CardDescription>
+              <CardTitle>{checkoutConfig.addressTitle}</CardTitle>
+              <CardDescription>{checkoutConfig.addressDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Saved Addresses */}
@@ -525,9 +531,9 @@ export default function CheckoutPage() {
 
               {editingAddress && (
                 <div className="border rounded-lg p-4 space-y-4 mt-4">
-                  <h4 className="font-medium">Chỉnh sửa địa chỉ</h4>
+                  <h4 className="font-medium">{checkoutConfig.editAddressTitle}</h4>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-street">Đường</Label>
+                    <Label htmlFor="edit-street">{checkoutConfig.streetLabel}</Label>
                     <Input
                       id="edit-street"
                       value={editAddressData.street}
@@ -536,7 +542,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="edit-city">Thành phố</Label>
+                      <Label htmlFor="edit-city">{checkoutConfig.cityLabel}</Label>
                       <Input
                         id="edit-city"
                         value={editAddressData.city}
@@ -544,7 +550,7 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-state">Tỉnh/Thành</Label>
+                      <Label htmlFor="edit-state">{checkoutConfig.stateLabel}</Label>
                       <Input
                         id="edit-state"
                         value={editAddressData.state}
@@ -553,7 +559,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="edit-postalCode">Mã bưu điện</Label>
+                    <Label htmlFor="edit-postalCode">{checkoutConfig.postalCodeLabel}</Label>
                     <Input
                       id="edit-postalCode"
                       value={editAddressData.postalCode}
@@ -569,18 +575,18 @@ export default function CheckoutPage() {
                           await fetchAddresses()
                           setEditingAddress(null)
                         } catch (error) {
-                          alert('Cập nhật địa chỉ thất bại!')
+                          alert(checkoutConfig.errorUpdateAddress)
                         }
                       }}
                     >
-                      Lưu thay đổi
+                      {checkoutConfig.saveChanges}
                     </Button>
                     <Button
                       variant="outline"
                       className="flex-1"
                       onClick={() => setEditingAddress(null)}
                     >
-                      Hủy
+                      {checkoutConfig.cancel}
                     </Button>
                   </div>
                 </div>
@@ -590,7 +596,7 @@ export default function CheckoutPage() {
               {!showNewAddressForm && (
                 <Button variant="outline" className="w-full" onClick={() => setShowNewAddressForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Thêm địa chỉ mới
+                  {checkoutConfig.addNewAddress}
                 </Button>
               )}
 
@@ -598,17 +604,17 @@ export default function CheckoutPage() {
               {showNewAddressForm && (
                 <div className="border rounded-lg p-4 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Thêm địa chỉ mới</h4>
+                    <h4 className="font-medium">{checkoutConfig.addNewAddressTitle}</h4>
                     <Button variant="ghost" size="sm" onClick={() => setShowNewAddressForm(false)}>
-                      Hủy
+                      {checkoutConfig.cancel}
                     </Button>
                   </div>            
 
                   <div className="space-y-2">
-                    <Label htmlFor="street">Đường</Label>
+                    <Label htmlFor="street">{checkoutConfig.streetLabel}</Label>
                     <Input
                       id="street"
-                      placeholder="Số nhà, tên đường"
+                      placeholder={checkoutConfig.streetPlaceholder}
                       value={newAddress.street}
                       onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
                     />
@@ -616,19 +622,19 @@ export default function CheckoutPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="city">Thành phố</Label>
+                      <Label htmlFor="city">{checkoutConfig.cityLabel}</Label>
                       <Input
                         id="city"
-                        placeholder="Thành phố"
+                        placeholder={checkoutConfig.cityPlaceholder}
                         value={newAddress.city}
                         onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="state">Tỉnh/Thành</Label>
+                      <Label htmlFor="state">{checkoutConfig.stateLabel}</Label>
                       <Input
                         id="state"
-                        placeholder="Tỉnh/Thành"
+                        placeholder={checkoutConfig.statePlaceholder}
                         value={newAddress.state}
                         onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
                       />
@@ -636,10 +642,10 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">Mã bưu điện</Label>
+                    <Label htmlFor="postalCode">{checkoutConfig.postalCodeLabel}</Label>
                     <Input
                       id="postalCode"
-                      placeholder="Mã bưu điện"
+                      placeholder={checkoutConfig.postalCodePlaceholder}
                       value={newAddress.postalCode}
                       onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })}
                     />
@@ -647,10 +653,10 @@ export default function CheckoutPage() {
 
                   <div className="flex gap-2">
                     <Button className="flex-1" onClick={() => handleSaveAddress(false)}>
-                      Lưu địa chỉ
+                      {checkoutConfig.saveAddress}
                     </Button>
                     <Button variant="outline" className="flex-1" onClick={() => handleSaveAddress(true)}>
-                      Lưu và đặt làm mặc định
+                      {checkoutConfig.saveAndSetDefault}
                     </Button>
                   </div>
                 </div>
@@ -760,8 +766,8 @@ export default function CheckoutPage() {
           {/* Shipping Method */}
           <Card>
             <CardHeader>
-              <CardTitle>Phương thức vận chuyển</CardTitle>
-              <CardDescription>Chọn phương thức vận chuyển phù hợp</CardDescription>
+              <CardTitle>{checkoutConfig.shippingTitle}</CardTitle>
+              <CardDescription>{checkoutConfig.shippingDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <RadioGroup value={shippingMethod} onValueChange={setShippingMethod} className="space-y-4">
@@ -770,8 +776,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="standard" className="flex items-center gap-2 cursor-pointer">
                     <Truck className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">Giao hàng tiêu chuẩn</p>
-                      <p className="text-sm text-muted-foreground">3-5 ngày - 30.000₫</p>
+                      <p className="font-medium">{checkoutConfig.shippingStandard}</p>
+                      <p className="text-sm text-muted-foreground">{checkoutConfig.shippingStandardDesc}</p>
                     </div>
                   </Label>
                 </div>
@@ -780,8 +786,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="express" className="flex items-center gap-2 cursor-pointer">
                     <Package className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">Giao hàng nhanh</p>
-                      <p className="text-sm text-muted-foreground">1-2 ngày - 50.000₫</p>
+                      <p className="font-medium">{checkoutConfig.shippingExpress}</p>
+                      <p className="text-sm text-muted-foreground">{checkoutConfig.shippingExpressDesc}</p>
                     </div>
                   </Label>
                 </div>
@@ -795,12 +801,12 @@ export default function CheckoutPage() {
           {/* Order Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Tổng đơn hàng</CardTitle>
+              <CardTitle>{checkoutConfig.orderSummaryTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span>Tạm tính</span>
+                  <span>{checkoutConfig.subtotal}</span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 {voucherDiscount > 0 && (
@@ -810,16 +816,16 @@ export default function CheckoutPage() {
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span>Phí vận chuyển</span>
+                  <span>{checkoutConfig.shippingFee}</span>
                   <span>{formatCurrency(shipping)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Thuế (10%)</span>
+                  <span>{checkoutConfig.tax}</span>
                   <span>{formatCurrency(tax)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-medium text-lg">
-                  <span>Tổng cộng</span>
+                  <span>{checkoutConfig.total}</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
               </div>
@@ -829,8 +835,8 @@ export default function CheckoutPage() {
           {/* Payment Method */}
           <Card>
             <CardHeader>
-              <CardTitle>Phương thức thanh toán</CardTitle>
-              <CardDescription>Chọn phương thức thanh toán</CardDescription>
+              <CardTitle>{checkoutConfig.paymentTitle}</CardTitle>
+              <CardDescription>{checkoutConfig.paymentDescription}</CardDescription>
             </CardHeader>
             <CardContent>
               <RadioGroup value={paymentMethod} onValueChange={(value) => {
@@ -842,8 +848,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="PayOs" className="flex items-center gap-2 cursor-pointer">
                     <CreditCard className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">Thẻ tín dụng/ghi nợ</p>
-                      <p className="text-sm text-muted-foreground">Visa, Mastercard, JCB</p>
+                      <p className="font-medium">{checkoutConfig.paymentCreditCard}</p>
+                      <p className="text-sm text-muted-foreground">{checkoutConfig.paymentCreditCardDesc}</p>
                     </div>
                   </Label>
                 </div>
@@ -852,8 +858,8 @@ export default function CheckoutPage() {
                   <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer">
                     <Package className="h-5 w-5" />
                     <div>
-                      <p className="font-medium">Thanh toán khi nhận hàng (COD)</p>
-                      <p className="text-sm text-muted-foreground">Thanh toán bằng tiền mặt</p>
+                      <p className="font-medium">{checkoutConfig.paymentCOD}</p>
+                      <p className="text-sm text-muted-foreground">{checkoutConfig.paymentCODDesc}</p>
                     </div>
                   </Label>
                 </div>
@@ -864,7 +870,7 @@ export default function CheckoutPage() {
             </CardContent>
             <CardFooter>
               <Button className="w-full" size="lg" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
-                {isPlacingOrder ? 'Đang xử lý...' : 'Đặt hàng'}
+                {isPlacingOrder ? checkoutConfig.processing : checkoutConfig.placeOrder}
               </Button>
             </CardFooter>
           </Card>

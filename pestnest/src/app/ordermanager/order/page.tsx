@@ -14,6 +14,9 @@ import { Edit, Eye, Trash2 } from "lucide-react";
 import NextImage from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import { se } from "date-fns/locale";
+import { useLanguage } from "@/context/LanguageContext";
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface OrderItem {
   productId: string;
@@ -91,7 +94,7 @@ interface OrderFormProps {
   onClose: () => void;
 }
 
-function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
+function OrderForm({ order, onSubmit, isOpen, onClose, config }: OrderFormProps & { config: any }) {
   const [formData, setFormData] = useState<{
     status: Order['status'];
   }>({
@@ -124,11 +127,11 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Update Order Status</DialogTitle>
+          <DialogTitle>{config.updateOrderStatus}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Order Status </Label>
+            <Label>{config.orderStatus }</Label>
             <Select
               value={formData.status}
               onValueChange={(value) => setFormData({ ...formData, status: value as Order['status'] })}
@@ -141,28 +144,28 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
               <SelectContent>
                 {formData.status === 'pending' && (
                   <>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="pending">{config.pending}</SelectItem>
+                    <SelectItem value="processing">{config.processing}</SelectItem>
                   </>
                 )}
                 {formData.status === 'processing' && (
                   <>
-                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="processing">{config.processing}</SelectItem>
                   </>
                 )}
                 {formData.status === 'shipped' && (
                   <>
-                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="shipped">{config.shipped}</SelectItem>
                   </>
                 )}
                 {formData.status === 'completed' && (
                   <>
-                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="completed">{config.completed}</SelectItem>
                   </>
                 )}
                 {formData.status === 'cancelled' && (
                   <>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="cancelled">{config.cancelled}</SelectItem>
                   </>
                 )}
               </SelectContent>
@@ -171,10 +174,10 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {config.cancel}
             </Button>
             <Button type="submit">
-              Save Changes
+              {config.saveChanges}
             </Button>
           </div>
         </form>
@@ -184,6 +187,9 @@ function OrderForm({ order, onSubmit, isOpen, onClose }: OrderFormProps) {
 }
 
 export default function OrderPage() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.orderManagement;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -202,6 +208,7 @@ export default function OrderPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [itemToProcess, setItemToProcess] = useState<any | null>(null);
   const [isViewReasonDialogOpen, setIsViewReasonDialogOpen] = useState(false);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
 
   useEffect(() => {
@@ -338,21 +345,21 @@ export default function OrderPage() {
     currentPage * itemsPerPage
   );
 
-  const getDialogTitle = () => {
+  function getDialogTitle(dialogConfig: any) {
     if (selectedOrder?.status === 'cancelled' || (Array.isArray(selectedReturnItem) && selectedReturnItem.some(i => i.status === 'cancelled' || i.status === 'cancelled-requested'))) {
-      return 'Chi tiết đơn hủy';
+      return dialogConfig.cancelDetail;
     }
     if (Array.isArray(selectedReturnItem) && selectedReturnItem.some(i => i.status === 'returned')) {
-      return 'Chi tiết đơn trả';
+      return dialogConfig.returnDetail;
     }
     if (Array.isArray(selectedReturnItem) && selectedReturnItem.some(i => i.status === 'returned-requested')) {
-      return 'Chi tiết yêu cầu trả hàng';
+      return dialogConfig.returnRequestDetail;
     }
     if (Array.isArray(selectedReturnItem) && selectedReturnItem.some(i => i.status === 'cancelled-requested')) {
-      return 'Chi tiết yêu cầu hủy hàng';
+      return dialogConfig.cancelRequestDetail;
     }
-    return 'Chi tiết đơn hàng';
-  };
+    return dialogConfig.orderDetail;
+  }
 
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -376,13 +383,13 @@ export default function OrderPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Order Management</CardTitle>
+            <CardTitle>{config.title}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search orders..."
+              placeholder={config.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -392,10 +399,10 @@ export default function OrderPage() {
               onValueChange={setSelectedStatus}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={config.allStatus} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">{config.allStatus}</SelectItem>
                 {Object.entries(ORDER_STATUS).map(([key, value]) => (
                   <SelectItem key={value} value={value}>
                     {key.charAt(0) + key.slice(1).toLowerCase()}
@@ -407,7 +414,7 @@ export default function OrderPage() {
               <div className="flex items-center gap-2">
                 <Select value={bulkStatus} onValueChange={setBulkStatus}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Update status" />
+                    <SelectValue placeholder={config.updateStatus} />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(ORDER_STATUS).map(([key, value]) => (
@@ -417,15 +424,11 @@ export default function OrderPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleBulkUpdate}>Update Selected</Button>
+                <Button onClick={handleBulkUpdate}>{config.updateSelected}</Button>
               </div>
             )}
-            <Button
-              variant="outline"
-              onClick={() => document.getElementById('csv-upload-input')?.click()}
-            >
-              Import User with CSV
-            </Button>
+            {// sort order by order.createAt
+            }
             <input
               id="csv-upload-input"
               type="file"
@@ -454,13 +457,13 @@ export default function OrderPage() {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                   />
                 </TableHead>
-                <TableHead>No</TableHead>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Total Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{config.table.no}</TableHead>
+                <TableHead>{config.table.orderId}</TableHead>
+                <TableHead>{config.table.customer}</TableHead>
+                <TableHead>{config.table.totalAmount}</TableHead>
+                <TableHead>{config.table.status}</TableHead>
+                <TableHead>{config.table.date}</TableHead>
+                <TableHead className="text-right">{config.table.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -496,7 +499,7 @@ export default function OrderPage() {
                               setIsReturnDialogOpen(true);
                             }}
                           >
-                            <span role="img" aria-label="Returned">⚠️</span> Có yêu cầu trả hàng
+                            <span role="img" aria-label="Returned">⚠️</span> {config.dialog.returnRequestDetail}
                           </span>
                         )}
                         {order.OrderItems && order.OrderItems.some(item => item.status === 'returned') && (
@@ -508,7 +511,7 @@ export default function OrderPage() {
                               setIsReturnDialogOpen(true);
                             }}
                           >
-                            <span role="img" aria-label="Returned">✅</span> Xem hàng trả
+                            <span role="img" aria-label="Returned">✅</span> {config.dialog.returnDetail}
                           </span>
                         )}
                         {order.OrderItems && order.OrderItems.some(item => item.status === 'cancelled' || item.status === 'cancelled-requested') && (
@@ -520,7 +523,7 @@ export default function OrderPage() {
                               setIsReturnDialogOpen(true);
                             }}
                           >
-                            <span role="img" aria-label="Cancelled">❌</span> Xem hàng đã hủy
+                            <span role="img" aria-label="Cancelled">❌</span> {config.dialog.cancelDetail}
                           </span>
                         )}
                          
@@ -533,7 +536,7 @@ export default function OrderPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        title="View Details"
+                        title={config.table.viewDetails}
                         onClick={() => handleViewDetail(order)}
                       >
                         <Eye className="h-4 w-4" />
@@ -542,7 +545,7 @@ export default function OrderPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
-                        title="Edit Order"
+                        title={config.table.editOrder}
                         onClick={() => handleEditOrder(order)}
                       >
                         <Edit className="h-4 w-4" />
@@ -579,12 +582,13 @@ export default function OrderPage() {
           setSelectedOrder(undefined);
         }}
         onSubmit={handleUpdateOrder}
+        config={config.form}
       />
 
       <Dialog open={isDetailOpen} onOpenChange={() => setIsDetailOpen(false)}>
       <DialogContent className="max-w-xl w-full max-h-screen overflow-y-auto">
       <DialogHeader>
-            <DialogTitle>{getDialogTitle()}</DialogTitle>
+            <DialogTitle>{getDialogTitle(config.dialog)}</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
@@ -595,7 +599,7 @@ export default function OrderPage() {
                   <p className="text-lg font-medium">{selectedOrder.userId.name}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Order Status</Label>
+                  <Label>Status</Label>
                   <Badge className={ORDER_STATUS_COLORS[selectedOrder.status]}>
                     {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
                   </Badge>
@@ -611,7 +615,7 @@ export default function OrderPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Order Items</Label>
+                <Label>{config.detail.orderItems}</Label>
                 <div className="space-y-4">
                   {selectedOrder.OrderItems?.map((item, index) => (
                     <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
@@ -640,7 +644,7 @@ export default function OrderPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Shipping Address</Label>
+                <Label>{config.detail.shippingAddress}</Label>
                 <div className="p-4 border rounded-lg">
                   <p>{selectedOrder.address?.street}</p>
                   <p>{selectedOrder.address?.city}, {selectedOrder.address?.state}</p>
@@ -650,9 +654,9 @@ export default function OrderPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Order Information</Label>
-                <p><strong>Created At:</strong> {selectedOrder.createAt ? new Date(selectedOrder.createAt).toLocaleString() : 'N/A'}</p>
-                <p><strong>Last Updated:</strong> {selectedOrder.updatedAt ? new Date(selectedOrder.updatedAt).toLocaleString() : 'N/A'}</p>
+                <Label>{config.detail.orderInformation}</Label>
+                <p><strong>{config.detail.createdAt}:</strong> {selectedOrder.createAt ? new Date(selectedOrder.createAt).toLocaleString() : 'N/A'}</p>
+                <p><strong>{config.detail.lastUpdated}:</strong> {selectedOrder.updatedAt ? new Date(selectedOrder.updatedAt).toLocaleString() : 'N/A'}</p>
               </div>
             </div>
           )}
@@ -667,7 +671,7 @@ export default function OrderPage() {
             onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            {config.pagination.previous}
           </Button>
           <div className="flex items-center gap-1">
             {(() => {
@@ -785,7 +789,7 @@ export default function OrderPage() {
             onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredOrders.length / itemsPerPage)))}
             disabled={currentPage === Math.ceil(filteredOrders.length / itemsPerPage)}
           >
-            Next
+            {config.pagination.next}
           </Button>
         </div>
       </div>
@@ -793,7 +797,7 @@ export default function OrderPage() {
       <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{getDialogTitle()}</DialogTitle>
+            <DialogTitle>{getDialogTitle(config.dialog)}</DialogTitle>
           </DialogHeader>
           {selectedReturnItem && selectedReturnItem.map((item, index) => (
             <div className="space-y-4" key={item._id || index}>
@@ -809,9 +813,9 @@ export default function OrderPage() {
                   </div>
                 )}
                 <div>
-                  <div><b>Sản phẩm:</b> {item.productId?.name}</div>
-                  <div><b>Số lượng:</b> {item.returnQuantity}</div>
-                  <div><b>Lý do:</b> {item.reason || 'Không có lý do'}</div>
+                  <div><b>{config.return.product}</b> {item.productId?.name}</div>
+                  <div><b>{config.return.quantity}</b> {item.returnQuantity}</div>
+                  <div><b>{config.return.reason}</b> {item.reason || config.return.noReason}</div>
                 </div>
               </div>
               {item.status === 'returned-requested' ? (
@@ -821,7 +825,7 @@ export default function OrderPage() {
                     setIsReturnDialogOpen(false);
                     setIsRejectReasonDialogOpen(true);
                   }}>
-                    Từ chối
+                    {config.return.reject}
                   </Button>
                   <Button
                     onClick={async () => {
@@ -836,13 +840,13 @@ export default function OrderPage() {
                       }
                     }}
                   >
-                    Chấp nhận
+                    {config.return.accept}
                   </Button>
                 </div>
               ) : item.status === 'returned' ? (
-                <div className="text-green-600">Đơn hàng đã được trả thành công.</div>
+                <div className="text-green-600">{config.return.returnedSuccess}</div>
               ) : item.status === 'cancelled' ? (
-                <div className="text-red-600">Đơn hàng đã bị hủy.</div>
+                <div className="text-red-600">{config.return.cancelled}</div>
               ) : null}
             </div>
           ))}
@@ -851,10 +855,10 @@ export default function OrderPage() {
        <Dialog open={isRejectReasonDialogOpen} onOpenChange={setIsRejectReasonDialogOpen}>
           <DialogContent>
               <DialogHeader>
-                  <DialogTitle>Lý do từ chối trả hàng</DialogTitle>
+                  <DialogTitle>{config.rejectReason.title}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                  <Label htmlFor="rejectionReason">Vui lòng nhập lý do từ chối:</Label>
+                  <Label htmlFor="rejectionReason">{config.rejectReason.inputLabel}</Label>
                   <textarea
                       id="rejectionReason"
                       value={rejectionReason}
@@ -864,10 +868,10 @@ export default function OrderPage() {
                   />
                   <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setIsRejectReasonDialogOpen(false)}>
-                          Hủy
+                          {config.form.cancel}
                       </Button>
                       <Button onClick={handleRejectReturn}>
-                          Xác nhận từ chối
+                          {config.rejectReason.confirm}
                       </Button>
                   </div>
               </div>
@@ -877,18 +881,18 @@ export default function OrderPage() {
       <Dialog open={isViewReasonDialogOpen} onOpenChange={setIsViewReasonDialogOpen}>
           <DialogContent>
               <DialogHeader>
-                  <DialogTitle>Lý do từ chối trả hàng</DialogTitle>
+                  <DialogTitle>{config.rejectReason.title}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                   <p className="text-sm text-gray-500">
-                      Lý do từ chối cho đơn hàng #{selectedOrder?._id?.slice(-6)}:
+                      {config.rejectReason.reasonForOrder}{selectedOrder?._id?.slice(-6)}:
                   </p>
                   <div className="p-4 bg-gray-100 rounded-md">
-                      <p>{selectedOrder?.reasonRejectCancel || 'Không có lý do được cung cấp.'}</p>
+                      <p>{selectedOrder?.reasonRejectCancel || config.rejectReason.noReasonProvided}</p>
                   </div>
                   <div className="flex justify-end">
                       <Button variant="outline" onClick={() => setIsViewReasonDialogOpen(false)}>
-                          Đóng
+                          {config.rejectReason.close}
                       </Button>
                   </div>
               </div>
