@@ -202,6 +202,7 @@ export default function OrderPage() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [itemToProcess, setItemToProcess] = useState<any | null>(null);
   const [isViewReasonDialogOpen, setIsViewReasonDialogOpen] = useState(false);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
 
   useEffect(() => {
@@ -420,12 +421,8 @@ export default function OrderPage() {
                 <Button onClick={handleBulkUpdate}>Update Selected</Button>
               </div>
             )}
-            <Button
-              variant="outline"
-              onClick={() => document.getElementById('csv-upload-input')?.click()}
-            >
-              Import User with CSV
-            </Button>
+            {// sort order by order.createAt
+            }
             <input
               id="csv-upload-input"
               type="file"
