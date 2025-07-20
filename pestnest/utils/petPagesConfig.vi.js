@@ -594,6 +594,294 @@ userstatistics: {
     cancellationDesc: "Thông tin chi tiết về các khách hàng có tỷ lệ hủy đơn cao"
   }
 },
+voucherManagement: {
+  title: "Quản lý Voucher",
+  addNewButton: "Tạo Voucher Mới",
+  form: {
+    addTitle: "Tạo Voucher Mới",
+    editTitle: "Chỉnh sửa Voucher",
+    fields: {
+      code: "Mã Voucher",
+      discountAmount: "Số tiền giảm giá",
+      discountPercent: "Phần trăm giảm giá",
+      validFrom: "Thời gian bắt đầu",
+      validTo: "Thời gian kết thúc",
+      usageLimit: "Số lần sử dụng tối đa"
+    },
+    buttons: {
+      cancel: "Hủy",
+      add: "Tạo Voucher",
+      save: "Cập nhật Voucher"
+    }
+  },
+  search: {
+    placeholder: "Tìm kiếm voucher..."
+  },
+  table: {
+    headers: {
+      no: "STT",
+      code: "Mã Voucher",
+      discount: "Giảm giá",
+      validTime: "Thời gian hiệu lực",
+      usage: "Số lần sử dụng",
+      actions: "Thao tác"
+    },
+    validFrom: "Từ:",
+    validTo: "Đến:",
+    edit: "Chỉnh sửa",
+    delete: "Xóa"
+  },
+  error: {
+    fetch: "Lỗi khi tải danh sách voucher",
+    duplicateCode: "Mã voucher đã tồn tại",
+    invalidStartDate: "Thời gian bắt đầu phải từ ngày hôm nay trở đi",
+    create: "Lỗi khi tạo voucher",
+    discountType: "Chỉ được nhập một loại giảm giá",
+    update: "Lỗi khi cập nhật voucher",
+    delete: "Lỗi khi xóa voucher"
+  },
+  success: {
+    create: "Tạo voucher thành công",
+    update: "Cập nhật voucher thành công",
+    delete: "Xóa voucher thành công"
+  },
+  confirm: {
+    delete: "Bạn có chắc chắn muốn xóa voucher này?"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Sau"
+  }
+},
+suportRequest: {
+  pageTitle: "Danh sách yêu cầu Hỗ trợ",
+  search: {
+    placeholder: "Tìm kiếm theo tiêu đề, mô tả...",
+    statusPlaceholder: "Trạng thái",
+    all: "Tất cả"
+  },
+  table: {
+    headers: {
+      no: "STT",
+      title: "Tiêu đề",
+      description: "Mô tả",
+      createdAt: "Ngày giao",
+      status: "Trạng thái",
+      actions: "Thao tác"
+    },
+    noData: "Không có request nào phù hợp."
+  },
+  status: {
+    new: "Mới",
+    processing: "Đang xử lý",
+    resolved: "Đã xử lý",
+    rejected: "Từ chối"
+  },
+  priority: {
+    urgent: "Khẩn cấp",
+    high: "Cao",
+    normal: "Bình thường"
+  },
+  detail: {
+    title: "Chi tiết Yêu cầu hỗ trợ",
+    fields: {
+      title: "Tiêu đề",
+      noTitle: "(Không có)",
+      content: "Nội dung",
+      status: "Trạng thái",
+      priority: "Mức độ ưu tiên",
+      handler: "Người xử lý",
+      noHandler: "(Chưa có)",
+      createdAt: "Ngày tạo",
+      updatedAt: "Ngày cập nhật",
+      response: "Phản hồi",
+      internalNote: "Ghi chú nội bộ"
+    },
+    buttons: {
+      save: "Lưu",
+      cancel: "Huỷ",
+      close: "Đóng"
+    },
+    updateStatus: "Cập nhật trạng thái"
+  },
+  actions: {
+    viewDetail: "Xem chi tiết"
+  },
+  loading: "Đang tải dữ liệu...",
+  pagination: {
+    previous: "Trước",
+    next: "Sau"
+  }
+},
+checkout : {
+  title: "Thanh toán",
+  productTitle: "Sản phẩm",
+  productDescription: "Xem lại sản phẩm trước khi thanh toán",
+  productQuantity: "SL: {item.quantity}",
+  addressTitle: "Địa chỉ giao hàng",
+  addressDescription: "Chọn địa chỉ giao hàng hoặc thêm địa chỉ mới",
+  savedAddresses: "Địa chỉ đã lưu",
+  defaultAddress: "Mặc định",
+  editAddressTitle: "Chỉnh sửa địa chỉ",
+  streetLabel: "Đường",
+  cityLabel: "Thành phố",
+  stateLabel: "Tỉnh/Thành",
+  postalCodeLabel: "Mã bưu điện",
+  saveChanges: "Lưu thay đổi",
+  cancel: "Hủy",
+  addNewAddress: "Thêm địa chỉ mới",
+  addNewAddressTitle: "Thêm địa chỉ mới",
+  streetPlaceholder: "Số nhà, tên đường",
+  cityPlaceholder: "Thành phố",
+  statePlaceholder: "Tỉnh/Thành",
+  postalCodePlaceholder: "Mã bưu điện",
+  saveAddress: "Lưu địa chỉ",
+  saveAndSetDefault: "Lưu và đặt làm mặc định",
+  shippingTitle: "Phương thức vận chuyển",
+  shippingDescription: "Chọn phương thức vận chuyển phù hợp",
+  shippingStandard: "Giao hàng tiêu chuẩn",
+  shippingStandardDesc: "3-5 ngày - 30.000₫",
+  shippingExpress: "Giao hàng nhanh",
+  shippingExpressDesc: "1-2 ngày - 50.000₫",
+  orderSummaryTitle: "Tổng đơn hàng",
+  subtotal: "Tạm tính",
+  shippingFee: "Phí vận chuyển",
+  tax: "Thuế (10%)",
+  total: "Tổng cộng",
+  paymentTitle: "Phương thức thanh toán",
+  paymentDescription: "Chọn phương thức thanh toán",
+  paymentCreditCard: "Thẻ tín dụng/ghi nợ",
+  paymentCreditCardDesc: "Visa, Mastercard, JCB",
+  paymentCOD: "Thanh toán khi nhận hàng (COD)",
+  paymentCODDesc: "Thanh toán bằng tiền mặt",
+  processing: "Đang xử lý...",
+  placeOrder: "Đặt hàng",
+  errorSelectAddress: "Vui lòng chọn địa chỉ giao hàng!",
+  errorSelectPayment: "Vui lòng chọn phương thức thanh toán!",
+  errorCreatePayment: "Không thể tạo thanh toán. Vui lòng thử lại!",
+  errorPlaceOrder: "Có lỗi xảy ra khi đặt hàng!",
+  errorUpdateAddress: "Cập nhật địa chỉ thất bại!"
+},
+orderManagement: {
+  title: "Quản lý đơn hàng",
+  searchPlaceholder: "Tìm kiếm đơn hàng...",
+  allStatus: "Tất cả trạng thái",
+  updateStatus: "Cập nhật trạng thái",
+  updateSelected: "Cập nhật đã chọn",
+  importCSV: "Nhập người dùng bằng CSV",
+  table: {
+    no: "STT",
+    orderId: "Mã đơn hàng",
+    customer: "Khách hàng",
+    totalAmount: "Tổng tiền",
+    status: "Trạng thái",
+    date: "Ngày",
+    actions: "Thao tác",
+    viewDetails: "Xem chi tiết",
+    editOrder: "Chỉnh sửa đơn"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  form: {
+    updateOrderStatus: "Cập nhật trạng thái đơn hàng",
+    orderStatus: "Trạng thái đơn hàng",
+    saveChanges: "Lưu thay đổi",
+    cancel: "Hủy"
+  },
+  detail: {
+    orderItems: "Sản phẩm trong đơn",
+    shippingAddress: "Địa chỉ giao hàng",
+    orderInformation: "Thông tin đơn hàng",
+    createdAt: "Ngày tạo",
+    lastUpdated: "Cập nhật lần cuối"
+  },
+  dialog: {
+    cancelDetail: "Chi tiết đơn hủy",
+    returnDetail: "Chi tiết đơn trả",
+    returnRequestDetail: "Chi tiết yêu cầu trả hàng",
+    cancelRequestDetail: "Chi tiết yêu cầu hủy hàng",
+    orderDetail: "Chi tiết đơn hàng"
+  },
+  return: {
+    product: "Sản phẩm:",
+    quantity: "Số lượng:",
+    reason: "Lý do:",
+    noReason: "Không có lý do",
+    reject: "Từ chối",
+    accept: "Chấp nhận",
+    returnedSuccess: "Đơn hàng đã được trả thành công.",
+    cancelled: "Đơn hàng đã bị hủy."
+  },
+  rejectReason: {
+    title: "Lý do từ chối trả hàng",
+    inputLabel: "Vui lòng nhập lý do từ chối:",
+    confirm: "Xác nhận từ chối",
+    close: "Đóng",
+    reasonForOrder: "Lý do từ chối cho đơn hàng #",
+    noReasonProvided: "Không có lý do được cung cấp."
+  }
+},
+orderDashboard: {
+  stats: {
+    totalOrders: "Tổng số đơn hàng",
+    noDataLastMonth: "Không có dữ liệu từ tháng trước",
+    percentFromLastMonth: "% so với tháng trước",
+    totalRevenue: "Tổng doanh thu",
+    totalRevenueCompleted: "Tổng doanh thu đơn hoàn thành",
+    revenueCurrentMonth: "Doanh thu tháng này",
+    noRevenueCurrentMonth: "Không có doanh thu tháng này",
+    percentFromLastYear: "% so với năm trước",
+    revenueCurrentYear: "Doanh thu năm nay",
+    noDataLastYear: "Không có dữ liệu từ năm trước"
+  },
+  recommendation: {
+    title: "🤔 Which products should we import?",
+    description: "AI-powered recommendations based on sales data, stock levels, and market trends",
+    import: "Should import",
+    noImport: "No import",
+    currentStock: "Current Stock",
+    units: "units",
+    monthlySales: "Monthly Sales",
+    brand: "Brand",
+    suggestQuantity: "Suggest Quantity",
+    importType: "Import Type",
+    why: "Why:",
+    whyImport: "Low stock with high demand - recommended to import",
+    whyNoImport: "Stock levels are adequate"
+  },
+  orderStatus: {
+    pending: "Chờ xử lý",
+    processing: "Đang xử lý",
+    shipping: "Đang giao",
+    cancelled: "Đã hủy",
+    completed: "Hoàn thành",
+    returned: "Đã trả hàng"
+  },
+  charts: {
+    monthlyOrders: "Đơn hàng theo tháng",
+    monthlyOrdersDesc: "Số lượng đơn hàng theo từng tháng",
+    orders: "Đơn hàng",
+    orderStatusDistribution: "Phân bố trạng thái đơn hàng",
+    year: "Năm",
+    month: "Tháng",
+    months: [
+      "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+      "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+    ],
+    tooltip: "{name}: {value} đơn"
+  },
+  tables: {
+    bestSelling: "Top 5 sản phẩm bán chạy",
+    worstSelling: "Top 5 sản phẩm bán chậm",
+    loading: "Đang tải...",
+    name: "Tên",
+    brand: "Thương hiệu",
+    price: "Giá",
+    sold: "Đã bán"
+  }
+}
 };
 
 export default pagesConfig;

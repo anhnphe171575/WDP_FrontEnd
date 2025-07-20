@@ -213,6 +213,7 @@ export default function AdminBusinessLayout({
           <SidebarTrigger className="ml-2" />
         </div>
       <SidebarInset>
+        {/* Không render Footer ở adminbusiness */}
         {children}
       </SidebarInset>
     </SidebarProvider>

@@ -590,6 +590,295 @@ const pagesConfig = {
         cancellationTitle: "Customer Cancellation Details",
         cancellationDesc: "Detailed information about customers with high cancellation rates"
       }
+    },
+    voucherManagement: {
+      title: "Voucher Management",
+      addNewButton: "Add New Voucher",
+      form: {
+        addTitle: "Add New Voucher",
+        editTitle: "Edit Voucher",
+        fields: {
+          code: "Voucher Code",
+          discountAmount: "Discount Amount",
+          discountPercent: "Discount Percent",
+          validFrom: "Start Time",
+          validTo: "End Time",
+          usageLimit: "Usage Limit"
+        },
+        buttons: {
+          cancel: "Cancel",
+          add: "Create Voucher",
+          save: "Update Voucher"
+        }
+      },
+      search: {
+        placeholder: "Search voucher..."
+      },
+      table: {
+        headers: {
+          no: "No.",
+          code: "Voucher Code",
+          discount: "Discount",
+          validTime: "Validity Period",
+          usage: "Usage",
+          actions: "Actions"
+        },
+        validFrom: "From:",
+        validTo: "To:",
+        edit: "Edit",
+        delete: "Delete"
+      },
+      error: {
+        fetch: "Error loading voucher list",
+        duplicateCode: "Voucher code already exists",
+        invalidStartDate: "Start time must be today or later",
+        create: "Error creating voucher",
+        discountType: "Only one type of discount can be entered",
+        update: "Error updating voucher",
+        delete: "Error deleting voucher"
+      },
+      success: {
+        create: "Voucher created successfully",
+        update: "Voucher updated successfully",
+        delete: "Voucher deleted successfully"
+      },
+      confirm: {
+        delete: "Are you sure you want to delete this voucher?"
+      },
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      }
+    },
+    suportRequest: {
+      pageTitle: "Support Request List",
+      search: {
+        placeholder: "Search by title, description...",
+        statusPlaceholder: "Status",
+        all: "All"
+      },
+      table: {
+        headers: {
+          no: "No.",
+          title: "Title",
+          description: "Description",
+          createdAt: "Created Date",
+          status: "Status",
+          actions: "Actions"
+        },
+        noData: "No matching requests found."
+      },
+      status: {
+        new: "New",
+        processing: "Processing",
+        resolved: "Resolved",
+        rejected: "Rejected"
+      },
+      priority: {
+        urgent: "Urgent",
+        high: "High",
+        normal: "Normal"
+      },
+      detail: {
+        title: "Support Request Detail",
+        fields: {
+          title: "Title",
+          noTitle: "(None)",
+          content: "Content",
+          status: "Status",
+          priority: "Priority",
+          handler: "Handler",
+          noHandler: "(None)",
+          createdAt: "Created At",
+          updatedAt: "Updated At",
+          response: "Response",
+          internalNote: "Internal Note"
+        },
+        buttons: {
+          save: "Save",
+          cancel: "Cancel",
+          close: "Close"
+        },
+        updateStatus: "Update status"
+      },
+      actions: {
+        viewDetail: "View detail"
+      },
+      loading: "Loading data...",
+      pagination: {
+        previous: "Previous",
+        next: "Next"
+      }
+    },
+    checkout : {
+      title: "Checkout",
+      productTitle: "Product(s)",
+      productDescription: "Review your products before checkout",
+      productQuantity: "Qty: {item.quantity}",
+      addressTitle: "Shipping Address",
+      addressDescription: "Select a shipping address or add a new one",
+      savedAddresses: "Saved Addresses",
+      defaultAddress: "Default",
+      editAddressTitle: "Edit Address",
+      streetLabel: "Street",
+      cityLabel: "City",
+      stateLabel: "State/Province",
+      postalCodeLabel: "Postal Code",
+      saveChanges: "Save Changes",
+      cancel: "Cancel",
+      addNewAddress: "Add New Address",
+      addNewAddressTitle: "Add New Address",
+      streetPlaceholder: "House number, street name",
+      cityPlaceholder: "City",
+      statePlaceholder: "State/Province",
+      postalCodePlaceholder: "Postal Code",
+      saveAddress: "Save Address",
+      saveAndSetDefault: "Save & Set as Default",
+      shippingTitle: "Shipping Method",
+      shippingDescription: "Choose a suitable shipping method",
+      shippingStandard: "Standard Shipping",
+      shippingStandardDesc: "3-5 days - 30,000₫",
+      shippingExpress: "Express Shipping",
+      shippingExpressDesc: "1-2 days - 50,000₫",
+      orderSummaryTitle: "Order Summary",
+      subtotal: "Subtotal",
+      shippingFee: "Shipping Fee",
+      tax: "Tax (10%)",
+      total: "Total",
+      paymentTitle: "Payment Method",
+      paymentDescription: "Select a payment method",
+      paymentCreditCard: "Credit/Debit Card",
+      paymentCreditCardDesc: "Visa, Mastercard, JCB",
+      paymentCOD: "Cash on Delivery (COD)",
+      paymentCODDesc: "Pay with cash",
+      processing: "Processing...",
+      placeOrder: "Place Order",
+      errorSelectAddress: "Please select a shipping address!",
+      errorSelectPayment: "Please select a payment method!",
+      errorCreatePayment: "Unable to create payment. Please try again!",
+      errorPlaceOrder: "An error occurred while placing the order!",
+      errorUpdateAddress: "Failed to update address!"
+    },
+    orderManagement: {
+        title: "Order Management",
+        searchPlaceholder: "Search orders...",
+        allStatus: "All Status",
+        updateStatus: "Update status",
+        updateSelected: "Update Selected",
+        importCSV: "Import User with CSV",
+        table: {
+          no: "No",
+          orderId: "Order ID",
+          customer: "Customer",
+          totalAmount: "Total Amount",
+          status: "Status",
+          date: "Date",
+          actions: "Actions",
+          viewDetails: "View Details",
+          editOrder: "Edit Order"
+        },
+        pagination: {
+          previous: "Previous",
+          next: "Next"
+        },
+        form: {
+          updateOrderStatus: "Update Order Status",
+          orderStatus: "Order Status",
+          saveChanges: "Save Changes",
+          cancel: "Cancel"
+        },
+        detail: {
+          orderItems: "Order Items",
+          shippingAddress: "Shipping Address",
+          orderInformation: "Order Information",
+          createdAt: "Created At",
+          lastUpdated: "Last Updated"
+        },
+        dialog: {
+          cancelDetail: "Cancel Order Detail",
+          returnDetail: "Return Order Detail",
+          returnRequestDetail: "Return Request Detail",
+          cancelRequestDetail: "Cancel Request Detail",
+          orderDetail: "Order Detail"
+        },
+        return: {
+          product: "Product:",
+          quantity: "Quantity:",
+          reason: "Reason:",
+          noReason: "No reason",
+          reject: "Reject",
+          accept: "Accept",
+          returnedSuccess: "Order has been returned successfully.",
+          cancelled: "Order has been cancelled."
+        },
+        rejectReason: {
+          title: "Reason for rejecting return",
+          inputLabel: "Please enter the reason for rejection:",
+          confirm: "Confirm rejection",
+          close: "Close",
+          reasonForOrder: "Reason for rejection for order #",
+          noReasonProvided: "No reason provided."
+        }
+      
+    },
+    orderDashboard: {
+      stats: {
+        totalOrders: "Total Orders",
+        noDataLastMonth: "No data from last month",
+        percentFromLastMonth: "% from last month",
+        totalRevenue: "Total Revenue",
+        totalRevenueCompleted: "total revenue order completed",
+        revenueCurrentMonth: "Revenue Current Month",
+        noRevenueCurrentMonth: "No revenue current month",
+        percentFromLastYear: "% from last year",
+        revenueCurrentYear: "Revenue Current Years",
+        noDataLastYear: "No data from last year"
+      },
+      recommendation: {
+        title: "🤔 Which products should we import?",
+        description: "AI-powered recommendations based on sales data, stock levels, and market trends",
+        import: "Import",
+        noImport: "No Import",
+        currentStock: "Current Stock",
+        units: "units",
+        monthlySales: "Monthly Sales",
+        brand: "Brand",
+        suggestQuantity: "Suggest Quantity",
+        importType: "Import Type",
+        why: "Why:",
+        whyImport: "Low stock with high demand - recommended to import",
+        whyNoImport: "Stock levels are adequate"
+      },
+      charts: {
+        monthlyOrders: "Monthly Orders",
+        monthlyOrdersDesc: "Order volume by month",
+        orders: "Orders",
+        orderStatusDistribution: "Order Status Distribution",
+        year: "Year",
+        month: "Month",
+        months: [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ],
+        tooltip: "{name}: {value} orders"
+      },
+      tables: {
+        bestSelling: "Top 5 Best-Selling Products",
+        worstSelling: "Top 5 Worst-Selling Products",
+        loading: "Loading...",
+        name: "Name",
+        brand: "Brand",
+        price: "Price",
+        sold: "Sold"
+      },
+      orderStatus: {
+        pending: "Pending",
+        processing: "Processing",
+        shipping: "Shipping",
+        cancelled: "Cancelled",
+        completed: "Completed",
+        returned: "Returned"
+      }
     }
   };
   

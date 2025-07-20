@@ -24,6 +24,9 @@ import { Toaster } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { Edit, Trash2, Plus } from "lucide-react";
+import { useLanguage } from '@/context/LanguageContext';
+import pagesConfigEn from '../../../../utils/petPagesConfig.en';
+import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
 
 interface Voucher {
   _id: string;
@@ -83,6 +86,8 @@ function Pagination({ filteredVouchers, itemsPerPage, currentPage, setCurrentPag
 }
 
 export default function VoucherPage() {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.voucherManagement : pagesConfigVi.voucherManagement;
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +115,7 @@ export default function VoucherPage() {
       const data = await response.json();
       setVouchers(data);
     } catch {
-      setError('Lỗi khi tải danh sách voucher');
+      setError(config.error.fetch);
     } finally {
       setLoading(false);
     }
@@ -131,7 +136,7 @@ export default function VoucherPage() {
     // Kiểm tra mã voucher trùng lặp
     const isCodeExists = vouchers.some(voucher => voucher.code === formData.code);
     if (isCodeExists) {
-      setError('Mã voucher đã tồn tại');
+      setError(config.error.duplicateCode);
       return;
     }
 
@@ -141,7 +146,7 @@ export default function VoucherPage() {
     today.setHours(0, 0, 0, 0); // Đặt giờ về 00:00:00
 
     if (startDate < today) {
-      setError('Thời gian bắt đầu phải từ ngày hôm nay trở đi');
+      setError(config.error.invalidStartDate);
       return;
     }
 
@@ -156,7 +161,7 @@ export default function VoucherPage() {
       });
 
       if (response.ok) {
-        setSuccessMessage('Tạo voucher thành công');
+        setSuccessMessage(config.success.create);
         setIsCreateDialogOpen(false);
         fetchVouchers();
         resetForm();
@@ -166,10 +171,10 @@ export default function VoucherPage() {
         }, 3000);
       } else {
         const error = await response.json();
-        setError(error.message || 'Lỗi khi tạo voucher');
+        setError(error.message || config.error.create);
       }
     } catch {
-      setError('Lỗi khi tạo voucher');
+      setError(config.error.create);
     }
   };
 
@@ -180,7 +185,7 @@ export default function VoucherPage() {
 
     // Kiểm tra chỉ được nhập một loại giảm giá
     if (formData.discountAmount && formData.discountPercent) {
-      setError('Chỉ được nhập một loại giảm giá');
+      setError(config.error.discountType);
       return;
     }
 
@@ -199,7 +204,7 @@ export default function VoucherPage() {
       });
 
       if (response.ok) {
-        setSuccessMessage('Cập nhật voucher thành công');
+        setSuccessMessage(config.success.update);
         setIsEditDialogOpen(false);
         fetchVouchers();
         resetForm();
@@ -209,16 +214,16 @@ export default function VoucherPage() {
         }, 3000);
       } else {
         const error = await response.json();
-        setError(error.message || 'Lỗi khi cập nhật voucher');
+        setError(error.message || config.error.update);
       }
     } catch {
-      setError('Lỗi khi cập nhật voucher');
+      setError(config.error.update);
     }
   };
 
   // Xóa voucher
   const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa voucher này?')) return;
+    if (!confirm(config.confirm.delete)) return;
 
     try {
       const response = await fetch(`http://localhost:5000/api/vouchers/${id}`, {
@@ -229,7 +234,7 @@ export default function VoucherPage() {
       });
 
       if (response.ok) {
-        setSuccessMessage('Xóa voucher thành công');
+        setSuccessMessage(config.success.delete);
         fetchVouchers();
         // Clear success message after 3 seconds
         setTimeout(() => {
@@ -237,10 +242,10 @@ export default function VoucherPage() {
         }, 3000);
       } else {
         const error = await response.json();
-        setError(error.message || 'Lỗi khi xóa voucher');
+        setError(error.message || config.error.delete);
       }
     } catch {
-      setError('Lỗi khi xóa voucher');
+      setError(config.error.delete);
     }
   };
 
@@ -276,13 +281,13 @@ export default function VoucherPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Quản lý Voucher</CardTitle>
+            <CardTitle>{config.title}</CardTitle>
             <Button onClick={() => {
               resetForm();
               setIsCreateDialogOpen(true);
             }}>
               <Plus className="h-4 w-4 mr-2" />
-              Tạo Voucher Mới
+              {config.addNewButton}
             </Button>
           </div>
         </CardHeader>
@@ -299,7 +304,7 @@ export default function VoucherPage() {
           )}
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Tìm kiếm voucher..."
+              placeholder={config.search.placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -315,12 +320,12 @@ export default function VoucherPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="font-bold">STT</TableHead>
-                    <TableHead className="font-bold">Mã Voucher</TableHead>
-                    <TableHead className="font-bold">Giảm giá</TableHead>
-                    <TableHead className="font-bold">Thời gian hiệu lực</TableHead>
-                    <TableHead className="font-bold">Số lần sử dụng</TableHead>
-                    <TableHead className="text-right font-bold">Thao tác</TableHead>
+                    <TableHead className="font-bold">{config.table.headers.no}</TableHead>
+                    <TableHead className="font-bold">{config.table.headers.code}</TableHead>
+                    <TableHead className="font-bold">{config.table.headers.discount}</TableHead>
+                    <TableHead className="font-bold">{config.table.headers.validTime}</TableHead>
+                    <TableHead className="font-bold">{config.table.headers.usage}</TableHead>
+                    <TableHead className="text-right font-bold">{config.table.headers.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -339,8 +344,8 @@ export default function VoucherPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>Từ: {format(new Date(voucher.validFrom), 'dd/MM/yyyy HH:mm', { locale: vi })}</div>
-                          <div>Đến: {format(new Date(voucher.validTo), 'dd/MM/yyyy HH:mm', { locale: vi })}</div>
+                          <div>{config.table.validFrom} {format(new Date(voucher.validFrom), 'dd/MM/yyyy HH:mm', { locale: vi })}</div>
+                          <div>{config.table.validTo} {format(new Date(voucher.validTo), 'dd/MM/yyyy HH:mm', { locale: vi })}</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -354,7 +359,7 @@ export default function VoucherPage() {
                             variant="ghost" 
                             size="sm" 
                             className="h-8 w-8 p-0" 
-                            title="Chỉnh sửa"
+                            title={config.table.edit}
                             onClick={() => openEditDialog(voucher)}
                           >
                             <Edit className="h-4 w-4" />
@@ -363,7 +368,7 @@ export default function VoucherPage() {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Xóa"
+                            title={config.table.delete}
                             onClick={() => handleDelete(voucher._id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -393,11 +398,11 @@ export default function VoucherPage() {
       }}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold mb-4">Tạo Voucher Mới</DialogTitle>
+            <DialogTitle className="text-2xl font-bold mb-4">{config.form.addTitle}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="code" className="text-base">Mã Voucher <span className="text-red-500">*</span></Label>
+              <Label htmlFor="code" className="text-base">{config.form.fields.code} <span className="text-red-500">*</span></Label>
               <Input
                 id="code"
                 value={formData.code}
@@ -408,7 +413,7 @@ export default function VoucherPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="discountAmount" className="text-base">Số tiền giảm giá</Label>
+                <Label htmlFor="discountAmount" className="text-base">{config.form.fields.discountAmount}</Label>
                 <Input
                   id="discountAmount"
                   type="number"
@@ -426,7 +431,7 @@ export default function VoucherPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="discountPercent" className="text-base">Phần trăm giảm giá</Label>
+                <Label htmlFor="discountPercent" className="text-base">{config.form.fields.discountPercent}</Label>
                 <Input
                   id="discountPercent"
                   type="number"
@@ -446,7 +451,7 @@ export default function VoucherPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="validFrom" className="text-base">Thời gian bắt đầu <span className="text-red-500">*</span></Label>
+                <Label htmlFor="validFrom" className="text-base">{config.form.fields.validFrom} <span className="text-red-500">*</span></Label>
                 <Input
                   id="validFrom"
                   type="datetime-local"
@@ -457,7 +462,7 @@ export default function VoucherPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="validTo" className="text-base">Thời gian kết thúc <span className="text-red-500">*</span></Label>
+                <Label htmlFor="validTo" className="text-base">{config.form.fields.validTo} <span className="text-red-500">*</span></Label>
                 <Input
                   id="validTo"
                   type="datetime-local"
@@ -469,7 +474,7 @@ export default function VoucherPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="usageLimit" className="text-base">Số lần sử dụng tối đa <span className="text-red-500">*</span></Label>
+              <Label htmlFor="usageLimit" className="text-base">{config.form.fields.usageLimit} <span className="text-red-500">*</span></Label>
               <Input
                 id="usageLimit"
                 type="number"
@@ -481,9 +486,9 @@ export default function VoucherPage() {
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                Hủy
+                {config.form.buttons.cancel}
               </Button>
-              <Button type="submit" className="h-10 text-base">Tạo Voucher</Button>
+              <Button type="submit" className="h-10 text-base">{config.form.buttons.add}</Button>
             </div>
           </form>
         </DialogContent>
@@ -492,11 +497,11 @@ export default function VoucherPage() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold mb-4">Chỉnh sửa Voucher</DialogTitle>
+            <DialogTitle className="text-2xl font-bold mb-4">{config.form.editTitle}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdate} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-code" className="text-base">Mã Voucher <span className="text-red-500">*</span></Label>
+              <Label htmlFor="edit-code" className="text-base">{config.form.fields.code} <span className="text-red-500">*</span></Label>
               <Input
                 id="edit-code"
                 value={formData.code}
@@ -507,7 +512,7 @@ export default function VoucherPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-discountAmount" className="text-base">Số tiền giảm giá</Label>
+                <Label htmlFor="edit-discountAmount" className="text-base">{config.form.fields.discountAmount}</Label>
                 <Input
                   id="edit-discountAmount"
                   type="number"
@@ -525,7 +530,7 @@ export default function VoucherPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-discountPercent" className="text-base">Phần trăm giảm giá</Label>
+                <Label htmlFor="edit-discountPercent" className="text-base">{config.form.fields.discountPercent}</Label>
                 <Input
                   id="edit-discountPercent"
                   type="number"
@@ -545,7 +550,7 @@ export default function VoucherPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-validFrom" className="text-base">Thời gian bắt đầu <span className="text-red-500">*</span></Label>
+                <Label htmlFor="edit-validFrom" className="text-base">{config.form.fields.validFrom} <span className="text-red-500">*</span></Label>
                 <Input
                   id="edit-validFrom"
                   type="datetime-local"
@@ -556,7 +561,7 @@ export default function VoucherPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-validTo" className="text-base">Thời gian kết thúc <span className="text-red-500">*</span></Label>
+                <Label htmlFor="edit-validTo" className="text-base">{config.form.fields.validTo} <span className="text-red-500">*</span></Label>
                 <Input
                   id="edit-validTo"
                   type="datetime-local"
@@ -568,7 +573,7 @@ export default function VoucherPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-usageLimit" className="text-base">Số lần sử dụng tối đa <span className="text-red-500">*</span></Label>
+              <Label htmlFor="edit-usageLimit" className="text-base">{config.form.fields.usageLimit} <span className="text-red-500">*</span></Label>
               <Input
                 id="edit-usageLimit"
                 type="number"
@@ -580,9 +585,9 @@ export default function VoucherPage() {
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Hủy
+                {config.form.buttons.cancel}
               </Button>
-              <Button type="submit" className="h-10 text-base">Cập nhật Voucher</Button>
+              <Button type="submit" className="h-10 text-base">{config.form.buttons.save}</Button>
             </div>
           </form>
         </DialogContent>
