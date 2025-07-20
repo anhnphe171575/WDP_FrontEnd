@@ -15,6 +15,7 @@ interface OrderData {
   amount: number
   buyAgainMode?: boolean
   rebuyItems?: OrderItem[]
+  voucherId?: string
 }
 
 interface OrderContextType {
