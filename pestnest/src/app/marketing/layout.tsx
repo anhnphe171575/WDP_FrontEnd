@@ -48,6 +48,11 @@ import { useLanguage } from "@/context/LanguageContext"
 // Menu items for the sidebar
 const menuItems = [
   {
+    title: "Marketing Dashboard",
+    url: "/marketing/dashboard",
+    icon: TrendingUp,
+  },
+  {
     title: "Email Marketing",
     url: "/marketing/email",
     icon: Mail,
