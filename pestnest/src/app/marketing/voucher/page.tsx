@@ -27,6 +27,7 @@ import { Edit, Trash2, Plus } from "lucide-react";
 import { useLanguage } from '@/context/LanguageContext';
 import pagesConfigEn from '../../../../utils/petPagesConfig.en';
 import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
+import { api } from '../../../../utils/axios';
 
 interface Voucher {
   _id: string;
@@ -111,9 +112,8 @@ export default function VoucherPage() {
   const fetchVouchers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/vouchers');
-      const data = await response.json();
-      setVouchers(data);
+      const response = await api.get('/vouchers');
+      setVouchers(Array.isArray(response.data) ? response.data : (Array.isArray(response.data.data) ? response.data.data : []));
     } catch {
       setError(config.error.fetch);
     } finally {
@@ -151,30 +151,25 @@ export default function VoucherPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/vouchers', {
-        method: 'POST',
+      await api.post('/vouchers', formData, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(formData),
       });
-
-      if (response.ok) {
-        setSuccessMessage(config.success.create);
-        setIsCreateDialogOpen(false);
-        fetchVouchers();
-        resetForm();
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
-        const error = await response.json();
-        setError(error.message || config.error.create);
+      setSuccessMessage(config.success.create);
+      setIsCreateDialogOpen(false);
+      fetchVouchers();
+      resetForm();
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (error: unknown) {
+      let message = config.error.create;
+      if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+        message = (error.response.data as { message?: string }).message || message;
       }
-    } catch {
-      setError(config.error.create);
+      setError(message);
     }
   };
 
@@ -190,34 +185,29 @@ export default function VoucherPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/vouchers/${selectedVoucher._id}`, {
-        method: 'PUT',
+      await api.put(`/vouchers/${selectedVoucher._id}`, {
+        ...formData,
+        discountAmount: formData.discountAmount ? Number(formData.discountAmount) : 0,
+        discountPercent: formData.discountPercent ? Number(formData.discountPercent) : 0,
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          discountAmount: formData.discountAmount ? Number(formData.discountAmount) : 0,
-          discountPercent: formData.discountPercent ? Number(formData.discountPercent) : 0,
-        }),
       });
-
-      if (response.ok) {
-        setSuccessMessage(config.success.update);
-        setIsEditDialogOpen(false);
-        fetchVouchers();
-        resetForm();
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
-        const error = await response.json();
-        setError(error.message || config.error.update);
+      setSuccessMessage(config.success.update);
+      setIsEditDialogOpen(false);
+      fetchVouchers();
+      resetForm();
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (error: unknown) {
+      let message = config.error.update;
+      if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+        message = (error.response.data as { message?: string }).message || message;
       }
-    } catch {
-      setError(config.error.update);
+      setError(message);
     }
   };
 
@@ -226,26 +216,23 @@ export default function VoucherPage() {
     if (!confirm(config.confirm.delete)) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/vouchers/${id}`, {
-        method: 'DELETE',
+      await api.delete(`/vouchers/${id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
-
-      if (response.ok) {
-        setSuccessMessage(config.success.delete);
-        fetchVouchers();
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 3000);
-      } else {
-        const error = await response.json();
-        setError(error.message || config.error.delete);
+      setSuccessMessage(config.success.delete);
+      fetchVouchers();
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (error: unknown) {
+      let message = config.error.delete;
+      if (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'message' in error.response.data) {
+        message = (error.response.data as { message?: string }).message || message;
       }
-    } catch {
-      setError(config.error.delete);
+      setError(message);
     }
   };
 
