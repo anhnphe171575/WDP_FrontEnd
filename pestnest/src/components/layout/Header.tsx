@@ -595,10 +595,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         const token = sessionStorage.getItem("token");
         if (!userId || !token) return;
         const res = await axios.get(
-          `http://localhost:5000/unread-count/${userId}`,
+          `http://localhost:5000/conversation/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setUnreadChatCount(res.data.unreadCount || 0);
+        // Tổng số tin nhắn chưa đọc từ tất cả conversation
+        const totalUnread = Array.isArray(res.data)
+          ? res.data.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+          : 0;
+        setUnreadChatCount(totalUnread);
       } catch (e) {
         setUnreadChatCount(0);
       }
