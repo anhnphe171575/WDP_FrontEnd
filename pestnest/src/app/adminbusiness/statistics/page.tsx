@@ -8,11 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, DollarSign, Package, BarChart3, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Package, Calendar } from "lucide-react";
 import { api } from "../../../../utils/axios";
 import { useLanguage } from '@/context/LanguageContext';
 import pagesConfigEn from '../../../../utils/petPagesConfig.en';
 import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
+import dynamic from 'next/dynamic';
+const RevenueLineChart = dynamic(() => import('@/components/charts/RevenueLineChart'), { ssr: false });
+const TopProductsBarChart = dynamic(() => import('@/components/charts/TopProductsBarChart'), { ssr: false });
 
 interface ProductStat {
   productId: string;
@@ -53,6 +56,7 @@ export default function StatisticsPage() {
   const [sortBy, setSortBy] = useState('revenue');
   const [limit, setLimit] = useState('10');
   const [timePeriod, setTimePeriod] = useState('month');
+  const [lowLimit, setLowLimit] = useState('5');
 
   useEffect(() => {
     fetchStatistics();
@@ -64,7 +68,7 @@ export default function StatisticsPage() {
 
   useEffect(() => {
     fetchLowRevenueProducts();
-  }, [limit]);
+  }, [limit, lowLimit]);
 
   const fetchStatistics = async () => {
     try {
@@ -108,7 +112,7 @@ export default function StatisticsPage() {
 
   const fetchLowRevenueProducts = async () => {
     try {
-      const response = await api.get(`/statistics/low-revenue-products?limit=${limit}`);
+      const response = await api.get(`/statistics/low-revenue-products?limit=${lowLimit}`);
       
       if (response.data.success) {
         setLowRevenueProducts(response.data.data);
@@ -274,6 +278,11 @@ export default function StatisticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="my-6 flex justify-center">
+              <div className="w-full max-w-md">
+                <TopProductsBarChart data={productStats.slice(0, 10)} />
+              </div>
+            </div>
             {loading ? (
               <div className="text-center py-8">{config.loading}</div>
             ) : (
@@ -326,6 +335,24 @@ export default function StatisticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex items-center gap-4">
+              <Label htmlFor="lowLimit">Số lượng sản phẩm hiển thị</Label>
+              <Select value={lowLimit} onValueChange={setLowLimit}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">Top 5</SelectItem>
+                  <SelectItem value="10">Top 10</SelectItem>
+                  <SelectItem value="15">Top 15</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="my-6 flex justify-center">
+              <div className="w-full max-w-md">
+                <TopProductsBarChart data={lowRevenueProducts.slice(0, parseInt(lowLimit))} />
+              </div>
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -339,7 +366,7 @@ export default function StatisticsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lowRevenueProducts.map((product) => (
+                {lowRevenueProducts.slice(0, parseInt(lowLimit)).map((product) => (
                   <TableRow key={product.productId}>
                     <TableCell className="font-medium">{product.productName}</TableCell>
                     <TableCell>{formatNumber(product.totalQuantity)}</TableCell>
@@ -387,7 +414,11 @@ export default function StatisticsPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+            <div className="my-6 flex justify-center">
+              <div className="w-full max-w-md">
+                <RevenueLineChart data={revenueTimeData} />
+              </div>
+            </div>
             <div className="space-y-2">
               {revenueTimeData.map((item) => (
                 <div key={item.time} className="flex justify-between items-center p-3 border rounded-lg">
