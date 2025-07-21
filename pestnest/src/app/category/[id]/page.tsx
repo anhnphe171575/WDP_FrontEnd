@@ -115,12 +115,20 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [wishlistItems, setWishlistItems] = useState<string[]>([])
   const [wishlistLoading, setWishlistLoading] = useState<Record<string, boolean>>({})
+  const [searchTerm, setSearchTerm] = useState("")
   const itemsPerPage = 9;
   const { addToCart } = useCart();
   const { lang } = useLanguage();
   const config = lang === 'vi' ? viConfig : enConfig;
   const categoryPage = config.categoryPage;
   const [breadcrumbHistory, setBreadcrumbHistory] = useState<Category[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Kiểm tra đăng nhập dựa trên token
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+    setIsLoggedIn(!!token);
+  }, []);
 
   // Tạo danh sách brand động từ allProducts
   const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
@@ -362,10 +370,15 @@ export default function ProductsPage() {
   };
 
   // Add pagination calculation
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  // Lọc sản phẩm theo searchTerm trước khi phân trang
+  const filteredBySearch = searchTerm.trim() ? products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.description.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : products;
+  const totalPages = Math.ceil(filteredBySearch.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentProducts = products.slice(startIndex, endIndex);
+  const currentProducts = filteredBySearch.slice(startIndex, endIndex);
 
   const handleAddToCart = (product: Product) => {
     const variant = product.variants?.[0];
@@ -380,8 +393,9 @@ export default function ProductsPage() {
     });
   };
 
-  // Fetch wishlist items
+  // Fetch wishlist items chỉ khi đã đăng nhập
   useEffect(() => {
+    if (!isLoggedIn) return;
     const fetchWishlist = async () => {
       try {
         const res = await api.get('/wishlist')
@@ -393,7 +407,7 @@ export default function ProductsPage() {
       }
     }
     fetchWishlist()
-  }, [])
+  }, [isLoggedIn])
 
   const handleToggleWishlist = async (e: React.MouseEvent, productId: string) => {
     e.preventDefault()
@@ -633,10 +647,25 @@ export default function ProductsPage() {
           </div>
           {/* Product Grid */}
           <div className="flex-1">
-            {/* Results Header */}
-            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-lg border border-gray-200">
-              <p className="text-gray-700 font-medium">{categoryPage.sort.results.replace('{count}', products.length.toString())}</p>
-              <div className="flex items-center space-x-3">
+            {/* Results Header với search */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 bg-white p-4 rounded-lg border border-gray-200 gap-4">
+              {/* Search bar bên trái */}
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm..."
+                value={searchTerm}
+                onChange={e => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full md:w-72 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              {/* Số kết quả ở giữa */}
+              <p className="text-gray-700 font-medium text-center flex-1">
+                {categoryPage.sort.results.replace('{count}', filteredBySearch.length.toString())}
+              </p>
+              {/* Sắp xếp bên phải */}
+              <div className="flex items-center space-x-3 justify-end">
                 <span className="text-sm text-gray-600 font-medium">{categoryPage.sort.sortBy}</span>
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-48 border-gray-300">
@@ -669,21 +698,24 @@ export default function ProductsPage() {
                     >
                       <CardContent className="p-4">
                         <div className="relative mb-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`absolute top-2 right-2 z-10 bg-white/80 hover:bg-white transition-all duration-200 ${
-                              wishlistItems.includes(product._id) ? 'text-red-500' : 'text-gray-600'
-                            }`}
-                            onClick={(e) => handleToggleWishlist(e, product._id)}
-                            disabled={wishlistLoading[product._id]}
-                          >
-                            {wishlistLoading[product._id] ? (
-                              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Heart className={`w-4 h-4 ${wishlistItems.includes(product._id) ? 'fill-red-500' : ''}`} />
-                            )}
-                          </Button>
+                          {/* Wishlist chỉ hiển thị khi đã đăng nhập */}
+                          {isLoggedIn && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`absolute top-2 right-2 z-10 bg-white/80 hover:bg-white transition-all duration-200 ${
+                                wishlistItems.includes(product._id) ? 'text-red-500' : 'text-gray-600'
+                              }`}
+                              onClick={(e) => handleToggleWishlist(e, product._id)}
+                              disabled={wishlistLoading[product._id]}
+                            >
+                              {wishlistLoading[product._id] ? (
+                                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Heart className={`w-4 h-4 ${wishlistItems.includes(product._id) ? 'fill-red-500' : ''}`} />
+                              )}
+                            </Button>
+                          )}
                           <Image
                             src={product.variants?.[0]?.images?.[0]?.url || "/placeholder.svg"}
                             alt={product.name}
