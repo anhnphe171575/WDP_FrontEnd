@@ -16,6 +16,7 @@ import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
 import dynamic from 'next/dynamic';
 const RevenueLineChart = dynamic(() => import('@/components/charts/RevenueLineChart'), { ssr: false });
 const TopProductsBarChart = dynamic(() => import('@/components/charts/TopProductsBarChart'), { ssr: false });
+const RevenueBarChart = dynamic(() => import('@/components/charts/RevenueBarChart'), { ssr: false });
 
 interface ProductStat {
   productId: string;
@@ -57,6 +58,9 @@ export default function StatisticsPage() {
   const [limit, setLimit] = useState('10');
   const [timePeriod, setTimePeriod] = useState('month');
   const [lowLimit, setLowLimit] = useState('5');
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [bestSellingFilter, setBestSellingFilter] = useState('');
+  const [slowSellingFilter, setSlowSellingFilter] = useState('');
 
   useEffect(() => {
     fetchStatistics();
@@ -144,6 +148,14 @@ export default function StatisticsPage() {
   const getProfitIcon = (profit: number) => {
     return profit >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />;
   };
+
+  const filteredProductStats = productStats.filter(product =>
+    product.productName.toLowerCase().includes(bestSellingFilter.toLowerCase())
+  );
+
+  const filteredLowRevenueProducts = lowRevenueProducts.filter(product =>
+    product.productName.toLowerCase().includes(slowSellingFilter.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -278,9 +290,17 @@ export default function StatisticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4">
+              <Input
+                placeholder="Lọc sản phẩm theo tên..."
+                value={bestSellingFilter}
+                onChange={(e) => setBestSellingFilter(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
             <div className="my-6 flex justify-center">
               <div className="w-full max-w-md">
-                <TopProductsBarChart data={productStats.slice(0, 10)} />
+                <TopProductsBarChart data={filteredProductStats.slice(0, 10)} />
               </div>
             </div>
             {loading ? (
@@ -299,7 +319,7 @@ export default function StatisticsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {productStats.map((product) => (
+                  {filteredProductStats.map((product) => (
                     <TableRow key={product.productId}>
                       <TableCell className="font-medium">{product.productName}</TableCell>
                       <TableCell>{formatNumber(product.totalQuantity)}</TableCell>
@@ -336,21 +356,33 @@ export default function StatisticsPage() {
           </CardHeader>
           <CardContent>
             <div className="mb-4 flex items-center gap-4">
-              <Label htmlFor="lowLimit">Số lượng sản phẩm hiển thị</Label>
-              <Select value={lowLimit} onValueChange={setLowLimit}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">Top 5</SelectItem>
-                  <SelectItem value="10">Top 10</SelectItem>
-                  <SelectItem value="15">Top 15</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="lowLimit">Số lượng sản phẩm hiển thị</Label>
+                <Select value={lowLimit} onValueChange={setLowLimit}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">Top 5</SelectItem>
+                    <SelectItem value="10">Top 10</SelectItem>
+                    <SelectItem value="15">Top 15</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="filter">Lọc theo tên</Label>
+                <Input
+                  id="filter"
+                  placeholder="Lọc sản phẩm..."
+                  value={slowSellingFilter}
+                  onChange={(e) => setSlowSellingFilter(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
             </div>
             <div className="my-6 flex justify-center">
               <div className="w-full max-w-md">
-                <TopProductsBarChart data={lowRevenueProducts.slice(0, parseInt(lowLimit))} />
+                <TopProductsBarChart data={filteredLowRevenueProducts.slice(0, parseInt(lowLimit))} />
               </div>
             </div>
             <Table>
@@ -366,7 +398,7 @@ export default function StatisticsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lowRevenueProducts.slice(0, parseInt(lowLimit)).map((product) => (
+                {filteredLowRevenueProducts.slice(0, parseInt(lowLimit)).map((product) => (
                   <TableRow key={product.productId}>
                     <TableCell className="font-medium">{product.productName}</TableCell>
                     <TableCell>{formatNumber(product.totalQuantity)}</TableCell>
@@ -401,6 +433,18 @@ export default function StatisticsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex items-center gap-4">
+              <Label htmlFor="chartType">Loại biểu đồ</Label>
+              <Select value={chartType} onValueChange={(value: 'line' | 'bar') => setChartType(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="line">Biểu đồ đường</SelectItem>
+                  <SelectItem value="bar">Biểu đồ cột</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="mb-4">
               <Label htmlFor="timePeriod">{config.revenueOverTime.timePeriod}</Label>
               <Select value={timePeriod} onValueChange={setTimePeriod}>
@@ -416,7 +460,11 @@ export default function StatisticsPage() {
             </div>
             <div className="my-6 flex justify-center">
               <div className="w-full max-w-md">
-                <RevenueLineChart data={revenueTimeData} />
+                {chartType === 'line' ? (
+                  <RevenueLineChart data={revenueTimeData} />
+                ) : (
+                  <RevenueBarChart data={revenueTimeData} />
+                )}
               </div>
             </div>
             <div className="space-y-2">
