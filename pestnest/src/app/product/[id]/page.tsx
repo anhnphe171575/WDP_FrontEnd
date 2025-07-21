@@ -99,6 +99,7 @@ export default function ProductPage() {
   const config = lang === 'vi' ? viConfig.productDetail : enConfig.productDetail;
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   // Review form states
   const [unreviewedData, setUnreviewedData] = useState<UnreviewedData | null>(null);
@@ -147,13 +148,19 @@ export default function ProductPage() {
       }
     };
 
-    if (params.id) {
+    if (params.id && isLoggedIn) {
       fetchUnreviewedProducts();
     }
-  }, [params.id]);
+  }, [params.id, isLoggedIn]);
 
-  // Kiểm tra sản phẩm đã trong wishlist chưa
   useEffect(() => {
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+    setIsLoggedIn(!!token);
+  }, []);
+
+  // Kiểm tra sản phẩm đã trong wishlist chưa, chỉ fetch khi đã đăng nhập
+  useEffect(() => {
+    if (!isLoggedIn) return;
     const fetchWishlist = async () => {
       try {
         const res = await api.get('/wishlist');
@@ -163,7 +170,7 @@ export default function ProductPage() {
       } catch {}
     };
     if (product?._id) fetchWishlist();
-  }, [product?._id]);
+  }, [product?._id, isLoggedIn]);
 
   const handleAddToCart = async () => {
     if (!product) {
@@ -493,32 +500,44 @@ export default function ProductPage() {
 
               {/* Action Buttons */}
               <div className="flex gap-4 pt-6">
-                <Button 
-                  size="lg" 
-                  className="flex-1 h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
-                  onClick={handleAddToCart}
-                  disabled={addingToCart || variant.totalQuantity === 0}
-                >
-                  {addingToCart ? (
-                    <div className="flex items-center">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      {config.adding}
-                    </div>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-5 h-5 mr-2" />
-                      {config.addToCart}
-                    </>
-                  )}
-                </Button>
+                {isLoggedIn ? (
+                  <Button 
+                    size="lg" 
+                    className="flex-1 h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
+                    onClick={handleAddToCart}
+                    disabled={addingToCart || variant.totalQuantity === 0}
+                  >
+                    {addingToCart ? (
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        {config.adding}
+                      </div>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5 mr-2" />
+                        {config.addToCart}
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    className="flex-1 h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
+                    onClick={() => window.location.href = '/login'}
+                  >
+                    Đăng nhập để mua hàng
+                  </Button>
+                )}
                 {addToCartError && (
                   <div className="text-sm text-red-500 mt-2">
                     {addToCartError}
                   </div>
                 )}
-                <Button size="lg" variant={isWishlisted ? "default" : "outline"} className="h-12 w-12 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center" onClick={handleToggleWishlist} disabled={wishlistLoading} aria-label="Yêu thích">
-                  <Heart className={"w-5 h-5 " + (isWishlisted ? "fill-red-500 text-red-500" : "")}/>
-                </Button>
+                {isLoggedIn && (
+                  <Button size="lg" variant={isWishlisted ? "default" : "outline"} className="h-12 w-12 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center" onClick={handleToggleWishlist} disabled={wishlistLoading} aria-label="Yêu thích">
+                    <Heart className={"w-5 h-5 " + (isWishlisted ? "fill-red-500 text-red-500" : "")}/>
+                  </Button>
+                )}
               </div>
 
               {/* Features */}
