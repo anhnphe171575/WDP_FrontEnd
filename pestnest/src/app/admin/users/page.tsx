@@ -419,7 +419,7 @@ export default function UserPage() {
 
   const fetchUsers = async () => {
     try {
-      const data = await api.get('/users');
+      const data = await api.get('/users/admin');
       console.log(data.data);
       setUsers(data.data.data);
     } catch (err: any) {
@@ -590,7 +590,6 @@ export default function UserPage() {
               </SelectContent>
             </Select>
           </div>
-                // 
           {loading ? (
             <div>Loading...</div>
           ) : error ? (
