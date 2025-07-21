@@ -15,6 +15,9 @@ import { Label } from "@/components/ui/label"
 import { Edit, Eye, Trash2 } from "lucide-react";
 import NextImage from "next/image";
 import { ROLES } from "../../../../role.config";
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 export interface Address {
   _id?: string; // MongoDB sẽ tự tạo nếu không chỉ định
@@ -99,7 +102,7 @@ interface RoleSelectorProps {
   onChange: (value: number) => void;
 }
 
-function RoleSelector({ value, onChange }: RoleSelectorProps) {
+function RoleSelector({ value, onChange, config }: RoleSelectorProps & { config: any }) {
   const toggleRole = (roleValue: number) => {
     if (roleValue === 0) {
       // Nếu là ADMIN_DEVELOPER, chỉ cho phép chọn một mình nó
@@ -131,14 +134,14 @@ function RoleSelector({ value, onChange }: RoleSelectorProps) {
             }`}
           onClick={() => toggleRole(roleValue)}
         >
-          {ROLE_LABELS[roleName as keyof typeof ROLE_LABELS]}
+          {config.table.headers[roleName.toLowerCase()] || roleName}
         </Badge>
       ))}
     </div>
   );
 }
 
-function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
+function UserForm({ user, onSubmit, isOpen, onClose, config }: UserFormProps & { config: any }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -219,12 +222,12 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="xl:max-w-[1000px] w-full max-h-screen overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{user ? 'Edit User' : 'Add New User'}</DialogTitle>
+          <DialogTitle>{user ? config.form.editTitle : config.form.addTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="name">{config.form.fields.name} <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -234,7 +237,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+              <Label htmlFor="email">{config.form.fields.email} <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 type="email"
@@ -248,7 +251,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
 
           {!user && (
             <div className="space-y-2">
-              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+              <Label htmlFor="password">{config.form.fields.password} <span className="text-red-500">*</span></Label>
               <Input
                 id="password"
                 type="password"
@@ -262,7 +265,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">{config.form.fields.phone}</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -271,7 +274,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dob">Date of Birth</Label>
+              <Label htmlFor="dob">{config.form.fields.dob}</Label>
               <Input
                 id="dob"
                 type="date"
@@ -283,15 +286,16 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Role <span className="text-red-500">*</span></Label>
+            <Label>{config.form.fields.role} <span className="text-red-500">*</span></Label>
             <RoleSelector
               value={formData.role}
               onChange={(value) => setFormData({ ...formData, role: value })}
+              config={config}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Address</Label>
+            <Label>{config.form.fields.address}</Label>
             {formData.address.map((address, index) => (
               <div key={index} className="relative grid grid-cols-2 gap-4 p-4 border rounded-lg">
                 {/* Remove button on top-right corner */}
@@ -308,7 +312,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                 </button>
 
                 <div className="space-y-2">
-                  <Label>Street</Label>
+                  <Label>{config.form.fields.street}</Label>
                   <Input
                     value={address.street}
                     onChange={(e) => {
@@ -319,7 +323,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>City</Label>
+                  <Label>{config.form.fields.city}</Label>
                   <Input
                     value={address.city}
                     onChange={(e) => {
@@ -330,7 +334,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>State</Label>
+                  <Label>{config.form.fields.state}</Label>
                   <Input
                     value={address.state}
                     onChange={(e) => {
@@ -341,7 +345,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Postal Code</Label>
+                  <Label>{config.form.fields.postalCode}</Label>
                   <Input
                     value={address.postalCode}
                     onChange={(e) => {
@@ -352,7 +356,7 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Country</Label>
+                  <Label>{config.form.fields.country}</Label>
                   <Input
                     value={address.country}
                     onChange={(e) => {
@@ -379,16 +383,16 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
                 }]
               })}
             >
-              Add Another Address
+              {config.form.addAddress}
             </Button>
           </div>
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
+              {config.form.buttons.cancel}
             </Button>
             <Button type="submit">
-              {user ? 'Save Changes' : 'Add User'}
+              {user ? config.form.buttons.save : config.form.buttons.add}
             </Button>
           </div>
         </form>
@@ -399,6 +403,9 @@ function UserForm({ user, onSubmit, isOpen, onClose }: UserFormProps) {
 
 // Component chính
 export default function UserPage() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.userManagement;
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -504,12 +511,12 @@ export default function UserPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>User Management</CardTitle>
+            <CardTitle>{config.title}</CardTitle>
             <div className="flex gap-2">
               <Button onClick={() => {
                 setSelectedUser(undefined);
                 setIsFormOpen(true);
-              }}>Add New User</Button>
+              }}>{config.addNewButton}</Button>
               {/* Import Users Button */}
               <input
                 type="file"
@@ -525,10 +532,10 @@ export default function UserPage() {
                     const response = await api.post('/users/import-csv', formData, {
                       headers: { 'Content-Type': 'multipart/form-data' },
                     });
-                    alert('Import successful!');
+                    alert(config.alert.importSuccess);
                     fetchUsers();
                   } catch (err: any) {
-                    alert('Import failed: ' + (err.response?.data?.message || err.message));
+                    alert(config.alert.importFail + (err.response?.data?.message || err.message));
                   } finally {
                     e.target.value = '';
                   }
@@ -541,7 +548,7 @@ export default function UserPage() {
                   if (input) input.click();
                 }}
               >
-                Import with CSV 
+                {config.importCSV}
               </Button>
               <Button
                 variant="outline"
@@ -556,11 +563,11 @@ export default function UserPage() {
                     link.click();
                     link.parentNode?.removeChild(link);
                   } catch (err: any) {
-                    alert('Export failed: ' + (err.response?.data?.message || err.message));
+                    alert(config.alert.exportFail + (err.response?.data?.message || err.message));
                   }
                 }}
               >
-                Export All Users
+                {config.exportAll}
               </Button>
             </div>
           </div>
@@ -568,7 +575,7 @@ export default function UserPage() {
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search users..."
+              placeholder={config.search.placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -578,10 +585,10 @@ export default function UserPage() {
               onValueChange={setSelectedRole}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder={config.search.rolePlaceholder} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="all">{config.table.headers.role}</SelectItem>
                 {Object.entries(ROLE_LABELS).map(([role, label]) => (
                   <SelectItem key={role} value={role}>
                     {label}
@@ -592,20 +599,20 @@ export default function UserPage() {
           </div>
                 // 
           {loading ? (
-            <div>Loading...</div>
+            <div>{config.loading}</div>
           ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <div className="text-red-500">{config.error} {error}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{config.table.headers.no}</TableHead>
+                  <TableHead>{config.table.headers.name}</TableHead>
+                  <TableHead>{config.table.headers.email}</TableHead>
+                  <TableHead>{config.table.headers.role}</TableHead>
+                  <TableHead>{config.table.headers.active}</TableHead>
+                  <TableHead>{config.table.headers.status}</TableHead>
+                  <TableHead className="text-right">{config.table.headers.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -617,12 +624,12 @@ export default function UserPage() {
                     <TableCell>{getRoleBadge(user.role)}</TableCell>
                     <TableCell>
                       <Badge onClick={()=>changeActiveStatus(user)} className={user.role > 0 ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
-                        {user.role > 0 ? 'Active' : 'Inactive'}
+                        {user.role > 0 ? config.status.active : config.status.inactive}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant={user.verified ? 'default' : 'secondary'}>
-                        {user.verified ? 'Verified' : 'Unverified'}
+                        {user.verified ? config.status.verified : config.status.unverified}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -631,7 +638,7 @@ export default function UserPage() {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
-                          title="View Details"
+                          title={config.detail.title}
                           onClick={() => handleViewDetail(user)}
                         >
                           <Eye className="h-4 w-4" />
@@ -640,7 +647,7 @@ export default function UserPage() {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
-                          title="Edit User"
+                          title={config.form.editTitle}
                           onClick={() => {
                             setSelectedUser(user);
                             setIsFormOpen(true);
@@ -675,12 +682,13 @@ export default function UserPage() {
           setSelectedUser(undefined);
         }}
         onSubmit={selectedUser ? handleEditUser : handleAddUser}
+        config={config}
       />
 
       <Dialog open={isDetailOpen} onOpenChange={() => setIsDetailOpen(false)}>
         <DialogContent className="xl:max-w-[1000px] w-full max-h-screen overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>User Details</DialogTitle>
+            <DialogTitle>{config.detail.title}</DialogTitle>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
@@ -707,44 +715,44 @@ export default function UserPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <p className="text-lg font-medium">{selectedUser.phone || 'N/A'}</p>
+                  <Label>{config.detail.phone}</Label>
+                  <p className="text-lg font-medium">{selectedUser.phone || config.notAvailable}</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Date of Birth</Label>
+                  <Label>{config.detail.dob}</Label>
                   <p className="text-lg font-medium">
-                    {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'N/A'}
+                    {selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : config.notAvailable}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Role</Label>
+                  <Label>{config.detail.role}</Label>
                   <div>{getRoleBadge(selectedUser.role)}</div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>{config.detail.status}</Label>
                   <Badge variant={selectedUser.verified ? 'default' : 'secondary'}>
-                    {selectedUser.verified ? 'Verified' : 'Unverified'}
+                    {selectedUser.verified ? config.status.verified : config.status.unverified}
                   </Badge>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Addresses</Label>
+                <Label>{config.detail.addresses}</Label>
                 {selectedUser.address.map((addr, index) => (
                   <div key={index} className="p-4 border rounded-lg space-y-2">
-                    <p><strong>Street:</strong> {addr.street}</p>
-                    <p><strong>City:</strong> {addr.city}</p>
-                    <p><strong>State:</strong> {addr.state || 'N/A'}</p>
-                    <p><strong>Postal Code:</strong> {addr.postalCode}</p>
-                    <p><strong>Country:</strong> {addr.country}</p>
+                    <p><strong>{config.form.fields.street}:</strong> {addr.street}</p>
+                    <p><strong>{config.form.fields.city}:</strong> {addr.city}</p>
+                    <p><strong>{config.form.fields.state}:</strong> {addr.state || config.notAvailable}</p>
+                    <p><strong>{config.form.fields.postalCode}:</strong> {addr.postalCode}</p>
+                    <p><strong>{config.form.fields.country}:</strong> {addr.country}</p>
                   </div>
                 ))}
               </div>
 
               <div className="space-y-2">
-                <Label>Account Information</Label>
-                <p><strong>Created At:</strong> {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleString() : 'N/A'}</p>
-                <p><strong>Last Updated:</strong> {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleString() : 'N/A'}</p>
+                <Label>{config.detail.accountInfo}</Label>
+                <p><strong>{config.detail.createdAt}:</strong> {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleString() : config.notAvailable}</p>
+                <p><strong>{config.detail.updatedAt}:</strong> {selectedUser.updatedAt ? new Date(selectedUser.updatedAt).toLocaleString() : config.notAvailable}</p>
               </div>
             </div>
           )}
@@ -756,6 +764,7 @@ export default function UserPage() {
         currentPage={currentPage}
         setItemsPerPage={setItemsPerPage}
         setCurrentPage={setCurrentPage}
+        config={config}
       />
     </div>
   );
@@ -767,7 +776,7 @@ interface PaginationProps {
   setItemsPerPage: (value: number) => void;
   setCurrentPage: (value: number) => void;
 }
-function Pagination({ filteredUsers, itemsPerPage, currentPage, setItemsPerPage, setCurrentPage }: PaginationProps) {
+function Pagination({ filteredUsers, itemsPerPage, currentPage, setItemsPerPage, setCurrentPage, config }: PaginationProps & { config: any }) {
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   return (
@@ -780,7 +789,7 @@ function Pagination({ filteredUsers, itemsPerPage, currentPage, setItemsPerPage,
           onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
         >
-          Previous
+          {config.pagination.previous}
         </Button>
         <div className="flex items-center gap-1">
           {[...Array(totalPages)].map((_, index) => (
@@ -800,7 +809,7 @@ function Pagination({ filteredUsers, itemsPerPage, currentPage, setItemsPerPage,
           onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}
         >
-          Next
+          {config.pagination.next}
         </Button>
       </div>
     </div>
