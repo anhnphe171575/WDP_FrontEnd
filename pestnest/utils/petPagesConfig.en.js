@@ -758,6 +758,127 @@ const pagesConfig = {
       errorCreatePayment: "Unable to create payment. Please try again!",
       errorPlaceOrder: "An error occurred while placing the order!",
       errorUpdateAddress: "Failed to update address!"
+    },
+    orderManagement: {
+        title: "Order Management",
+        searchPlaceholder: "Search orders...",
+        allStatus: "All Status",
+        updateStatus: "Update status",
+        updateSelected: "Update Selected",
+        importCSV: "Import User with CSV",
+        table: {
+          no: "No",
+          orderId: "Order ID",
+          customer: "Customer",
+          totalAmount: "Total Amount",
+          status: "Status",
+          date: "Date",
+          actions: "Actions",
+          viewDetails: "View Details",
+          editOrder: "Edit Order"
+        },
+        pagination: {
+          previous: "Previous",
+          next: "Next"
+        },
+        form: {
+          updateOrderStatus: "Update Order Status",
+          orderStatus: "Order Status",
+          saveChanges: "Save Changes",
+          cancel: "Cancel"
+        },
+        detail: {
+          orderItems: "Order Items",
+          shippingAddress: "Shipping Address",
+          orderInformation: "Order Information",
+          createdAt: "Created At",
+          lastUpdated: "Last Updated"
+        },
+        dialog: {
+          cancelDetail: "Cancel Order Detail",
+          returnDetail: "Return Order Detail",
+          returnRequestDetail: "Return Request Detail",
+          cancelRequestDetail: "Cancel Request Detail",
+          orderDetail: "Order Detail"
+        },
+        return: {
+          product: "Product:",
+          quantity: "Quantity:",
+          reason: "Reason:",
+          noReason: "No reason",
+          reject: "Reject",
+          accept: "Accept",
+          returnedSuccess: "Order has been returned successfully.",
+          cancelled: "Order has been cancelled."
+        },
+        rejectReason: {
+          title: "Reason for rejecting return",
+          inputLabel: "Please enter the reason for rejection:",
+          confirm: "Confirm rejection",
+          close: "Close",
+          reasonForOrder: "Reason for rejection for order #",
+          noReasonProvided: "No reason provided."
+        }
+      
+    },
+    orderDashboard: {
+      stats: {
+        totalOrders: "Total Orders",
+        noDataLastMonth: "No data from last month",
+        percentFromLastMonth: "% from last month",
+        totalRevenue: "Total Revenue",
+        totalRevenueCompleted: "total revenue order completed",
+        revenueCurrentMonth: "Revenue Current Month",
+        noRevenueCurrentMonth: "No revenue current month",
+        percentFromLastYear: "% from last year",
+        revenueCurrentYear: "Revenue Current Years",
+        noDataLastYear: "No data from last year"
+      },
+      recommendation: {
+        title: "🤔 Which products should we import?",
+        description: "AI-powered recommendations based on sales data, stock levels, and market trends",
+        import: "Import",
+        noImport: "No Import",
+        currentStock: "Current Stock",
+        units: "units",
+        monthlySales: "Monthly Sales",
+        brand: "Brand",
+        suggestQuantity: "Suggest Quantity",
+        importType: "Import Type",
+        why: "Why:",
+        whyImport: "Low stock with high demand - recommended to import",
+        whyNoImport: "Stock levels are adequate"
+      },
+      charts: {
+        monthlyOrders: "Monthly Orders",
+        monthlyOrdersDesc: "Order volume by month",
+        orders: "Orders",
+        orderStatusDistribution: "Order Status Distribution",
+        year: "Year",
+        month: "Month",
+        months: [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ],
+        tooltip: "{name}: {value} orders"
+      },
+      tables: {
+        bestSelling: "Top 5 Best-Selling Products",
+        worstSelling: "Top 5 Worst-Selling Products",
+        loading: "Loading...",
+        name: "Name",
+        brand: "Brand",
+        price: "Price",
+        sold: "Sold"
+      },
+      orderStatus: {
+        pending: "Pending",
+        processing: "Processing",
+        shipping: "Shipping",
+        cancelled: "Cancelled",
+        completed: "Completed",
+        returned: "Returned"
+      }
     }
   };
   

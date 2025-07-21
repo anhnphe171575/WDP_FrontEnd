@@ -761,6 +761,126 @@ checkout : {
   errorCreatePayment: "Không thể tạo thanh toán. Vui lòng thử lại!",
   errorPlaceOrder: "Có lỗi xảy ra khi đặt hàng!",
   errorUpdateAddress: "Cập nhật địa chỉ thất bại!"
+},
+orderManagement: {
+  title: "Quản lý đơn hàng",
+  searchPlaceholder: "Tìm kiếm đơn hàng...",
+  allStatus: "Tất cả trạng thái",
+  updateStatus: "Cập nhật trạng thái",
+  updateSelected: "Cập nhật đã chọn",
+  importCSV: "Nhập người dùng bằng CSV",
+  table: {
+    no: "STT",
+    orderId: "Mã đơn hàng",
+    customer: "Khách hàng",
+    totalAmount: "Tổng tiền",
+    status: "Trạng thái",
+    date: "Ngày",
+    actions: "Thao tác",
+    viewDetails: "Xem chi tiết",
+    editOrder: "Chỉnh sửa đơn"
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  form: {
+    updateOrderStatus: "Cập nhật trạng thái đơn hàng",
+    orderStatus: "Trạng thái đơn hàng",
+    saveChanges: "Lưu thay đổi",
+    cancel: "Hủy"
+  },
+  detail: {
+    orderItems: "Sản phẩm trong đơn",
+    shippingAddress: "Địa chỉ giao hàng",
+    orderInformation: "Thông tin đơn hàng",
+    createdAt: "Ngày tạo",
+    lastUpdated: "Cập nhật lần cuối"
+  },
+  dialog: {
+    cancelDetail: "Chi tiết đơn hủy",
+    returnDetail: "Chi tiết đơn trả",
+    returnRequestDetail: "Chi tiết yêu cầu trả hàng",
+    cancelRequestDetail: "Chi tiết yêu cầu hủy hàng",
+    orderDetail: "Chi tiết đơn hàng"
+  },
+  return: {
+    product: "Sản phẩm:",
+    quantity: "Số lượng:",
+    reason: "Lý do:",
+    noReason: "Không có lý do",
+    reject: "Từ chối",
+    accept: "Chấp nhận",
+    returnedSuccess: "Đơn hàng đã được trả thành công.",
+    cancelled: "Đơn hàng đã bị hủy."
+  },
+  rejectReason: {
+    title: "Lý do từ chối trả hàng",
+    inputLabel: "Vui lòng nhập lý do từ chối:",
+    confirm: "Xác nhận từ chối",
+    close: "Đóng",
+    reasonForOrder: "Lý do từ chối cho đơn hàng #",
+    noReasonProvided: "Không có lý do được cung cấp."
+  }
+},
+orderDashboard: {
+  stats: {
+    totalOrders: "Tổng số đơn hàng",
+    noDataLastMonth: "Không có dữ liệu từ tháng trước",
+    percentFromLastMonth: "% so với tháng trước",
+    totalRevenue: "Tổng doanh thu",
+    totalRevenueCompleted: "Tổng doanh thu đơn hoàn thành",
+    revenueCurrentMonth: "Doanh thu tháng này",
+    noRevenueCurrentMonth: "Không có doanh thu tháng này",
+    percentFromLastYear: "% so với năm trước",
+    revenueCurrentYear: "Doanh thu năm nay",
+    noDataLastYear: "Không có dữ liệu từ năm trước"
+  },
+  recommendation: {
+    title: "🤔 Which products should we import?",
+    description: "AI-powered recommendations based on sales data, stock levels, and market trends",
+    import: "Should import",
+    noImport: "No import",
+    currentStock: "Current Stock",
+    units: "units",
+    monthlySales: "Monthly Sales",
+    brand: "Brand",
+    suggestQuantity: "Suggest Quantity",
+    importType: "Import Type",
+    why: "Why:",
+    whyImport: "Low stock with high demand - recommended to import",
+    whyNoImport: "Stock levels are adequate"
+  },
+  orderStatus: {
+    pending: "Chờ xử lý",
+    processing: "Đang xử lý",
+    shipping: "Đang giao",
+    cancelled: "Đã hủy",
+    completed: "Hoàn thành",
+    returned: "Đã trả hàng"
+  },
+  charts: {
+    monthlyOrders: "Đơn hàng theo tháng",
+    monthlyOrdersDesc: "Số lượng đơn hàng theo từng tháng",
+    orders: "Đơn hàng",
+    orderStatusDistribution: "Phân bố trạng thái đơn hàng",
+    year: "Năm",
+    month: "Tháng",
+    months: [
+      "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+      "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+    ],
+    tooltip: "{name}: {value} đơn"
+  },
+  tables: {
+    bestSelling: "Top 5 sản phẩm bán chạy",
+    worstSelling: "Top 5 sản phẩm bán chậm",
+    loading: "Đang tải...",
+    name: "Tên",
+    brand: "Thương hiệu",
+    price: "Giá",
+    sold: "Đã bán"
+  }
 }
 };
 

@@ -16,6 +16,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { api } from "../../../../utils/axios"
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table"
+import { useLanguage } from "@/context/LanguageContext";
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -69,7 +72,7 @@ interface Recommendation {
   attributeNames:string;
 }
 
-function formatOrderStatusData(data: any, year: number, month: number) {
+function formatOrderStatusData(data: any, year: number, month: number, statusLabels: any) {
   if (!data?.ordersStatusByYearMonth) return [];
 
   // Find the data for selected year
@@ -82,7 +85,7 @@ function formatOrderStatusData(data: any, year: number, month: number) {
 
   // Map the statuses to the format needed for the pie chart
   return monthData.statuses.map((s: any) => ({
-    name: s.status.charAt(0).toUpperCase() + s.status.slice(1),
+    name: statusLabels[s.status] || s.status,
     value: s.count,
     color: statusColors[s.status as keyof typeof statusColors]
   }));
@@ -97,7 +100,7 @@ function formatOrdersData(ordersData: any, year: number) {
     orders: m.count,
   }));
 }
-function ProductRecommendationCard({ product }: { product: Recommendation }) {
+function ProductRecommendationCard({ product, config }: { product: Recommendation, config: any }) {
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardContent className="p-6">
@@ -119,40 +122,39 @@ function ProductRecommendationCard({ product }: { product: Recommendation }) {
                   <ArrowDownIcon className="h-4 w-4 text-red-500" />
                 )}
                 <span className={`text-sm font-medium ${product.shouldImport ? 'text-green-600' : 'text-red-600'}`}>
-                  {product.shouldImport ? 'Import' : 'No Import'}
+                  {product.shouldImport ? config.recommendation.import : config.recommendation.noImport}
                 </span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
-                <p className="text-sm text-gray-500">Current Stock</p>
-                <p className="font-semibold text-red-600">{product.currentStock} units</p>
+                <p className="text-sm text-gray-500">{config.recommendation.currentStock}</p>
+                <p className="font-semibold text-red-600">{product.currentStock} {config.recommendation.units}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Monthly Sales</p>
-                <p className="font-semibold">{product.averageMonthlySales} units</p>
+                <p className="text-sm text-gray-500">{config.recommendation.monthlySales}</p>
+                <p className="font-semibold">{product.averageMonthlySales} {config.recommendation.units}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Brand</p>
+                <p className="text-sm text-gray-500">{config.recommendation.brand}</p>
                 <p className="font-semibold text-blue-600">{product.brand}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Suggest Quantity </p>
+                <p className="text-sm text-gray-500">{config.recommendation.suggestQuantity}</p>
                 <p className="font-semibold text-purple-600">{product.suggestedQuantity}</p>
               </div>
             </div>
 
             <div className="bg-blue-50 p-3 rounded-lg mb-3">
-              
               <p className="text-xs text-gray-500">
-              <strong>Import Type: </strong> {product.attributeNames} 
+                <strong>{config.recommendation.importType}: </strong> {product.attributeNames}
               </p>
             </div>
 
             <div className="bg-yellow-50 p-3 rounded-lg">
               <p className="text-sm text-gray-700">
-                <strong>Why:</strong> {product.shouldImport ? 'Low stock with high demand - recommended to import' : 'Stock levels are adequate'}
+                <strong>{config.recommendation.why}</strong> {product.shouldImport ? config.recommendation.whyImport : config.recommendation.whyNoImport}
               </p>
             </div>
           </div>
@@ -163,6 +165,9 @@ function ProductRecommendationCard({ product }: { product: Recommendation }) {
 }
 
 export default function Component() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.orderDashboard;
   const [selectedYear, setSelectedYear] = React.useState<string>("2025")
   const [selectedMonth, setSelectedMonth] = React.useState<string>(String(new Date().getMonth() + 1)) // Default to this month
   const [ordersData, setOrdersData] = React.useState<any>(null)
@@ -226,8 +231,8 @@ export default function Component() {
 
   const filteredOrderStatusData = React.useMemo(() => {
     if (!ordersData) return [];
-    return formatOrderStatusData(ordersData, Number(selectedYear), Number(selectedMonth));
-  }, [ordersData, selectedYear, selectedMonth]);
+    return formatOrderStatusData(ordersData, Number(selectedYear), Number(selectedMonth), config.orderStatus);
+  }, [ordersData, selectedYear, selectedMonth, config.orderStatus]);
 
   return (
 
@@ -241,7 +246,7 @@ export default function Component() {
         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.stats.totalOrders}</CardTitle>
               <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -264,39 +269,39 @@ export default function Component() {
                   const currentCount = currentMonthData?.count || 0;
                   const lastCount = lastMonthData?.count || 0;
                   
-                  if (lastCount === 0) return "No data from last month";
+                  if (lastCount === 0) return config.stats.noDataLastMonth;
                   
                   const percentageChange = ((currentCount - lastCount) / lastCount * 100);
                   const sign = percentageChange >= 0 ? "+" : "";
-                  return `${sign}${percentageChange.toFixed(1)}% from last month`;
+                  return `${sign}${percentageChange.toFixed(1)}${config.stats.percentFromLastMonth}`;
                 })()}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.stats.totalRevenue}</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold"> {revenueData?.totalRevenue || 'null'} VND</div>
-              <p className="text-xs text-muted-foreground">total revenue order completed</p>
+              <p className="text-xs text-muted-foreground">{config.stats.totalRevenueCompleted}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue Current Month</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.stats.revenueCurrentMonth}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{revenueData?.currentMonthRevenue || '0'} VND</div>
-              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage === 0 ? 'No revenue current month' : `${revenueData?.monthlyGrowthPercentage} % from last month`} </p>
+              <p className="text-xs text-muted-foreground">{revenueData?.monthlyGrowthPercentage === 0 ? config.stats.noRevenueCurrentMonth : `${revenueData?.monthlyGrowthPercentage} % ${config.stats.percentFromLastMonth}`} </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue Current Years</CardTitle>
+              <CardTitle className="text-sm font-medium">{config.stats.revenueCurrentYear}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -308,11 +313,11 @@ export default function Component() {
                   const currentRevenue = revenueData?.revenueByYear.find((r: any) => r._id === currentYear)?.yearlyRevenue || 0;
                   const lastYearRevenue = revenueData?.revenueByYear.find((r: any) => r._id === lastYear)?.yearlyRevenue || 0;
                   
-                  if (lastYearRevenue === 0) return "No data from last year";
+                  if (lastYearRevenue === 0) return config.stats.noDataLastYear;
                   
                   const percentageChange = ((currentRevenue - lastYearRevenue) / lastYearRevenue * 100);
                   const sign = percentageChange >= 0 ? "+" : "";
-                  return `${sign}${percentageChange.toFixed(1)}% from last year`;
+                  return `${sign}${percentageChange.toFixed(1)}${config.stats.percentFromLastYear}`;
                 })()}
               </p>
             </CardContent>
@@ -327,18 +332,16 @@ export default function Component() {
               </div>
               <div>
                 <CardTitle className="text-xl text-blue-900">
-                  🤔 Nên nhập sản phẩm nào? / Which products should we import?
+                  {config.recommendation.title}
                 </CardTitle>
-                <CardDescription className="text-blue-700">
-                  AI-powered recommendations based on sales data, stock levels, and market trends
-                </CardDescription>
+                <CardDescription className="text-blue-700">{config.recommendation.description}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
               {recommendProducts.map((product) => (
-                <ProductRecommendationCard key={product.productId} product={product} />
+                <ProductRecommendationCard key={product.productId} product={product} config={config} />
               ))}
             </div>
 
@@ -352,13 +355,13 @@ export default function Component() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Monthly Orders</CardTitle>
-                  <CardDescription>Order volume by month</CardDescription>
+                  <CardTitle>{config.charts.monthlyOrders}</CardTitle>
+                  <CardDescription>{config.charts.monthlyOrdersDesc}</CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
                     <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Year" />
+                      <SelectValue placeholder={config.charts.year} />
                     </SelectTrigger>
                     <SelectContent>
                       {year.map((y) => (
@@ -373,7 +376,7 @@ export default function Component() {
               <ChartContainer
                 config={{
                   orders: {
-                    label: "Orders",
+                    label: config.charts.orders,
                     color: "hsl(var(--chart-1))",
                   },
                 }}
@@ -395,11 +398,11 @@ export default function Component() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Order Status Distribution</CardTitle>
+                <CardTitle>{config.charts.orderStatusDistribution}</CardTitle>
                 <div className="flex gap-4">
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
                     <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Year" />
+                      <SelectValue placeholder={config.charts.year} />
                     </SelectTrigger>
                     <SelectContent>
                       {year.map((y) => (
@@ -410,21 +413,12 @@ export default function Component() {
 
                   <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                     <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Month" />
+                      <SelectValue placeholder={config.charts.month} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">January</SelectItem>
-                      <SelectItem value="2">February</SelectItem>
-                      <SelectItem value="3">March</SelectItem>
-                      <SelectItem value="4">April</SelectItem>
-                      <SelectItem value="5">May</SelectItem>
-                      <SelectItem value="6">June</SelectItem>
-                      <SelectItem value="7">July</SelectItem>
-                      <SelectItem value="8">August</SelectItem>
-                      <SelectItem value="9">September</SelectItem>
-                      <SelectItem value="10">October</SelectItem>
-                      <SelectItem value="11">November</SelectItem>
-                      <SelectItem value="12">December</SelectItem>
+                      {config.charts.months.map((m: string, idx: number) => (
+                        <SelectItem key={idx + 1} value={(idx + 1).toString()}>{m}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -453,7 +447,7 @@ export default function Component() {
                           const data = payload[0].payload;
                           return (
                             <div className="bg-white p-2 border rounded shadow">
-                              <p>{data.name}: {data.value} orders</p>
+                              <p>{config.charts.tooltip.replace('{name}', data.name).replace('{value}', data.value)}</p>
                             </div>
                           );
                         }
@@ -472,7 +466,7 @@ export default function Component() {
                       style={{ backgroundColor: item.color }}
                     />
                     <span className="text-sm text-muted-foreground">
-                      {item.name}: {item.value} 
+                      {config.charts.tooltip.replace('{name}', item.name).replace('{value}', item.value)}
                     </span>
                   </div>
                 ))}
@@ -487,21 +481,21 @@ export default function Component() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Top 5 Best-Selling Products</CardTitle>
+                <CardTitle>{config.tables.bestSelling}</CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingProducts ? (
-                  <div>Loading...</div>
+                  <div>{config.tables.loading}</div>
                 ) : errorProducts ? (
                   <div className="text-red-600">{errorProducts}</div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Brand</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Sold</TableHead>
+                        <TableHead>{config.tables.name}</TableHead>
+                        <TableHead>{config.tables.brand}</TableHead>
+                        <TableHead>{config.tables.price}</TableHead>
+                        <TableHead>{config.tables.sold}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -521,21 +515,21 @@ export default function Component() {
             {/* Worst selling  */}
             <Card>
               <CardHeader>
-                <CardTitle>Top 5 Worst-Selling Products</CardTitle>
+                <CardTitle>{config.tables.worstSelling}</CardTitle>
               </CardHeader>
               <CardContent>
                 {loadingProducts ? (
-                  <div>Loading...</div>
+                  <div>{config.tables.loading}</div>
                 ) : errorProducts ? (
                   <div className="text-red-600">{errorProducts}</div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Brand</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Sold</TableHead>
+                        <TableHead>{config.tables.name}</TableHead>
+                        <TableHead>{config.tables.brand}</TableHead>
+                        <TableHead>{config.tables.price}</TableHead>
+                        <TableHead>{config.tables.sold}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

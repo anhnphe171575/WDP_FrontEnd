@@ -53,11 +53,6 @@ import { useLanguage } from "@/context/LanguageContext";
 // Menu items for the sidebar
 const menuItems = [
   {
-    title: "Dashboard",
-    url: "/admin/dashboard",
-    icon: Home,
-  },
-  {
     title: "Analytics",
     url: "/admin/analytics",
     icon: BarChart3,
