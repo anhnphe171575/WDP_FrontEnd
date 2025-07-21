@@ -28,6 +28,7 @@ export default function PaymentSuccessPage() {
   const orderCode = searchParams.get("orderCode");
   const method = searchParams.get("method");
   const rebuyItems = searchParams.get("rebuyItems");
+  const voucherId = searchParams.get("voucherId"); // Thêm dòng này
 
   React.useEffect(() => {
     // Kiểm tra chế độ mua lại từ sessionStorage
@@ -69,7 +70,8 @@ export default function PaymentSuccessPage() {
           status,
           orderCode,
           buyAgainMode: buyAgainMode,
-          rebuyItems: rebuyItems ? JSON.parse(rebuyItems) : undefined
+          rebuyItems: rebuyItems ? JSON.parse(rebuyItems) : undefined,
+          voucherId, // Thêm voucherId vào payload
         };
 
         // Nếu là COD, sử dụng dữ liệu từ context
@@ -84,6 +86,7 @@ export default function PaymentSuccessPage() {
             method: 'cod',
             buyAgainMode: orderData.buyAgainMode || false, // Lấy từ orderData nếu có
             rebuyItems: orderData.rebuyItems ? JSON.stringify(orderData.rebuyItems) : undefined, // Thêm rebuyItems
+            voucherId: orderData.voucherId, // Thêm voucherId từ orderData nếu có
           };
         }
 

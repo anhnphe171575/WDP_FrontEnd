@@ -53,19 +53,9 @@ import { useLanguage } from "@/context/LanguageContext";
 // Menu items for the sidebar
 const menuItems = [
   {
-    title: "Analytics",
-    url: "/admin/analytics",
-    icon: BarChart3,
-  },
-  {
     title: "Users",
     url: "/admin/users",
     icon: Users,
-  },
-  {
-    title: "Messages",
-    url: "/admin/messages",
-    icon: Inbox,
   },
   {
     title: "Manage Product",

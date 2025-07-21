@@ -606,10 +606,14 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
         const token = sessionStorage.getItem("token");
         if (!userId || !token) return;
         const res = await axios.get(
-          `http://localhost:5000/unread-count/${userId}`,
+          `http://localhost:5000/conversation/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setUnreadChatCount(res.data.unreadCount || 0);
+        // Tổng số tin nhắn chưa đọc từ tất cả conversation
+        const totalUnread = Array.isArray(res.data)
+          ? res.data.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+          : 0;
+        setUnreadChatCount(totalUnread);
       } catch (e) {
         setUnreadChatCount(0);
       }
@@ -726,7 +730,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
                       <li key={child._id} className="mb-1">
                         <div
                           className="font-medium cursor-pointer hover:underline flex items-center pl-2 py-2 rounded-lg hover:bg-primary/10 transition-colors group"
-                          // Đã bỏ router.push chuyển trang
+                          onClick={() => router.push(`/category/${child._id}`)}
                         >
                           {child.image && (
                             <img src={child.image} alt={child.name} className="w-5 h-5 rounded object-cover mr-2" />
@@ -742,7 +746,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
                               <li
                                 key={grand._id}
                                 className="mb-1 hover:underline cursor-pointer text-sm pl-2 py-1 rounded hover:bg-primary/5 transition-colors flex items-center"
-                                // Đã bỏ router.push chuyển trang
+                                onClick={() => router.push(`/category/${grand._id}`)}
                               >
                                 {grand.image && (
                                   <img src={grand.image} alt={grand.name} className="w-4 h-4 rounded object-cover mr-2" />

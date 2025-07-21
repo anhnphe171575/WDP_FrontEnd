@@ -69,7 +69,11 @@ const menuItems = [
     url: "/adminbusiness/analytics",
     icon: BarChart3,
   },
-
+  {
+    title: "Thống kê Sản phẩm",
+    url: "/adminbusiness/products",
+    icon: BarChart3,
+  },
 ]
 
 const settingsItems = [

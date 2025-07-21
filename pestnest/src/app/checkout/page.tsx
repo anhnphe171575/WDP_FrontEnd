@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -100,6 +100,21 @@ export default function CheckoutPage() {
     state: "",
     postalCode: "",
   })
+  // Fetch user vouchers
+  const [vouchers, setVouchers] = useState<any[]>([])
+  const [selectedVoucherId, setSelectedVoucherId] = useState<string>("")
+  const [showVoucherModal, setShowVoucherModal] = useState(false)
+  const [showAddressModal, setShowAddressModal] = useState(false)
+
+  // Lọc voucher hợp lệ (chưa dùng và còn hạn)
+  const now = new Date();
+  const validVouchers = vouchers.filter(voucher => {
+    if (voucher.used) return false;
+    const validFrom = voucher.voucherId?.validFrom ? new Date(voucher.voucherId.validFrom) : null;
+    const validTo = voucher.voucherId?.validTo ? new Date(voucher.voucherId.validTo) : null;
+    const isValid = (!validFrom || now >= validFrom) && (!validTo || now <= validTo);
+    return isValid;
+  });
 
   // Thêm hàm fetchAddresses để lấy lại danh sách địa chỉ mới nhất thay vì chỉ cập nhật state cục bộ
   const fetchAddresses = async () => {
@@ -137,9 +152,10 @@ export default function CheckoutPage() {
           return
         }
 
-        const [cartResponse, addressesResponse] = await Promise.all([
+        const [cartResponse, addressesResponse, vouchersResponse] = await Promise.all([
           axiosInstance.get('/cart/getcart'),
-          axiosInstance.get('/users/addresses')
+          axiosInstance.get('/users/addresses'),
+          axiosInstance.get('/vouchers/user'),
         ])
 
         if (cartResponse.data.success) {
@@ -166,12 +182,20 @@ export default function CheckoutPage() {
             isDefault: addr.isDefault || false
           }))
           setAddresses(userAddresses)
-          
           // Set default address as selected if exists
           const defaultAddress = userAddresses.find((addr: Address) => addr.isDefault)
           if (defaultAddress) {
             setSelectedAddress(defaultAddress.id)
           }
+        }
+
+        // Set vouchers state
+        if (Array.isArray(vouchersResponse.data)) {
+          setVouchers(vouchersResponse.data)
+        } else if (vouchersResponse.data && vouchersResponse.data.data) {
+          setVouchers(vouchersResponse.data.data)
+        } else {
+          setVouchers([])
         }
       } catch (err) {
         console.error('Error fetching data:', err)
@@ -193,9 +217,28 @@ export default function CheckoutPage() {
   })
 
   const subtotal = cartItems.reduce((total, item) => total + item.product.selectedVariant.price * item.quantity, 0)
+  // Calculate voucher discount
+  let voucherDiscount = 0
+  let selectedVoucher: any = null
+  if (selectedVoucherId) {
+    selectedVoucher = vouchers.find(v => v._id === selectedVoucherId)
+    if (selectedVoucher && !selectedVoucher.used) {
+      const now = new Date()
+      const validFrom = selectedVoucher.voucherId?.validFrom ? new Date(selectedVoucher.voucherId.validFrom) : null
+      const validTo = selectedVoucher.voucherId?.validTo ? new Date(selectedVoucher.voucherId.validTo) : null
+      const isValid = (!validFrom || now >= validFrom) && (!validTo || now <= validTo)
+      if (isValid) {
+        if (selectedVoucher.voucherId?.discountAmount > 0) {
+          voucherDiscount = selectedVoucher.voucherId.discountAmount
+        } else if (selectedVoucher.voucherId?.discountPercent > 0) {
+          voucherDiscount = Math.round(subtotal * (selectedVoucher.voucherId.discountPercent / 100))
+        }
+      }
+    }
+  }
   const shipping = shippingMethod === "express" ? 0 : 0
   const tax = Math.round(subtotal * 0.0)
-  const total = subtotal + shipping + tax
+  const total = subtotal + shipping + tax - voucherDiscount
 
   const handleDeleteAddress = async (addressId: string) => {
     try {
@@ -225,15 +268,9 @@ export default function CheckoutPage() {
       const response = await axiosInstance.post('/users/addresses', addressData);
 
       if (response.data.success) {
-        // Update local state with the new address from the response
-        const newAddressFromServer = response.data.data;
-        if (setAsDefault) {
-          setAddresses([...addresses.map((addr) => ({ ...addr, isDefault: false })), newAddressFromServer]);
-        } else {
-          setAddresses([...addresses, newAddressFromServer]);
-        }
+        await fetchAddresses(); // Fetch lại danh sách địa chỉ từ server
 
-        setSelectedAddress(newAddressFromServer.id);
+        setSelectedAddress(response.data.data.id); // Chọn địa chỉ mới làm selected
         setShowNewAddressForm(false);
         setNewAddress({
           name: "",
@@ -277,6 +314,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         amount: total,
+        voucherId: selectedVoucherId, // Thêm voucherId vào payload
         // Thêm dữ liệu mua lại vào payload
         rebuyItems: rebuyItems
       }
@@ -321,7 +359,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto py-10 px-4">
       <Header />
-      <h1 className="text-3xl font-bold mb-8">{checkoutConfig.title}</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center w-full mt-10">Thanh toán</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left column - Cart items and forms */}
@@ -364,62 +402,131 @@ export default function CheckoutPage() {
             <CardContent className="space-y-4">
               {/* Saved Addresses */}
               {addresses.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="font-medium">{checkoutConfig.savedAddresses}</h4>
-                  <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
-                    {addresses.map((address) => (
-                      <div key={address.id} className="relative">
-                        <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50">
-                          <RadioGroupItem value={address.id} id={address.id} className="mt-1" />
-                          <Label htmlFor={address.id} className="flex-1 cursor-pointer">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{address.name}</span>
-                                {address.isDefault && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {checkoutConfig.defaultAddress}
-                                  </Badge>
-                                )}
+                <Fragment>
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Địa chỉ đã lưu</h4>
+                    <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
+                      {(addresses.length > 1 ? addresses.slice(0, 1) : addresses).map((address) => (
+                        <div key={address.id} className="relative">
+                          <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50">
+                            <RadioGroupItem value={address.id} id={address.id} className="mt-1" />
+                            <Label htmlFor={address.id} className="flex-1 cursor-pointer">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{address.name}</span>
+                                  {address.isDefault && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Mặc định
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm font-medium">{address.fullName}</p>
+                                <p className="text-sm text-muted-foreground">{address.phone}</p>
                               </div>
-                              <p className="text-sm font-medium">{address.fullName}</p>
-                              <p className="text-sm text-muted-foreground">{address.phone}</p>
-                              <p className="text-sm text-muted-foreground flex items-start gap-1">
-                                <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                {address.address}
-                              </p>
+                            </Label>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => {
+                                  setEditingAddress(address)
+                                  setEditAddressData({
+                                    street: address.street,
+                                    city: address.city,
+                                    state: address.state,
+                                    postalCode: address.postalCode,
+                                  })
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteAddress(address.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </div>
-                          </Label>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => {
-                                setEditingAddress(address)
-                                setEditAddressData({
-                                  street: address.street,
-                                  city: address.city,
-                                  state: address.state,
-                                  postalCode: address.postalCode,
-                                })
-                              }}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteAddress(address.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
                           </div>
                         </div>
+                      ))}
+                    </RadioGroup>
+                    {addresses.length > 1 && (
+                      <Button variant="outline" className="w-full mt-2" onClick={() => setShowAddressModal(true)}>
+                        Xem thêm địa chỉ
+                      </Button>
+                    )}
+                  </div>
+                  {/* Modal Popup for all addresses */}
+                  {showAddressModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+                        <button
+                          className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl"
+                          onClick={() => setShowAddressModal(false)}
+                          aria-label="Đóng"
+                        >
+                          ×
+                        </button>
+                        <h2 className="text-xl font-bold mb-4">Tất cả địa chỉ của bạn</h2>
+                        <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
+                          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                            {addresses.map((address) => (
+                              <div key={address.id} className="relative">
+                                <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50">
+                                  <RadioGroupItem value={address.id} id={address.id} className="mt-1" />
+                                  <Label htmlFor={address.id} className="flex-1 cursor-pointer">
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">{address.name}</span>
+                                        {address.isDefault && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            Mặc định
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <p className="text-sm font-medium">{address.fullName}</p>
+                                      <p className="text-sm text-muted-foreground">{address.phone}</p>
+                                    </div>
+                                  </Label>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => {
+                                        setEditingAddress(address)
+                                        setEditAddressData({
+                                          street: address.street,
+                                          city: address.city,
+                                          state: address.state,
+                                          postalCode: address.postalCode,
+                                        })
+                                      }}
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                      onClick={() => handleDeleteAddress(address.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </RadioGroup>
                       </div>
-                    ))}
-                  </RadioGroup>
-                </div>
+                    </div>
+                  )}
+                </Fragment>
               )}
 
               {editingAddress && (
@@ -554,6 +661,105 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
+              {/* Voucher List */}
+              {validVouchers.length > 0 && (
+                <Fragment>
+                  <Card className="mt-6">
+                    <CardHeader>
+                      <CardTitle>Voucher của bạn</CardTitle>
+                      <CardDescription>Chọn voucher để áp dụng giảm giá cho đơn hàng</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {(validVouchers.length > 1 ? validVouchers.slice(0, 1) : validVouchers).map((voucher: any) => (
+                        <div key={voucher._id} className={`border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 ${selectedVoucherId === voucher._id ? 'border-blue-500 bg-blue-50' : ''}`}>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-lg">{voucher.voucherId?.code}</span>
+                              {voucher.used && (
+                                <Badge variant="destructive">Đã dùng</Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {voucher.voucherId?.discountAmount > 0
+                                ? `Giảm ${formatCurrency(voucher.voucherId.discountAmount)}`
+                                : voucher.voucherId?.discountPercent > 0
+                                ? `Giảm ${voucher.voucherId.discountPercent}%`
+                                : 'Không có giảm giá'}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Hiệu lực: {voucher.voucherId?.validFrom ? new Date(voucher.voucherId.validFrom).toLocaleDateString() : ''} - {voucher.voucherId?.validTo ? new Date(voucher.voucherId.validTo).toLocaleDateString() : ''}
+                            </div>
+                          </div>
+                          <div>
+                            <Button
+                              size="sm"
+                              variant={selectedVoucherId === voucher._id ? 'secondary' : 'outline'}
+                              disabled={selectedVoucherId === voucher._id}
+                              onClick={() => setSelectedVoucherId(voucher._id)}
+                            >
+                              {selectedVoucherId === voucher._id ? 'Đã chọn' : 'Chọn'}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {validVouchers.length > 1 && (
+                        <Button variant="outline" className="w-full mt-2" onClick={() => setShowVoucherModal(true)}>
+                          Xem thêm voucher
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                  {/* Modal Popup for all vouchers */}
+                  {showVoucherModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+                        <button
+                          className="absolute top-2 right-2 text-gray-500 hover:text-black text-xl"
+                          onClick={() => setShowVoucherModal(false)}
+                          aria-label="Đóng"
+                        >
+                          ×
+                        </button>
+                        <h2 className="text-xl font-bold mb-4">Tất cả voucher của bạn</h2>
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                          {validVouchers.map((voucher: any) => (
+                            <div key={voucher._id} className={`border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 ${selectedVoucherId === voucher._id ? 'border-blue-500 bg-blue-50' : ''}`}>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-lg">{voucher.voucherId?.code}</span>
+                                  {voucher.used && (
+                                    <Badge variant="destructive">Đã dùng</Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {voucher.voucherId?.discountAmount > 0
+                                    ? `Giảm ${formatCurrency(voucher.voucherId.discountAmount)}`
+                                    : voucher.voucherId?.discountPercent > 0
+                                    ? `Giảm ${voucher.voucherId.discountPercent}%`
+                                    : 'Không có giảm giá'}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Hiệu lực: {voucher.voucherId?.validFrom ? new Date(voucher.voucherId.validFrom).toLocaleDateString() : ''} - {voucher.voucherId?.validTo ? new Date(voucher.voucherId.validTo).toLocaleDateString() : ''}
+                                </div>
+                              </div>
+                              <div>
+                                <Button
+                                  size="sm"
+                                  variant={selectedVoucherId === voucher._id ? 'secondary' : 'outline'}
+                                  disabled={selectedVoucherId === voucher._id}
+                                  onClick={() => setSelectedVoucherId(voucher._id)}
+                                >
+                                  {selectedVoucherId === voucher._id ? 'Đã chọn' : 'Chọn'}
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </Fragment>
+              )}
             </CardContent>
           </Card>
 
@@ -603,6 +809,12 @@ export default function CheckoutPage() {
                   <span>{checkoutConfig.subtotal}</span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
+                {voucherDiscount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Giảm giá voucher</span>
+                    <span>-{formatCurrency(voucherDiscount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>{checkoutConfig.shippingFee}</span>
                   <span>{formatCurrency(shipping)}</span>
