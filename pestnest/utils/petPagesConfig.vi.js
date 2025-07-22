@@ -1050,6 +1050,7 @@ manaCategory:{
   childCategoriesTitle: "Danh mục con - {name}",
   table: {
     headers: {
+      no: "STT",
       name: "Tên",
       description: "Mô tả",
       image: "Hình ảnh",
@@ -1107,6 +1108,7 @@ manageAttribute: {
   close: "Đóng",
   table: {
     headers: {
+      no: "STT",
       value: "Giá trị",
       description: "Mô tả",
       categories: "Danh mục",
