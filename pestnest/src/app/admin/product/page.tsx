@@ -1104,6 +1104,13 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAddingVariantAddProduct, setIsAddingVariantAddProduct] = useState(false); // Thêm state riêng cho modal này
 
+  // Lấy config ngôn ngữ và label cho child/grandchild category
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.manageProduct?.form || {};
+  const childCategoryLabel = (config.fields as any)?.childCategory || 'Child Category';
+  const grandchildCategoryLabel = (config.fields as any)?.grandchildCategory || 'Grandchild Category';
+
   // Reset states when modal closes
   useEffect(() => {
     if (!isOpen) {

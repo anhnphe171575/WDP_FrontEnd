@@ -1046,6 +1046,7 @@ const pagesConfig = {
       childCategoriesTitle: "Child Categories - {name}",
       table: {
         headers: {
+          no: "No.",
           name: "Name",
           description: "Description",
           image: "Image",
@@ -1103,6 +1104,7 @@ const pagesConfig = {
       close: "Close",
       table: {
         headers: {
+          no: "No.",
           value: "Value",
           description: "Description",
           categories: "Categories",
