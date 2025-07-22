@@ -583,7 +583,7 @@ userstatistics: {
     orders: "Số đơn hàng",
     totalSpent: "Tổng chi tiêu",
     avgOrder: "Trung bình/đơn",
-    totalOrders: "Tổng đơn",
+    totalOrders: "Tổng tiền đơn",
     cancelledOrders: "Đơn hủy",
     cancelRate: "Tỷ lệ hủy",
     mainReason: "Lý do chính"
