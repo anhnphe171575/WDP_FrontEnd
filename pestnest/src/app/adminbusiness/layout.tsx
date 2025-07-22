@@ -48,12 +48,6 @@ import { useLanguage } from "@/context/LanguageContext"
 // Menu items for the sidebar
 const menuItems = [
   {
-    title: "Bảng điều khiển",
-    url: "/adminbusiness/dashboard",
-    icon: Home,
-  },
-
-  {
     title: "Thống kê doanh thu",
     url: "/adminbusiness/statistics",
     icon: BarChart3,
@@ -65,29 +59,12 @@ const menuItems = [
     icon: Users,
   },
   {
-    title: "Báo cáo & Phân tích",
-    url: "/adminbusiness/analytics",
-    icon: BarChart3,
-  },
-  {
     title: "Thống kê Sản phẩm",
     url: "/adminbusiness/products",
     icon: BarChart3,
   },
 ]
 
-const settingsItems = [
-  {
-    title: "Cài đặt",
-    url: "/adminbusiness/settings",
-    icon: Settings,
-  },
-  {
-    title: "Tìm kiếm",
-    url: "/adminbusiness/search",
-    icon: Search,
-  },
-]
 
 function AdminBusinessSidebar() {
   const { lang, setLang } = useLanguage();
@@ -137,16 +114,6 @@ function AdminBusinessSidebar() {
           <SidebarGroupLabel>Khác</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={toggleLanguage}>
                   <Languages />

@@ -74,18 +74,6 @@ const menuItems = [
   },
 ]
 
-const settingsItems = [
-  {
-    title: "Settings",
-    url: "/admin/settings",
-    icon: Settings,
-  },
-  {
-    title: "Search",
-    url: "/admin/search",
-    icon: Search,
-  },
-]
 
 function AppSidebar() {
   const { lang, setLang } = useLanguage();
@@ -146,16 +134,6 @@ function AppSidebar() {
           <SidebarGroupLabel>Other</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={toggleLanguage}>
                   <Languages />
