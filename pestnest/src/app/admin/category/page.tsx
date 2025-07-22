@@ -642,6 +642,9 @@ export default function CategoryPage() {
   const [isGrandChildCategoryModalOpen, setIsGrandChildCategoryModalOpen] = useState(false);
   const [selectedCategoryForGrandChildren, setSelectedCategoryForGrandChildren] = useState<Category | null>(null);
   const { request } = useApi();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -677,6 +680,12 @@ export default function CategoryPage() {
   const filteredCategories = categories.filter(category =>
     category.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Pagination logic for main table
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleEditCategory = async (updatedCategory: Category) => {
@@ -856,6 +865,7 @@ export default function CategoryPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>No.</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Image</TableHead>
@@ -863,9 +873,63 @@ export default function CategoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCategories.map(category => (
+                {paginatedCategories.map((category, index) => (
                   <React.Fragment key={category._id}>
-                    {renderCategoryRow(category)}
+                    <TableRow>
+                      <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {category.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{category.description}</TableCell>
+                      <TableCell>
+                        {category.image && (
+                          <img
+                            src={category.image}
+                            alt={category.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Manage Child Categories"
+                            onClick={() => {
+                              setSelectedCategoryForChildren(category);
+                              setIsChildCategoryModalOpen(true);
+                            }}
+                          >
+                            <ListTree className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Edit Category" 
+                            onClick={() => {
+                              setSelectedCategory(category);
+                              setIsEditModalOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete Category"
+                            onClick={() => handleDeleteCategory(category._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   </React.Fragment>
                 ))}
               </TableBody>
@@ -873,6 +937,53 @@ export default function CategoryPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {[...Array(Math.ceil(filteredCategories.length / itemsPerPage))].map((_, index) => (
+              <Button
+                key={index + 1}
+                variant={currentPage === index + 1 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredCategories.length / itemsPerPage)))}
+            disabled={currentPage === Math.ceil(filteredCategories.length / itemsPerPage)}
+          >
+            Next
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Rows per page:</span>
+          <Select value={String(itemsPerPage)} onValueChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[5, 8, 10, 20, 50].map(num => (
+                <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {selectedCategory && (
         <EditCategoryModal

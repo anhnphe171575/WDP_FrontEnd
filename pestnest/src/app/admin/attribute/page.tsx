@@ -583,6 +583,9 @@ export default function AttributePage() {
   const [isChildModalOpen, setIsChildModalOpen] = useState(false);
   const [parentForChildModal, setParentForChildModal] = useState<Attribute | null>(null);
   const { request } = useApi();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -656,6 +659,12 @@ export default function AttributePage() {
     (attr.description || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Pagination logic
+  const paginatedAttributes = filteredAttributes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // Flatten all attributes for parent select
   const flattenAttributes = (attrs: Attribute[], arr: Attribute[] = []) => {
     for (const attr of attrs) {
@@ -685,6 +694,7 @@ export default function AttributePage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>No.</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Categories</TableHead>
@@ -692,8 +702,9 @@ export default function AttributePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAttributes.map(attr => (
+                {paginatedAttributes.map((attr, index) => (
                   <TableRow key={attr._id}>
+                    <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                     <TableCell>{attr.value}</TableCell>
                     <TableCell>{attr.description}</TableCell>
                     <TableCell>{attr.categories?.map(cid => categories.find(c => c._id === cid)?.name).filter(Boolean).join(", ")}</TableCell>
@@ -711,6 +722,52 @@ export default function AttributePage() {
           )}
         </CardContent>
       </Card>
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {[...Array(Math.ceil(filteredAttributes.length / itemsPerPage))].map((_, index) => (
+              <Button
+                key={index + 1}
+                variant={currentPage === index + 1 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredAttributes.length / itemsPerPage)))}
+            disabled={currentPage === Math.ceil(filteredAttributes.length / itemsPerPage)}
+          >
+            Next
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Rows per page:</span>
+          <Select value={String(itemsPerPage)} onValueChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[5, 8, 10, 20, 50].map(num => (
+                <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       <AddAttributeModal
         isOpen={isAddModalOpen}
         onClose={() => { setIsAddModalOpen(false); setError(null); }}
