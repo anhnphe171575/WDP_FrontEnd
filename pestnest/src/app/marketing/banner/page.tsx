@@ -55,6 +55,21 @@ function BannerForm({ banner, onSubmit, isOpen, onClose }: BannerFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  useEffect(() => {
+    setFormData({
+      _id: banner?._id || '',
+      title: banner?.title || '',
+      description: banner?.description || '',
+      image: banner?.image || '',
+      status: banner?.status || 'active',
+      startDate: banner?.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      endDate: banner?.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
+      link: banner?.link || ''
+    });
+    setImagePreview(banner?.imageUrl || null);
+    setSelectedFile(null);
+  }, [banner]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {

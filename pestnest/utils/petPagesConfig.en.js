@@ -573,7 +573,7 @@ const pagesConfig = {
         orders: "Orders",
         totalSpent: "Total Spent",
         avgOrder: "Avg/Order",
-        totalOrders: "Total Orders",
+        totalOrders: "Total Orders Value",
         cancelledOrders: "Cancelled Orders",
         cancelRate: "Cancel Rate",
         mainReason: "Main Reason"
