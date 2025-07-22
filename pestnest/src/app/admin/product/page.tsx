@@ -1071,11 +1071,6 @@ interface AddProductModalProps {
 }
 
 function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
-  const { lang } = useLanguage();
-  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
-  const config = pagesConfig.manageProduct.form;
-  const childCategoryLabel = (config.fields as any).childCategory || 'Child Category';
-  const grandchildCategoryLabel = (config.fields as any).grandchildCategory || 'Grandchild Category';
   const [level1Categories, setLevel1Categories] = useState<Array<{ _id: string; name: string; description: string }>>([]);
   const [formData, setFormData] = useState({
     name: '',

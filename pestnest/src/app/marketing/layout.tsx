@@ -17,6 +17,9 @@ import {
   Languages,
   MessageCircle,
   LifeBuoy,
+  Star,
+  Gift,
+  Image,
 } from "lucide-react"
 
 import {
@@ -53,24 +56,24 @@ const menuItems = [
     icon: TrendingUp,
   },
   {
-    title: "Email Marketing",
-    url: "/marketing/email",
-    icon: Mail,
-  },
-  {
     title: "Manage Blog",
     url: "/marketing/blog",
-    icon: FileText,
+    icon: Megaphone,
   },
   {
     title: "Manage Banner",
     url: "/marketing/banner",
-    icon: FileText,
+    icon: Image, // icon hình ảnh cho banner
   },
   {
     title: "Manage Review",
     url: "/marketing/review",
-    icon: FileText,
+    icon: Star,
+  },
+  {
+    title: "Manage Voucher",
+    url: "/marketing/voucher",
+    icon: Gift, // icon quà tặng cho voucher
   },
   {
     title: "Chăm Sóc Khách Hàng",
@@ -84,18 +87,6 @@ const menuItems = [
   }
 ]
 
-const settingsItems = [
-  {
-    title: "Cài đặt",
-    url: "/marketing/settings",
-    icon: Settings,
-  },
-  {
-    title: "Tìm kiếm",
-    url: "/marketing/search",
-    icon: Search,
-  },
-]
 
 function MarketingSidebar() {
   const { lang, setLang } = useLanguage();
@@ -162,16 +153,6 @@ function MarketingSidebar() {
           <SidebarGroupLabel>Khác</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={toggleLanguage}>
                   <Languages />
