@@ -911,7 +911,9 @@ const pagesConfig = {
           name: "Name",
           brand: "Brand",
           description: "Description",
-          categories: "Categories"
+          categories: "Categories",
+          childCategory: "Child Category",
+          grandchildCategory: "Grandchild Category"
         },
         buttons: {
           cancel: "Cancel",
@@ -1135,7 +1137,61 @@ const pagesConfig = {
       },
       loading: "Loading...",
       error: "Error: {error}"
-    }
+    },
+    productOverview: {
+      pageTitle: "Product Overview",
+      pageDescription: "Detailed statistics about products in the store.",
+      filter: {
+        activeCategory: "Filtering by category:",
+        clear: "Clear filter"
+      },
+      stats: {
+        totalProducts: {
+          title: "Total Products",
+          description: "Total number of products available"
+        },
+        lowStock: {
+          title: "Low Stock Products",
+          description: "Number of variants with stock <= 10"
+        }
+      },
+      charts: {
+        byCategory: {
+          title: "Products by Category",
+          description: "Click a category to filter the whole page."
+        },
+        byBrand: {
+          title: "Products by Brand"
+        }
+      },
+      lowStockTable: {
+        title: "Low Stock Products",
+        searchPlaceholder: "Search low stock products...",
+        columns: {
+          image: "Image",
+          name: "Product Name",
+          quantity: "Remaining Quantity"
+        }
+      }
+    },
+      adminSidebar: {
+        dashboard: "Dashboard",
+        version: "v1.0.0",
+        application: "Application",
+        other: "Other",
+        switchToEnglish: "Switch to English",
+        switchToVietnamese: "Chuyển sang Tiếng Việt",
+        userName: "John Doe", // hoặc để động
+        userEmail: "john@example.com", // hoặc để động
+        profile: "Profile",
+        settings: "Settings",
+        logout: "Log out",
+        users: "Users",
+        manageProduct: "Manage Product",
+        manageCategory: "Manage Category",
+        manageAttribute: "Manage Attribute",
+        search: "Search"
+      }
   };
   
   export default pagesConfig;

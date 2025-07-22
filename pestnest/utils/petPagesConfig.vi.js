@@ -913,7 +913,9 @@ manageProduct: {
       name: "Tên",
       brand: "Thương hiệu",
       description: "Mô tả",
-      categories: "Danh mục"
+      categories: "Danh mục",
+      childCategory: "Danh mục con",
+      grandchildCategory: "Danh mục cháu"
     },
     buttons: {
       cancel: "Hủy",
@@ -1138,6 +1140,61 @@ manageAttribute: {
   loading: "Đang tải...",
   error: "Lỗi: {error}"
 },
+productOverview: {
+  pageTitle: "Tổng Quan Sản Phẩm",
+  pageDescription: "Thống kê chi tiết về sản phẩm trong cửa hàng.",
+  filter: {
+    activeCategory: "Đang lọc theo danh mục:",
+    clear: "Xóa bộ lọc"
+  },
+  stats: {
+    totalProducts: {
+      title: "Tổng Sản Phẩm",
+      description: "Tổng số sản phẩm đang có"
+    },
+    lowStock: {
+      title: "Sản Phẩm Sắp Hết Hàng",
+      description: "Số lượng biến thể có tồn kho <= 10"
+    }
+  },
+  charts: {
+    byCategory: {
+      title: "Sản Phẩm Theo Danh Mục",
+      description: "Nhấp vào một danh mục để lọc toàn bộ trang."
+    },
+    byBrand: {
+      title: "Sản Phẩm Theo Thương Hiệu"
+    }
+  },
+  lowStockTable: {
+    title: "Sản Phẩm Tồn Kho Thấp",
+    searchPlaceholder: "Tìm kiếm sản phẩm tồn kho thấp...",
+    columns: {
+      image: "Hình Ảnh",
+      name: "Tên Sản Phẩm",
+      quantity: "Số Lượng Còn Lại"
+    }
+  }
+},
+adminSidebar: {
+  dashboard: "Bảng điều khiển",
+  version: "v1.0.0",
+  application: "Ứng dụng",
+  other: "Khác",
+  switchToEnglish: "Switch to English",
+  switchToVietnamese: "Chuyển sang Tiếng Việt",
+  userName: "John Doe", // hoặc để động
+  userEmail: "john@example.com", // hoặc để động
+  profile: "Trang cá nhân",
+  settings: "Cài đặt",
+  logout: "Đăng xuất",
+  users: "Người dùng",
+  manageProduct: "Quản lý Sản phẩm",
+  manageCategory: "Quản lý Danh mục",
+  manageAttribute: "Quản lý Thuộc tính",
+  settings: "Cài đặt",
+  search: "Tìm kiếm"
+}
 };
 
 export default pagesConfig;
