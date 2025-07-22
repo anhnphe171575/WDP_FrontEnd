@@ -566,9 +566,11 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     setSearchQuery(initialSearchTerm);
   }, [initialSearchTerm]);
 
-  const handleSearch = () => {
-    // Nếu muốn chuyển trang tìm kiếm, hãy sử dụng router.push ở đây
-    // Ví dụ: router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   // Lắng nghe socket để nhận tin nhắn mới

@@ -30,8 +30,10 @@ interface CartItem {
       attributes: {
         value: string
       }[]
+      importBatches: { quantity: number }[]
     }
   }
+  stockAvailable?: number
 }
 
 interface CartResponse {
@@ -58,6 +60,20 @@ export default function ShoppingCart() {
   const { lang } = useLanguage();
   const config = lang === 'vi' ? viConfig : enConfig;
   const cartConfig = config.cart;
+
+  // Thêm hàm tính stockAvailable thực tế nếu chưa có trường này trong item
+  const getStockAvailable = (item: CartItem) => {
+    // Nếu có trường stockAvailable thì ưu tiên dùng
+    if (typeof (item as any).stockAvailable === 'number') {
+      return (item as any).stockAvailable;
+    }
+    // Nếu không, tính tổng quantity từ importBatches
+    const batches = item.product.selectedVariant.importBatches as { quantity: number }[] | undefined;
+    if (batches && Array.isArray(batches)) {
+      return batches.reduce((sum, batch) => sum + (batch.quantity || 0), 0);
+    }
+    return 0;
+  };
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -136,19 +152,23 @@ export default function ShoppingCart() {
     )
   }
 
-  const toggleSelectAll = () => {
-    if (selectedItems.length === cartItems.length) {
-      setSelectedItems([])
-    } else {
-      setSelectedItems(cartItems.map(item => item._id))
-    }
-  }
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(price)
+  }
+
+  // Thêm biến kiểm tra có sản phẩm hết hàng
+  const hasOutOfStock = cartItems.some(item => getStockAvailable(item) === 0);
+
+  // Sửa hàm toggleSelectAll để chọn tất cả sản phẩm (kể cả hết hàng)
+  const toggleSelectAll = () => {
+    if (selectedItems.length === cartItems.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(cartItems.map(item => item._id));
+    }
   }
 
   const calculateSelectedTotal = () => {
@@ -158,10 +178,21 @@ export default function ShoppingCart() {
   }
 
   const handleBuyNow = () => {
-    if (selectedItems.length === 0) return
+    // Kiểm tra có sản phẩm hết hàng trong selectedItems không
+    const hasOutOfStockSelected = cartItems
+      .filter(item => selectedItems.includes(item._id))
+      .some(item => getStockAvailable(item) === 0);
+
+    if (selectedItems.length === 0) return;
+
+    if (hasOutOfStockSelected) {
+      alert('Trong giỏ hàng có sản phẩm hết hàng, vui lòng bỏ chọn sản phẩm này trước khi thanh toán!');
+      return;
+    }
+
     // Store selected items in localStorage for checkout page
-    localStorage.setItem('checkoutItems', JSON.stringify(selectedItems))
-    router.push('/checkout')
+    localStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
+    router.push('/checkout');
   }
 
   if (loading) {
@@ -188,7 +219,7 @@ export default function ShoppingCart() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center gap-4 mb-8">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => router.push('/homepage')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               {cartConfig.continueShopping}
             </Button>
@@ -215,7 +246,7 @@ export default function ShoppingCart() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="hover:bg-gray-100">
+            <Button variant="ghost" size="sm" className="hover:bg-gray-100" onClick={() => router.push('/homepage')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               {cartConfig.continueShopping}
             </Button>
@@ -254,111 +285,124 @@ export default function ShoppingCart() {
           </Card>
 
           {/* Cart Items */}
-          {cartItems.map((item) => (
-            <Card 
-              key={item._id} 
-              className={`shadow-sm hover:shadow-md transition-all duration-200 ${
-                selectedItems.includes(item._id) ? "ring-2 ring-blue-500 bg-blue-50/50" : ""
-              } ${
-                rebuyItems.includes(item._id) ? "ring-2 ring-green-500 bg-green-50/50" : ""
-              }`}
-            >
-              <CardContent className="p-6">
-                <div className="flex gap-6">
-                  <div className="flex items-start pt-2">
-                    <Checkbox
-                      id={`item-${item._id}`}
-                      checked={selectedItems.includes(item._id)}
-                      onChange={() => toggleItemSelection(item._id)}
-                      className="border-gray-300"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-2">
-                    <Checkbox
-                      id={`rebuy-${item._id}`}
-                      checked={rebuyItems.includes(item._id)}
-                      onChange={() => toggleRebuySelection(item._id)}
-                      className="border-green-300"
-                    />
-                    <label htmlFor={`rebuy-${item._id}`} className="text-xs text-green-600 cursor-pointer">
-                      Mua lại
-                    </label>
-                  </div>
-
-                  <img
-                    src={item.product.selectedVariant.images[0]?.url || "/placeholder.svg"}
-                    alt={item.product.name}
-                    className="w-28 h-28 object-cover rounded-lg shadow-sm"
-                  />
-
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-semibold text-lg text-gray-900">{item.product.name}</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(item._id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+          {cartItems.map((item) => {
+            const stockAvailable = getStockAvailable(item);
+            const isOutOfStock = stockAvailable === 0;
+            const isOverQuantity = item.quantity > stockAvailable;
+            return (
+              <Card
+                key={item._id}
+                className={`shadow-sm hover:shadow-md transition-all duration-200
+                  ${selectedItems.includes(item._id) ? "ring-2 ring-blue-500 bg-blue-50/50" : ""}
+                  ${rebuyItems.includes(item._id) ? "ring-2 ring-green-500 bg-green-50/50" : ""}
+                  ${(isOutOfStock || isOverQuantity) ? "opacity-50 line-through" : ""}
+                `}
+              >
+                <CardContent className="p-6">
+                  <div className="flex gap-6">
+                    <div className="flex items-start pt-2">
+                      <Checkbox
+                        id={`item-${item._id}`}
+                        checked={selectedItems.includes(item._id)}
+                        onChange={() => toggleItemSelection(item._id)}
+                        className="border-gray-300"
+                      />
                     </div>
 
-                    <div className="flex gap-4 text-sm text-gray-600 mb-4">
-                      {item.product.selectedVariant.attributes.map((attr, index) => (
-                        <span key={index} className="bg-gray-100 px-3 py-1 rounded-full">
-                          {attr.value}
-                        </span>
-                      ))}
+                    <div className="flex items-center gap-2 mb-2">
+                      <Checkbox
+                        id={`rebuy-${item._id}`}
+                        checked={rebuyItems.includes(item._id)}
+                        onChange={() => toggleRebuySelection(item._id)}
+                        className="border-green-300"
+                      />
+                      <label htmlFor={`rebuy-${item._id}`} className="text-xs text-green-600 cursor-pointer">
+                        Mua lại
+                      </label>
                     </div>
 
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
+                    <img
+                      src={item.product.selectedVariant.images[0]?.url || "/placeholder.svg"}
+                      alt={item.product.name}
+                      className="w-28 h-28 object-cover rounded-lg shadow-sm"
+                    />
+
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-semibold text-lg text-gray-900">
+                          {item.product.name}
+                          {(isOutOfStock || isOverQuantity) && (
+                            <span className="ml-2 text-red-500 text-sm font-normal">
+                              {isOutOfStock ? "Hết hàng" : "Không đủ hàng"}
+                            </span>
+                          )}
+                        </h3>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="border-gray-300 hover:bg-gray-100"
+                          onClick={() => removeItem(item._id)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-12 text-center font-medium text-gray-900">{item.quantity}</span>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                          className="border-gray-300 hover:bg-gray-100"
-                        >
-                          <Plus className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
-                      <div className="text-right">
-                        <div
-                          className={`font-semibold text-xl ${
-                            selectedItems.includes(item._id) ? "text-blue-600" : "text-gray-900"
-                          }`}
-                        >
-                          {formatPrice(item.product.selectedVariant.price * item.quantity)}
-                          {selectedItems.includes(item._id) && (
-                            <span className="text-xs text-blue-500 block mt-1">{cartConfig.selected}</span>
-                          )}
-                          {rebuyItems.includes(item._id) && (
-                            <span className="text-xs text-green-500 block mt-1">✓ Mua lại</span>
-                          )}
+                      <div className="flex gap-4 text-sm text-gray-600 mb-4">
+                        {item.product.selectedVariant.attributes.map((attr, index) => (
+                          <span key={index} className="bg-gray-100 px-3 py-1 rounded-full">
+                            {attr.value}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                            disabled={item.quantity <= 1 || isOutOfStock}
+                            className="border-gray-300 hover:bg-gray-100"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-12 text-center font-medium text-gray-900">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                            disabled={item.quantity >= stockAvailable || isOutOfStock}
+                            className="border-gray-300 hover:bg-gray-100"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {cartConfig.pricePerProduct.replace('{price}', formatPrice(item.product.selectedVariant.price))}
+
+                        <div className="text-right">
+                          <div
+                            className={`font-semibold text-xl ${
+                              selectedItems.includes(item._id) ? "text-blue-600" : "text-gray-900"
+                            }`}
+                          >
+                            {formatPrice(item.product.selectedVariant.price * item.quantity)}
+                            {selectedItems.includes(item._id) && (
+                              <span className="text-xs text-blue-500 block mt-1">{cartConfig.selected}</span>
+                            )}
+                            {rebuyItems.includes(item._id) && (
+                              <span className="text-xs text-green-500 block mt-1">✓ Mua lại</span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            {cartConfig.pricePerProduct.replace('{price}', formatPrice(item.product.selectedVariant.price))}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
