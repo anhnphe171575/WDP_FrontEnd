@@ -171,8 +171,7 @@ reviewManagement: {
 userManagement: {
   title: "Quản lý Người dùng",
   addNewButton: "Thêm Người dùng Mới",
-  importCSV: "Nhập bằng CSV",
-  exportAll: "Xuất tất cả người dùng",
+  editTitle: "Chỉnh sửa Người dùng",
   search: {
     placeholder: "Tìm kiếm người dùng...",
     rolePlaceholder: "Lọc theo vai trò"
@@ -234,13 +233,7 @@ userManagement: {
     next: "Tiếp"
   },
   loading: "Đang tải...",
-  error: "Lỗi:",
-  alert: {
-    importSuccess: "Nhập thành công!",
-    importFail: "Nhập thất bại:",
-    exportFail: "Xuất thất bại:"
-  },
-  notAvailable: "Không có"
+  error: "Lỗi:"
 },
 changepass: {
   title: "Đổi Mật Khẩu",
@@ -583,7 +576,7 @@ userstatistics: {
     orders: "Số đơn hàng",
     totalSpent: "Tổng chi tiêu",
     avgOrder: "Trung bình/đơn",
-    totalOrders: "Tổng tiền đơn",
+    totalOrders: "Tổng đơn",
     cancelledOrders: "Đơn hủy",
     cancelRate: "Tỷ lệ hủy",
     mainReason: "Lý do chính"

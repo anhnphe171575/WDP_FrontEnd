@@ -91,7 +91,7 @@ export default function ProductsByCategoryPieChart({ data }: Props) {
         {currentCategories.map((cat) =>
           cat.subCategories && cat.subCategories.length > 0 ? (
             <Button key={cat.categoryName} size="sm" variant="secondary" onClick={() => handleDrillDown(cat)}>
-              Lọc {cat.categoryName}
+              {cat.categoryName}
             </Button>
           ) : null
         )}
