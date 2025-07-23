@@ -1335,7 +1335,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-8">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold mb-2">Add New Product</DialogTitle>
+          <DialogTitle className="text-2xl font-bold mb-2">{config.addTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -1346,7 +1346,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name" className="font-semibold">Name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="name" className="font-semibold">{config.fields.name} <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -1356,7 +1356,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="brand" className="font-semibold">Brand</Label>
+                <Label htmlFor="brand" className="font-semibold">{config.fields.brand}</Label>
                 <Input
                   id="brand"
                   value={formData.brand}
@@ -1366,7 +1366,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
               </div>
             </div>
             <div>
-              <Label htmlFor="description" className="font-semibold">Description <span className="text-red-500">*</span></Label>
+              <Label htmlFor="description" className="font-semibold">{config.fields.description} <span className="text-red-500">*</span></Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -1377,7 +1377,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
             </div>
           </div>
           <div className="bg-gray-50 p-6 rounded-lg border">
-            <Label className="font-semibold mb-2 block">Categories <span className="text-red-500">*</span></Label>
+            <Label className="font-semibold mb-2 block">{config.fields.categories} <span className="text-red-500">*</span></Label>
             <div className="space-y-2 mt-2">
               {level1Categories.map((category) => (
                 <div key={`parent-${category._id}`} className="flex flex-col gap-1">
@@ -1434,17 +1434,17 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
           </div>
           <div className="bg-gray-50 p-6 rounded-lg border">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-base text-gray-700">Product Variants</h3>
-              <Button type="button" onClick={() => setIsAddVariantFormOpen(true)} disabled={selectedParentCategories.length === 0}>Add Variant</Button>
+              <h3 className="font-semibold text-base text-gray-700">{pagesConfig.manageProduct.variant.title}</h3>
+              <Button type="button" onClick={() => setIsAddVariantFormOpen(true)} disabled={selectedParentCategories.length === 0}>{pagesConfig.manageProduct.variant.addNewButton}</Button>
             </div>
             {variants.length > 0 && (
               <div className="space-y-2 mb-4">
-                <h4 className="text-sm font-medium">Added Variants ({variants.length})</h4>
+                <h4 className="text-sm font-medium">{pagesConfig.manageProduct.variant.table.headers.no} {variants.length}</h4>
                 {variants.map((variant, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
                     <div className="flex items-center space-x-4">
-                      <div className="text-sm"><span className="font-medium">Images:</span> {variant.images.length}</div>
-                      <div className="text-sm"><span className="font-medium">Attributes:</span> {variant.attributes.length}</div>
+                      <div className="text-sm"><span className="font-medium">{pagesConfig.manageProduct.variant.table.headers.images}:</span> {variant.images.length}</div>
+                      <div className="text-sm"><span className="font-medium">{pagesConfig.manageProduct.variant.table.headers.attributes}:</span> {variant.attributes.length}</div>
                     </div>
                     <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveVariant(index)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
@@ -1460,7 +1460,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <Label className="font-semibold">Images <span className="text-red-500">*</span></Label>
+                    <Label className="font-semibold">{pagesConfig.manageProduct.variant.form.fields.images} <span className="text-red-500">*</span></Label>
                     <div className="space-y-2">
                       {newVariant.images.map((image, index) => (
                         <div key={`image-${index}`} className="flex gap-2 items-center">
@@ -1492,15 +1492,15 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                         onClick={handleAddImage}
                         disabled={isAddingVariantAddProduct}
                       >
-                        Add Image
+                        {pagesConfig.manageProduct.variant.form.fields.images}
                       </Button>
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <Label className="font-semibold">Attributes <span className="text-red-500">*</span></Label>
+                    <Label className="font-semibold">{pagesConfig.manageProduct.variant.form.fields.attributes} <span className="text-red-500">*</span></Label>
                     <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
                       <div>
-                        <Label className="font-semibold">Parent Attributes</Label>
+                        <Label className="font-semibold">{pagesConfig.manageProduct.variant.form.fields.parentAttributes}</Label>
                         <div className="space-y-2 mt-2">
                           {attributes.parentAttributes.map((attr) => (
                             <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
@@ -1519,7 +1519,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                         </div>
                       </div>
                       <div>
-                        <Label className="font-semibold">Child Attributes</Label>
+                        <Label className="font-semibold">{pagesConfig.manageProduct.variant.form.fields.childAttributes}</Label>
                         <div className="space-y-2 mt-2">
                           {selectedParentAttribute && attributes.childAttributes
                             .filter(attr => attr.parentId && attr.parentId._id === selectedParentAttribute)
@@ -1541,7 +1541,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="price">Sell Price <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="price">{pagesConfig.manageProduct.variant.form.fields.sellPrice} <span className="text-red-500">*</span></Label>
                       <Input
                         id="price"
                         type="number"
@@ -1559,10 +1559,10 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                         setSelectedChildAttribute(null);
                         setError(null);
                       }} disabled={isAddingVariantAddProduct}>
-                        Cancel
+                        {pagesConfig.manageProduct.variant.form.buttons.cancel}
                       </Button>
                       <Button type="button" onClick={handleAddVariant} disabled={isAddingVariantAddProduct}>
-                        {isAddingVariantAddProduct ? 'Adding...' : 'Add Variant'}
+                        {isAddingVariantAddProduct ? pagesConfig.manageProduct.variant.form.buttons.add : pagesConfig.manageProduct.variant.form.buttons.add}
                       </Button>
                     </div>
                   </div>
@@ -1572,10 +1572,10 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
           </div>
           <div className="flex justify-end gap-4 mt-6">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="px-6 py-2">
-              Cancel
+              {config.buttons.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="px-6 py-2 font-semibold">
-              {isSubmitting ? 'Adding...' : 'Add Product'}
+              {isSubmitting ? config.buttons.add : config.buttons.add}
             </Button>
           </div>
         </form>
