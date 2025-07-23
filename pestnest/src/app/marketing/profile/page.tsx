@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../utils/axios';
+import { api } from '../../../../utils/axios';
 import Header from '@/components/layout/Header';
 import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import viConfig from '../../../utils/petPagesConfig.vi';
-import enConfig from '../../../utils/petPagesConfig.en';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface Address {
     _id?: string; // Added _id for potential backend compatibility
@@ -91,6 +91,7 @@ const UserProfilePage = () => {
 
     const handleUpdate = async () => {
         if (!editData) return;
+
         // Kiểm tra các trường bắt buộc
         if (
             !editData.name || !editData.name.trim() ||
@@ -137,7 +138,7 @@ const UserProfilePage = () => {
     };
 
     const handleChangePassword = () => {
-        router.push('/changepass');
+        router.push('/marketing/changepassword');
     };
 
     const getValidDateString = (dateStr?: string) => {
@@ -209,7 +210,6 @@ const UserProfilePage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header />
             {successMsg && (
                 <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded shadow-lg animate-fade-in">
                     {successMsg}

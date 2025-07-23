@@ -47,7 +47,6 @@ import { useLanguage } from "@/context/LanguageContext"
 
 // Menu items for the sidebar
 const menuItems = [
-
   {
     title: "Thống kê doanh thu",
     url: "/adminbusiness/statistics",
@@ -58,17 +57,6 @@ const menuItems = [
     title: " Thống kê khách hàng",
     url: "/adminbusiness/user",
     icon: Users,
-  },
-  {
-    title: "Thống kê đơn hàng",
-    url: "/adminbusiness/order",
-    icon: ShoppingCart,
-  },
-
-  {
-    title: "Thống kê Marketing",
-    url: "/adminbusiness/marketing",
-    icon: TrendingUp,
   },
   {
     title: "Thống kê Sản phẩm",
@@ -83,23 +71,6 @@ function AdminBusinessSidebar() {
 
   const toggleLanguage = () => {
     setLang(lang === 'vi' ? 'en' : 'vi');
-  };
-
-  const handleLogout = () => {
-    try {
-      sessionStorage.removeItem('token');
-      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-        try {
-          window.google.accounts.id.disableAutoSelect();
-        } catch (error) {
-          console.error('Error disabling Google auto select:', error);
-        }
-      }
-      window.location.reload();
-    } catch (error) {
-      console.error('Error during logout:', error);
-      window.location.reload();
-    }
   };
 
   return (
@@ -143,7 +114,6 @@ function AdminBusinessSidebar() {
           <SidebarGroupLabel>Khác</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-           
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={toggleLanguage}>
                   <Languages />
@@ -190,6 +160,7 @@ function AdminBusinessSidebar() {
                 <DropdownMenuSeparator />
                 
                 <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                <DropdownMenuItem className="text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Đăng xuất</span>
                 </DropdownMenuItem>
