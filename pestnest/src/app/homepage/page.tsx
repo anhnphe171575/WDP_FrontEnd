@@ -22,6 +22,7 @@ interface Category {
   description: string;
   totalOrders: number;
   image?: string;
+  parentCategory?: string | null;
 }
 
 interface ParentCategory {
@@ -42,15 +43,43 @@ interface Banner {
   status:string
 }
 
+interface ProductVariant {
+  _id: string;
+  images: { url: string }[];
+  sellPrice: number;
+  importedQuantity: number;
+  orderedQuantity: number;
+  availableQuantity: number;
+  // ... các trường khác nếu cần
+}
+
+interface ReviewUser {
+  _id: string;
+  name: string;
+  avatar?: string;
+}
+
+interface ProductReview {
+  _id: string;
+  userId: ReviewUser | null;
+  productId: string;
+  rating: number;
+  comment: string;
+  images: { url: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface TopSellingProduct {
   _id: string;
   name: string;
   description: string;
-  totalSold: number;
-  minSellPrice: number;
-  images: {
-    url: string;
-  }[];
+  brand: string;
+  category: Category[];
+  createAt: string;
+  updateAt: string;
+  variants: ProductVariant[];
+  reviews: ProductReview[];
 }
 
 export default function HomePage() {
@@ -164,7 +193,7 @@ export default function HomePage() {
     const fetchTopSellingProducts = async () => {
       try {
         setIsLoadingTopSelling(true);
-        const response = await api.get('/products/top-selling');
+        const response = await api.get('/products/best-selling');
         if (response.data.success) {
           // Ensure response.data.data is an array
           const productsData = Array.isArray(response.data.data) ? response.data.data : [];
@@ -360,7 +389,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {parentCategories.map((category, index) => (
+              {Array.isArray(parentCategories) && parentCategories.map((category, index) => (
                 <motion.div
                   key={category._id}
                   initial={{ opacity: 0, y: 30 }}
@@ -494,35 +523,78 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="flex space-x-8 pr-4">
-                  {Array.isArray(topSellingProducts) && topSellingProducts.map((product, index) => (
-                    <motion.div
-                      key={product._id}
-                      initial={{ opacity: 0, x: 30 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      className="w-72 flex-shrink-0 bg-white rounded-2xl shadow-lg overflow-hidden transform hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <Link href={`/product/${product._id}`} className="block">
-                        <div className="relative h-48 w-full">
-                          <span className="absolute top-3 left-3 bg-yellow-500 text-white text-sm font-bold px-3 py-1 rounded-full z-10">Bán chạy</span>
+                  {Array.isArray(topSellingProducts) && topSellingProducts.map((product, index) => {
+                    // Lấy variant có giá thấp nhất và có ảnh
+                    const minPriceVariant = Array.isArray(product.variants) && product.variants.length > 0
+                      ? product.variants.reduce((min, v) => v.sellPrice < min.sellPrice ? v : min, product.variants[0])
+                      : null;
+
+                    // Lấy ảnh đầu tiên tìm được trong các variants
+                    let firstImage = '/images/placeholder.jpg';
+                    if (Array.isArray(product.variants)) {
+                      for (const v of product.variants) {
+                        if (Array.isArray(v.images) && v.images.length > 0 && v.images[0].url) {
+                          firstImage = v.images[0].url;
+                          break;
+                        }
+                      }
+                    }
+                    // Kiểm tra hết hàng: tất cả variant đều availableQuantity <= 0
+                    const isOutOfStock = Array.isArray(product.variants) && product.variants.length > 0
+                      ? product.variants.every(v => v.availableQuantity <= 0)
+                      : false;
+                    // Lấy nhãn phụ từ category đầu tiên (nếu có)
+                    const mainCategory = Array.isArray(product.category) && product.category.length > 0 ? product.category[0] : null;
+                    // Lấy mô tả phụ từ description hoặc category
+                    const subDescription = mainCategory?.description || product.description;
+                    return (
+                      <div
+                        key={product._id}
+                        className="w-80 bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col relative group border border-gray-100 hover:shadow-2xl hover:border-pink-400 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105"
+                      >
+                        <div className="relative w-full h-52 flex items-center justify-center bg-gradient-to-tr from-pink-50 via-white to-blue-50">
+                          {isOutOfStock && (
+                            <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded z-20 shadow-lg">
+                              Hết hàng
+                            </span>
+                          )}
                           <Image
-                            src={product.images[0]?.url || '/images/placeholder.jpg'}
+                            src={firstImage}
                             alt={product.name}
                             fill
-                            className="object-cover"
+                            className="object-contain p-6 drop-shadow-lg group-hover:scale-105 transition-transform duration-500"
                           />
+                          {/* Nhãn phụ */}
+                          {mainCategory && (
+                            <span className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-10 border-2 border-white">{mainCategory.name}</span>
+                          )}
                         </div>
-                        <div className="p-6">
-                          <h4 className="text-base font-bold text-gray-800 mb-2 line-clamp-2">{product.name}</h4>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm text-gray-600">Đã bán: {product.totalSold}</p>
-                            <p className="text-xl font-bold text-gray-900">{product.minSellPrice}đ</p>
+                        {/* Mô tả phụ dưới ảnh */}
+                        {subDescription && (
+                          <div className="text-center text-xs text-gray-700 font-medium px-3 pt-2 pb-1 truncate italic opacity-80">
+                            {subDescription}
+                          </div>
+                        )}
+                        <div className="flex-1 flex flex-col justify-between p-5">
+                          {/* Brand */}
+                          <div className="uppercase text-xs text-pink-500 font-bold mb-1 tracking-widest">{product.brand}</div>
+                          {/* Tên sản phẩm */}
+                          <Link href={`/product/${product._id}`} className="block font-bold text-lg text-blue-800 hover:text-pink-600 hover:underline leading-tight mb-1 line-clamp-2 transition-colors duration-200">
+                            {product.name}
+                          </Link>
+                          {/* Mô tả ngắn */}
+                          <div className="text-sm text-gray-500 mb-2 line-clamp-2 italic">{product.description}</div>
+                          {/* Giá */}
+                          <div className="text-xl font-extrabold text-pink-600 mt-auto flex items-end gap-1">
+                            {minPriceVariant && minPriceVariant.sellPrice
+                              ? minPriceVariant.sellPrice.toLocaleString('vi-VN')
+                              : 'N/A'}
+                            <span className="text-base font-normal text-gray-500 pb-0.5">đ</span>
                           </div>
                         </div>
-                      </Link>
-                    </motion.div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

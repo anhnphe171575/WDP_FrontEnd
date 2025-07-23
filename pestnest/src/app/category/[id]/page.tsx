@@ -41,7 +41,7 @@ interface Product {
       value: string;
     }[];
     sellPrice: number;
-    totalQuantity: number;
+    availableQuantity: number;
   }[];
   brand: string;
 }
@@ -131,8 +131,6 @@ export default function ProductsPage() {
   const fetchFilteredProducts = async (filterParams: FilterParams) => {
     try {
       setLoading(true);
-      
-      
       // If we don't have all products yet, fetch them first
       if (allProducts.length === 0) {
         const response = await api.get(`/products/productDetailsByCategory/${params.id}`);
@@ -370,7 +368,10 @@ export default function ProductsPage() {
   const handleAddToCart = (product: Product) => {
     const variant = product.variants?.[0];
     if (!variant) return;
-
+    if (variant.availableQuantity <= 0) {
+      alert('Sản phẩm đã hết hàng!');
+      return;
+    }
     addToCart({
       _id: product._id,
       name: product.name,
@@ -704,9 +705,10 @@ export default function ProductsPage() {
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-lg text-red-600">{(product.variants?.[0]?.sellPrice || 0).toLocaleString()} ₫</span>
                           </div>
-                          {product.variants?.[0]?.totalQuantity === 0 && (
+                          {product.variants?.[0]?.availableQuantity <= 0 && (
                             <div className="text-xs text-white bg-red-500 rounded px-2 py-1 inline-block mt-2">Sản phẩm hết hàng</div>
                           )}
+                         
                         </div>
                       </CardContent>
                     </Card>

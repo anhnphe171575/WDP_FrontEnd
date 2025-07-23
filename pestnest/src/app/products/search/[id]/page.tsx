@@ -49,12 +49,11 @@ interface Product {
     images: {
       url: string;
     }[];
-    attribute: {
-      Attribute_id: string;
-      value: string;
-    }[];
+    attribute: string[]; // sửa lại cho đúng với dữ liệu trả về
     sellPrice: number;
-    totalQuantity: number;
+    importedQuantity: number;
+    orderedQuantity: number;
+    availableQuantity: number;
   }[];
   brand: string;
   reviews?: Review[];
@@ -121,15 +120,7 @@ const mapBestSellingProduct = (item: any): Product => ({
   category: item.category || [],
   createAt: item.createAt || '',
   updateAt: item.updateAt || '',
-  variants: [
-    {
-      _id: item._id + '-variant',
-      images: item.images || [],
-      attribute: [],
-      sellPrice: item.minSellPrice || 0,
-      totalQuantity: item.totalQuantity || 0,
-    },
-  ],
+  variants: item.variants || [], // dùng trực tiếp từ API
 });
 
 // Helper: Tính điểm đánh giá trung bình
@@ -260,7 +251,11 @@ export default function ProductsPage() {
         sorted.sort((a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime());
         break;
       case 'bestselling':
-        sorted.sort((a, b) => (b.variants?.[0]?.totalQuantity || 0) - (a.variants?.[0]?.totalQuantity || 0));
+        sorted.sort((a, b) => {
+          const soldA = (a.variants?.[0]?.importedQuantity || 0) - (a.variants?.[0]?.availableQuantity || 0);
+          const soldB = (b.variants?.[0]?.importedQuantity || 0) - (b.variants?.[0]?.availableQuantity || 0);
+          return soldB - soldA;
+        });
         break;
       default:
         break;
@@ -647,6 +642,10 @@ export default function ProductsPage() {
                             height={300}
                             className="w-full h-48 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                           />
+                          {/* Hiển thị nhãn Hết hàng nếu tất cả variant đều hết hàng */}
+                          {product.variants && product.variants.every(v => (v.availableQuantity || 0) <= 0) && (
+                            <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">Hết hàng</span>
+                          )}
                         </div>
                         {/* Hiển thị brand */}
                         <div className="mb-1 text-xs text-gray-500 font-semibold uppercase tracking-wide">{product.brand}</div>

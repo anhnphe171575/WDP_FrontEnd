@@ -31,18 +31,14 @@ interface Product {
   updateAt: string;
   variants: {
     _id: string;
-    images: {
-      url: string;
-    }[];
-    attribute: {
-      Attribute_id: string;
-      value: string;
-    }[];
+    images: { url: string }[];
+    attribute: string[];
     sellPrice: number;
-    totalQuantity: number;
+    availableQuantity: number;
   }[];
   brand: string;
   averageRating?: number;
+  totalSold?: number;
 }
 
 interface Category {
@@ -103,19 +99,18 @@ const mapBestSellingProduct = (item: any): Product => ({
   name: item.name,
   description: item.description,
   brand: item.brand,
-  category: item.categories?.map((c: any) => c._id) || [],
-  createAt: '',
-  updateAt: '',
-  variants: [
-    {
-      _id: item._id + '-variant',
-      images: item.images || [],
-      attribute: [],
-      sellPrice: item.minSellPrice || 0,
-      totalQuantity: item.totalQuantity || 0,
-    },
-  ],
+  category: item.category || [],
+  createAt: item.createAt || '',
+  updateAt: item.updateAt || '',
+  variants: (item.variants || []).map((v: any) => ({
+    _id: v._id,
+    images: v.images || [],
+    attribute: v.attribute || [],
+    sellPrice: v.sellPrice || 0,
+    availableQuantity: v.availableQuantity || 0,
+  })),
   averageRating: item.averageRating || 0,
+  totalSold: item.totalSold,
 });
 
 export default function ProductsPage() {
@@ -224,7 +219,7 @@ export default function ProductsPage() {
         sorted.sort((a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime());
         break;
       case 'bestselling':
-        sorted.sort((a, b) => (b.variants?.[0]?.totalQuantity || 0) - (a.variants?.[0]?.totalQuantity || 0));
+        sorted.sort((a, b) => (b.variants?.[0]?.availableQuantity || 0) - (a.variants?.[0]?.availableQuantity || 0));
         break;
       default:
         // relevance: giữ nguyên thứ tự
@@ -595,6 +590,11 @@ export default function ProductsPage() {
                           <div className="flex items-center space-x-2">
                             <span className="font-bold text-lg text-red-600">{config.product.price.replace('{price}', (product.variants?.[0]?.sellPrice || 0).toLocaleString())}</span>
                           </div>
+                          {(product.variants?.[0]?.availableQuantity ?? 0) <= 0 && (
+                            <span className="inline-block mt-2 px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded font-semibold">
+                              Hết hàng
+                            </span>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

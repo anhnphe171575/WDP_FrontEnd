@@ -96,42 +96,35 @@ export function getSocket() {
 
 function CartDropdown() {
   const [isLoading, setIsLoading] = useState(true);
-  const [cartData, setCartData] = useState<CartItem[]>([]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartCount, setCartCount] = useState(0);
   const { lang } = useLanguage();
   const config = lang === 'vi' ? pagesConfigVi.header : pagesConfigEn.header;
+
   useEffect(() => {
     const fetchCartData = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/cart/getlatestcartitem');
-        console.log(response.data);
-
+        const response = await api.get('/cart/getcart');
         if (response.data.success && response.data.data) {
-          const latestItem = response.data.data;
-
-          // Check if the required properties exist before transforming
-          if (latestItem.product && latestItem.product.selectedVariant) {
-            // Transform the data to match CartItem interface
-            const transformedItem: CartItem = {
-              _id: latestItem._id || '',
-              variantId: latestItem.product.selectedVariant._id || '',
-              name: latestItem.product.name || 'Unknown Product',
-              price: latestItem.product.selectedVariant.price || 0,
-              quantity: latestItem.quantity || 1,
-              image: latestItem.product.selectedVariant.images?.[0]?.url || "/placeholder.svg"
-            };
-            setCartData([transformedItem]);
-          } else {
-            // If selectedVariant is missing, set empty cart
-            console.warn('Cart item missing selectedVariant:', latestItem);
-            setCartData([]);
-          }
+          const items = response.data.data.cartItems || [];
+          setCartItems((items as any[]).map((item: any) => ({
+            _id: item._id || '',
+            variantId: item.product.selectedVariant?._id || '',
+            name: item.product.name || 'Unknown Product',
+            price: item.product.selectedVariant?.price || 0,
+            quantity: item.quantity || 1,
+            image: item.product.selectedVariant?.images?.[0]?.url || "/placeholder.svg"
+          })));
+          setCartCount(items.length);
         } else {
-          setCartData([]);
+          setCartItems([]);
+          setCartCount(0);
         }
       } catch (error) {
         console.error("Failed to fetch cart data:", error);
-        setCartData([]); // Set empty array on error
+        setCartItems([]);
+        setCartCount(0);
       } finally {
         setIsLoading(false);
       }
@@ -139,23 +132,28 @@ function CartDropdown() {
 
     fetchCartData();
 
-    // Lắng nghe sự kiện cartUpdated để fetch lại giỏ hàng
     const handleCartUpdate = () => {
       fetchCartData();
     };
     window.addEventListener('cartUpdated', handleCartUpdate);
-
-    // Cleanup
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
   }, []);
+
+  // Get the latest added product (last in the array)
+  const latestItem = cartItems.length > 0 ? cartItems[cartItems.length - 1] : null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <ShoppingCart className="h-5 w-5" />
+          {cartCount > 0 && (
+            <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+              {cartCount}
+            </Badge>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
@@ -165,33 +163,28 @@ function CartDropdown() {
             <div className="flex justify-center items-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             </div>
-          ) : cartData.length === 0 ? (
+          ) : !latestItem ? (
             <div className="text-center py-4 text-muted-foreground">
               {config.cart.empty}
             </div>
           ) : (
             <>
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {cartData.map((item) => (
-                  <div key={`${item._id}-${item.variantId}`} className="flex items-center space-x-3">
-                    <img
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name}
-                      className="w-12 h-12 rounded-md object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.name}</p>
-                      <div className="flex items-center space-x-2">
-
-
-                      </div>
+                <div key={`${latestItem._id}-${latestItem.variantId}`} className="flex items-center space-x-3">
+                  <img
+                    src={latestItem.image || "/placeholder.svg"}
+                    alt={latestItem.name}
+                    className="w-12 h-12 rounded-md object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{latestItem.name}</p>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-red-500 font-semibold">{latestItem.price.toLocaleString('vi-VN')}₫</span>
                     </div>
-
                   </div>
-                ))}
+                </div>
               </div>
               <Separator className="my-3" />
-
               <div className="space-y-2">
                 <Button className="w-full" size="sm" asChild>
                   <Link href="/cart">{config.cart.viewCart}</Link>
@@ -202,7 +195,7 @@ function CartDropdown() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
 
 function NotificationDropdown() {
@@ -566,9 +559,11 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     setSearchQuery(initialSearchTerm);
   }, [initialSearchTerm]);
 
-  const handleSearch = () => {
-    // Nếu muốn chuyển trang tìm kiếm, hãy sử dụng router.push ở đây
-    // Ví dụ: router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   // Lắng nghe socket để nhận tin nhắn mới

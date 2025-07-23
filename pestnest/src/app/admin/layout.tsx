@@ -204,12 +204,8 @@ function AppSidebar() {
                   <span>{pagesConfig.adminSidebar.settings}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
-                  <Link href="/login" className="flex items-center w-full">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </Link>
-                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                
+                  <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{pagesConfig.adminSidebar.logout}</span>
                 </DropdownMenuItem>

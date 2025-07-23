@@ -53,7 +53,7 @@ interface Product {
       quantity: number;
       costPrice: number;
     }[];
-    totalQuantity: number;
+    availableQuantity: number;
   }[];
   categoryInfo: {
     _id: string;
@@ -431,9 +431,21 @@ export default function ProductPage() {
           {/* Product Info */}
           <div className="space-y-8">
             <div>
-              <Badge variant="secondary" className="mb-3 text-sm px-3 py-1">
-                {product.category?.[0]?.name || config.uncategorized}
-              </Badge>
+              {product.category && product.category.length > 0 ? (
+                product.category.map((cat, idx) => (
+                  <Badge
+                    key={cat.id || idx}
+                    variant="secondary"
+                    className="mb-3 text-sm px-3 py-1 mr-2"
+                  >
+                    {cat.name}
+                  </Badge>
+                ))
+              ) : (
+                <Badge variant="secondary" className="mb-3 text-sm px-3 py-1">
+                  {config.uncategorized}
+                </Badge>
+              )}
               <h1 className="text-4xl font-bold mb-3">{product.name}</h1>
               {Object.entries(attributeOptions).map(([parentId, options]) => (
                 <div key={parentId} className="mb-4">
@@ -459,10 +471,10 @@ export default function ProductPage() {
               ))}
               <div className="flex items-center gap-4 mb-6">
                 <span className="text-4xl font-bold text-primary">{variant.sellPrice}đ</span>
-                {variant.totalQuantity === 0 ? (
+                {variant.availableQuantity <= 0 ? (
                   <span className="text-base text-red-500 ml-4 font-semibold">{config.outOfStock}</span>
                 ) : (
-                  <span className="text-base text-muted-foreground ml-4">{config.left} <b>{variant.totalQuantity}</b></span>
+                  <span className="text-base text-muted-foreground ml-4">{config.left} <b>{variant.availableQuantity}</b></span>
                 )}
               </div>
             </div>
@@ -473,7 +485,7 @@ export default function ProductPage() {
               </p>
 
               {/* Quantity */}
-              {variant.totalQuantity > 0 && (
+              {variant.availableQuantity > 0 && (
                 <div className="space-y-3">
                   <Label className="text-base font-medium">{config.quantity}</Label>
                   <Select value={quantity.toString()} onValueChange={(value) => setQuantity(parseInt(value))}>
@@ -481,7 +493,7 @@ export default function ProductPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5].map((num) => (
+                      {Array.from({ length: Math.min(5, variant.availableQuantity) }, (_, i) => i + 1).map((num) => (
                         <SelectItem key={num} value={num.toString()}>
                           {num}
                         </SelectItem>
@@ -497,7 +509,7 @@ export default function ProductPage() {
                   size="lg" 
                   className="flex-1 h-12 text-lg font-medium shadow-lg hover:shadow-xl transition-shadow"
                   onClick={handleAddToCart}
-                  disabled={addingToCart || variant.totalQuantity === 0}
+                  disabled={addingToCart || variant.availableQuantity <= 0}
                 >
                   {addingToCart ? (
                     <div className="flex items-center">
