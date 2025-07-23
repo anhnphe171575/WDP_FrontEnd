@@ -426,7 +426,7 @@ export default function UserPage() {
 
   const fetchUsers = async () => {
     try {
-      const data = await api.get('/users/admin');
+      const data = await api.get('/users');
       console.log(data.data);
       setUsers(data.data.data);
     } catch (err: any) {
