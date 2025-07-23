@@ -218,7 +218,7 @@ export default function OrderPage() {
 
   const fetchOrders = async () => {
     try {
-      const data = await api.get('/orders');
+      const data = await api.get('/orders/order-manager');
       setOrders(data.data);
       console.log(data.data);
       
