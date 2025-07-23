@@ -169,8 +169,7 @@ const pagesConfig = {
     userManagement: {
       title: "User Management",
       addNewButton: "Add New User",
-      importCSV: "Import with CSV",
-      exportAll: "Export All Users",
+      editTitle: "Edit User",
       search: {
         placeholder: "Search users...",
         rolePlaceholder: "Filter by role"
@@ -232,13 +231,7 @@ const pagesConfig = {
         next: "Next"
       },
       loading: "Loading...",
-      error: "Error:",
-      alert: {
-        importSuccess: "Import successful!",
-        importFail: "Import failed:",
-        exportFail: "Export failed:"
-      },
-      notAvailable: "N/A"
+      error: "Error:"
     },
     changepass: {
       title: "Change Password",
@@ -580,7 +573,7 @@ const pagesConfig = {
         orders: "Orders",
         totalSpent: "Total Spent",
         avgOrder: "Avg/Order",
-        totalOrders: "Total Orders Value",
+        totalOrders: "Total Orders",
         cancelledOrders: "Cancelled Orders",
         cancelRate: "Cancel Rate",
         mainReason: "Main Reason"
@@ -886,257 +879,6 @@ const pagesConfig = {
         completed: "Completed",
         returned: "Returned"
       }
-    },
-    manageProduct: {
-      title: "Product Management",
-      addNewButton: "Add New Product",
-      editTitle: "Edit Product",
-      search: {
-        placeholder: "Search products..."
-      },
-      table: {
-        headers: {
-          no: "No.",
-          name: "Name",
-          brand: "Brand",
-          description: "Description",
-          categories: "Categories",
-          actions: "Actions"
-        }
-      },
-      form: {
-        addTitle: "Add New Product",
-        editTitle: "Edit Product",
-        fields: {
-          name: "Name",
-          brand: "Brand",
-          description: "Description",
-          categories: "Categories"
-        },
-        buttons: {
-          cancel: "Cancel",
-          save: "Save Changes",
-          add: "Add Product"
-        },
-        error: {
-          requiredName: "Name and description are required",
-          requiredCategory: "Please select at least one parent category",
-          failedUpdate: "Failed to update product",
-          failedCreate: "Failed to create product"
-        }
-      },
-      variant: {
-        title: "Manage Variants",
-        addNewButton: "Add New Variant",
-        editTitle: "Edit Variant",
-        table: {
-          headers: {
-            no: "No.",
-            attributes: "Attributes",
-            sellPrice: "Sell Price",
-            totalQuantity: "Total Quantity",
-            images: "Images",
-            actions: "Actions"
-          }
-        },
-        form: {
-          addTitle: "Add New Variant",
-          editTitle: "Edit Variant",
-          fields: {
-            images: "Images",
-            attributes: "Attributes",
-            parentAttributes: "Parent Attributes",
-            childAttributes: "Child Attributes",
-            sellPrice: "Sell Price"
-          },
-          buttons: {
-            cancel: "Cancel",
-            save: "Update Variant",
-            add: "Add Variant"
-          },
-          error: {
-            requiredImage: "Please add at least one image",
-            requiredParentAttr: "Please select a parent attribute",
-            requiredChildAttr: "Please select a child attribute",
-            requiredPrice: "Please enter a valid price",
-            failedAdd: "Failed to add variant",
-            failedUpdate: "Failed to update variant"
-          }
-        },
-        deleteDialog: {
-          title: "Delete Variant",
-          content: "Are you sure you want to delete this variant? This action cannot be undone.",
-          cancel: "Cancel",
-          delete: "Delete"
-        },
-        empty: "No variants found for this product",
-        loading: "Loading variants..."
-      },
-      import: {
-        title: "Manage Import Batches",
-        addNewButton: "Add New Import Batch",
-        editTitle: "Edit Import Batch",
-        table: {
-          headers: {
-            no: "No.",
-            importDate: "Import Date",
-            quantity: "Quantity",
-            costPrice: "Cost Price",
-            totalValue: "Total Value",
-            actions: "Actions"
-          }
-        },
-        form: {
-          addTitle: "Add New Import Batch",
-          editTitle: "Edit Import Batch",
-          fields: {
-            importDate: "Import Date",
-            quantity: "Quantity",
-            costPrice: "Cost Price"
-          },
-          buttons: {
-            cancel: "Cancel",
-            add: "Add Batch",
-            save: "Update Batch"
-          },
-          error: {
-            requiredQuantity: "Quantity must be greater than 0",
-            requiredCostPrice: "Cost price must be greater than 0",
-            failedAdd: "Failed to add import batch",
-            failedUpdate: "Failed to update import batch"
-          }
-        },
-        deleteDialog: {
-          title: "Delete Import Batch",
-          content: "Are you sure you want to delete this import batch? This action cannot be undone.",
-          cancel: "Cancel",
-          delete: "Delete"
-        },
-        empty: "No import batches found for this variant",
-        loading: "Loading import batches...",
-        summary: {
-          totalQuantity: "Total Quantity",
-          averageCostPrice: "Average Cost Price",
-          totalInventoryValue: "Total Inventory Value",
-          profitMargin: "Profit Margin"
-        },
-        sellPrice: {
-          label: "Sell Price:",
-          saving: "Saving..."
-        }
-      },
-      deleteDialog: {
-        title: "Delete Product",
-        content: "Are you sure you want to delete this product? This action will also delete all its variants and cannot be undone.",
-        cancel: "Cancel",
-        delete: "Delete",
-        deleting: "Deleting..."
-      },
-      pagination: {
-        previous: "Previous",
-        next: "Next"
-      },
-      loading: "Loading...",
-      error: "Error:"
-    },
-    manaCategory: {
-      title: "Category Management",
-      addNewButton: "Add New Category",
-      editTitle: "Edit Category",
-      childCategoriesTitle: "Child Categories - {name}",
-      table: {
-        headers: {
-          no: "No.",
-          name: "Name",
-          description: "Description",
-          image: "Image",
-          actions: "Actions"
-        }
-      },
-      form: {
-        name: "Name",
-        description: "Description",
-        image: "Category Image",
-        cancel: "Cancel",
-        save: "Save Changes",
-        saving: "Saving...",
-        add: "Add Category",
-        adding: "Adding..."
-      },
-      dialog: {
-        deleteTitle: "Delete Category",
-        deleteContent: "Are you sure you want to delete this category? This action cannot be undone.",
-        delete: "Delete",
-        deleting: "Deleting...",
-        close: "Close"
-      },
-      button: {
-        manageChildren: "Manage Child Categories",
-        edit: "Edit Category",
-        delete: "Delete Category"
-      },
-      search: {
-        placeholder: "Search categories..."
-      },
-      loading: "Loading...",
-      loadingChildren: "Loading child categories...",
-      noChildren: "No child categories found",
-      uploading: "Uploading: {progress}%",
-      error: "Error: {error}",
-      errors: {
-        nameRequired: "Name is required",
-        updateFailed: "Failed to update category",
-        createFailed: "Failed to create category",
-        fetchChildrenFailed: "Failed to fetch child categories",
-        deleteFailed: "Failed to delete category",
-        fetchFailed: "Failed to fetch categories",
-        saveFailed: "Failed to save category"
-      }
-    },
-    manageAttribute: {
-      title: "Attribute Management",
-      addNewButton: "Add Attribute",
-      editTitle: "Edit Attribute",
-      deleteTitle: "Delete Attribute",
-      deleteConfirm: "Are you sure you want to delete this attribute? This action cannot be undone.",
-      delete: "Delete",
-      deleting: "Deleting...",
-      close: "Close",
-      table: {
-        headers: {
-          no: "No.",
-          value: "Value",
-          description: "Description",
-          categories: "Categories",
-          actions: "Actions"
-        }
-      },
-      search: {
-        placeholder: "Search attributes..."
-      },
-      form: {
-        value: "Value",
-        description: "Description",
-        parent: "Parent Attribute",
-        categories: "Categories",
-        noParent: "No parent",
-        cancel: "Cancel",
-        save: "Save",
-        add: "Add Attribute",
-        error: {
-          requiredValue: "Value is required",
-          failedSave: "Failed to save attribute",
-          failedDelete: "Failed to delete attribute"
-        }
-      },
-      child: {
-        title: "Child Attributes of: {parent}",
-        add: "Add Child Attribute",
-        noChild: "No child attributes found",
-        loading: "Loading child attributes..."
-      },
-      loading: "Loading...",
-      error: "Error: {error}"
     }
   };
   

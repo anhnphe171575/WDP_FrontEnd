@@ -43,7 +43,150 @@ import { da } from "date-fns/locale"
 import { useLanguage } from '@/context/LanguageContext';
 import pagesConfigEn from '../../../../utils/petPagesConfig.en';
 import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
-import * as XLSX from "xlsx";
+
+
+
+// Mock data for VIP customers
+const vipCustomers = [
+  {
+    id: 1,
+    name: "Nguyễn Văn An",
+    email: "an.nguyen@email.com",
+    totalSpent: 25000000,
+    orders: 45,
+    joinDate: "2023-01-15",
+    tier: "Diamond",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 2,
+    name: "Trần Thị Bình",
+    email: "binh.tran@email.com",
+    totalSpent: 18000000,
+    orders: 32,
+    joinDate: "2023-03-20",
+    tier: "Gold",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 3,
+    name: "Lê Minh Cường",
+    email: "cuong.le@email.com",
+    totalSpent: 22000000,
+    orders: 38,
+    joinDate: "2023-02-10",
+    tier: "Platinum",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 4,
+    name: "Phạm Thu Dung",
+    email: "dung.pham@email.com",
+    totalSpent: 15000000,
+    orders: 28,
+    joinDate: "2023-04-05",
+    tier: "Gold",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 5,
+    name: "Hoàng Văn Em",
+    email: "em.hoang@email.com",
+    totalSpent: 30000000,
+    orders: 52,
+    joinDate: "2022-12-01",
+    tier: "Diamond",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 6,
+    name: "Hoàng Văn Em",
+    email: "em.hoang@email.com",
+    totalSpent: 30000000,
+    orders: 52,
+    joinDate: "2022-12-01",
+    tier: "Diamond",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 7,
+    name: "Hoàng Văn Em",
+    email: "em.hoang@email.com",
+    totalSpent: 30000000,
+    orders: 52,
+    joinDate: "2022-12-01",
+    tier: "Diamond",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+]
+
+// Mock data for customers with most cancellations
+const topCancelUsers = [
+  {
+    id: 1,
+    name: "Đỗ Văn Phúc",
+    email: "phuc.do@email.com",
+    totalOrders: 25,
+    cancelledOrders: 12,
+    cancelRate: 48,
+    lastCancel: "2024-01-15",
+    reason: "Thay đổi ý định",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 2,
+    name: "Vũ Thị Giang",
+    email: "giang.vu@email.com",
+    totalOrders: 30,
+    cancelledOrders: 11,
+    cancelRate: 37,
+    lastCancel: "2024-01-10",
+    reason: "Sản phẩm không phù hợp",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 3,
+    name: "Bùi Minh Hải",
+    email: "hai.bui@email.com",
+    totalOrders: 22,
+    cancelledOrders: 9,
+    cancelRate: 41,
+    lastCancel: "2024-01-08",
+    reason: "Giao hàng chậm",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 4,
+    name: "Ngô Thu Hương",
+    email: "huong.ngo@email.com",
+    totalOrders: 28,
+    cancelledOrders: 10,
+    cancelRate: 36,
+    lastCancel: "2024-01-12",
+    reason: "Giá cả không hợp lý",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+  {
+    id: 5,
+    name: "Đinh Văn Khoa",
+    email: "khoa.dinh@email.com",
+    totalOrders: 20,
+    cancelledOrders: 8,
+    cancelRate: 40,
+    lastCancel: "2024-01-14",
+    reason: "Thay đổi ý định",
+    avatar: "/placeholder.svg?height=40&width=40",
+  },
+]
+
+// Mock data for cancellation reasons
+const cancellationReasons = [
+  { name: "Thay đổi ý định", value: 35, color: "#8884d8" },
+  { name: "Sản phẩm không phù hợp", value: 25, color: "#82ca9d" },
+  { name: "Giao hàng chậm", value: 20, color: "#ffc658" },
+  { name: "Giá cả không hợp lý", value: 15, color: "#ff7300" },
+  { name: "Khác", value: 5, color: "#00ff00" },
+]
 
 
 const formatCurrency = (amount: number) => {
@@ -234,10 +377,10 @@ export default function UserManagementDashboard() {
 
 
   // Filter VIP customers based on search term
-  const filteredVipCustomers = (dashboardData?.topCustomersByOrderCount || []).filter(
+  const filteredVipCustomers = vipCustomers.filter(
     (customer) =>
-      customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   // Paginate VIP customers
@@ -245,50 +388,30 @@ export default function UserManagementDashboard() {
   const vipEndIndex = vipStartIndex + vipItemsPerPage
   const paginatedVipCustomers = filteredVipCustomers.slice(vipStartIndex, vipEndIndex)
 
-  // Paginate top buyers (by revenue)
-  const topBuyersData = (dashboardData?.topCustomersByRevenue || []).sort((a, b) => b.orderCount - a.orderCount)
+  // Paginate top buyers
+  const topBuyersData = vipCustomers.sort((a, b) => b.orders - a.orders)
   const buyersStartIndex = (currentPage - 1) * itemsPerPage
   const buyersEndIndex = buyersStartIndex + itemsPerPage
   const paginatedTopBuyers = topBuyersData.slice(buyersStartIndex, buyersEndIndex)
 
-  // Đã thay thế toàn bộ logic filter, paginate, render bằng filteredCancelUsers và paginatedCancelUsers
-  // Đảm bảo hàm filter có kiểu cho user
-  const filteredCancelUsers = (dashboardData?.topUsersByCancellations || []).filter((user: any) =>
-    user.userName?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Paginate cancellation users
   const cancelStartIndex = (cancelCurrentPage - 1) * cancelItemsPerPage
   const cancelEndIndex = cancelStartIndex + cancelItemsPerPage
-  const paginatedCancelUsers = filteredCancelUsers.slice(cancelStartIndex, cancelEndIndex)
+  const paginatedCancelUsers = topCancelUsers.slice(cancelStartIndex, cancelEndIndex)
 
-  const filteredPotentialCustomers = (dashboardData?.potentialCustomers || []).filter((customer) =>
-    customer.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredPotentialCustomers =
+    dashboardData?.potentialCustomers.filter((customer) =>
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || []
+
   const paginatedPotentialCustomers = filteredPotentialCustomers.slice(
     (potentialCurrentPage - 1) * potentialItemsPerPage,
     potentialCurrentPage * potentialItemsPerPage
   )
 
-  const handleExportExcel = () => {
-    if (!dashboardData) return;
-    const wb = XLSX.utils.book_new();
-
-    // Helper to add a sheet
-    const addSheet = (data: any[], name: string) => {
-      if (data && data.length > 0) {
-        const ws = XLSX.utils.json_to_sheet(data);
-        XLSX.utils.book_append_sheet(wb, ws, name);
-      }
-    };
-
-    addSheet(dashboardData.topCustomersByOrderCount, "TopByOrderCount");
-    addSheet(dashboardData.topCustomersByRevenue, "TopByRevenue");
-    addSheet(dashboardData.topUsersByCancellations, "TopByCancellations");
-    addSheet(dashboardData.potentialCustomers, "PotentialCustomers");
-    addSheet(dashboardData.userRegistrationByMonth, "RegByMonth");
-    addSheet(dashboardData.userRegistrationByYear, "RegByYear");
-
-    XLSX.writeFile(wb, "dashboard-data.xlsx");
-  };
+  const filteredCancelUsers = topCancelUsers.filter((user) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -303,9 +426,9 @@ export default function UserManagementDashboard() {
               <Filter className="mr-2 h-4 w-4" />
               {config.filter}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportExcel}>
+            <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
-              Export Excel
+              {config.export}
             </Button>
           </div>
         </div>
@@ -437,12 +560,12 @@ export default function UserManagementDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedPotentialCustomers.map((customer: any, index: number) => (
-                      <TableRow key={customer.id ?? customer.email ?? index}>
+                    {dashboardData?.potentialCustomers.map((customer: any) => (
+                      <TableRow key={customer.id}>
                         <TableCell className="flex items-center space-x-3">
                           <Avatar>
                             <AvatarImage src={customer.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{customer.name?.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="font-medium">{customer.name}</div>
@@ -451,7 +574,7 @@ export default function UserManagementDashboard() {
                         </TableCell>
                         <TableCell>{customer.email}</TableCell>
                         <TableCell>{customer.phone}</TableCell>
-                        <TableCell>{customer.createdAt ? new Date(customer.createdAt).toLocaleDateString("vi-VN") : ""}</TableCell>
+                        <TableCell>{new Date(customer.createdAt).toLocaleDateString("vi-VN")}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -488,7 +611,7 @@ export default function UserManagementDashboard() {
                   </TableHeader>
                   <TableBody>
                     {dashboardData?.topCustomersByRevenue.map((customer, index) => (
-                      <TableRow key={customer.id ?? customer.userEmail ?? index}>
+                      <TableRow key={customer.id}>
                         <TableCell>
                           <div className="flex items-center">
                             <span className="font-bold text-lg">#{buyersStartIndex + index + 1}</span>
@@ -544,8 +667,8 @@ export default function UserManagementDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedCancelUsers.map((user: any, index: number) => (
-                      <TableRow key={user.id ?? user.userEmail ?? index}>
+                    {dashboardData?.topUsersByCancellations.map((user) => (
+                      <TableRow key={user.id}>
                         <TableCell className="flex items-center space-x-3">
                           <Avatar>
                             <AvatarImage src={user.avatar || "/placeholder.svg"} />
@@ -574,7 +697,7 @@ export default function UserManagementDashboard() {
                 <div className="mt-4">
                   <Pagination
                     currentPage={cancelCurrentPage}
-                    totalItems={filteredCancelUsers.length}
+                    totalItems={topCancelUsers.length}
                     itemsPerPage={cancelItemsPerPage}
                     onPageChange={setCancelCurrentPage}
                     onItemsPerPageChange={setCancelItemsPerPage}

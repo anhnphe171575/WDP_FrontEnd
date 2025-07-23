@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  BarChart3,
+  Home,
   Search,
   Settings,
   FileText,
@@ -8,7 +10,10 @@ import {
   LogOut,
   User,
   ChevronUp,
+  Megaphone,
+  Target,
   Mail,
+  Share2,
   Languages,
   MessageCircle,
   LifeBuoy,
@@ -69,7 +74,7 @@ const menuItems = [
   },
   {
     title: "Chăm Sóc Khách Hàng",
-    url: "/marketing/messages", // <-- đổi từ /messages thành /marketing/messages
+    url: "/messages",
     icon: MessageCircle,
   },
   {
@@ -202,7 +207,7 @@ function MarketingSidebar() {
                 align="start"
                 sideOffset={4}
               >
-                <DropdownMenuItem onClick={() => window.location.href = '/marketing/profile'}>
+                <DropdownMenuItem onClick={() => window.location.href = '/userProfile'}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Hồ sơ</span>
                 </DropdownMenuItem>
