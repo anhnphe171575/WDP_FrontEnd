@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../../utils/axios';
+import Header from '@/components/layout/Header';
 import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import viConfig from '../../../../utils/petPagesConfig.vi';
@@ -119,7 +120,7 @@ const UserProfilePage = () => {
     };
 
     const handleChangePassword = () => {
-        router.push('/admin/changepass');
+        router.push('/marketing/changepassword');
     };
 
     const getValidDateString = (dateStr?: string) => {
