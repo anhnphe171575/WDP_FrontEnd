@@ -55,11 +55,28 @@ import pagesConfigViRaw from "../../../utils/petPagesConfig.vi";
 // Menu items for the sidebar
 const menuItems = [
   {
+    title: "Dashboard",
+    url: "/admin/dashboard",
+    icon: Home,
+  },
+  {
+    title: "Analytics",
+    url: "/admin/analytics",
+    icon: BarChart3,
+  },
+  {
+    title: "Users",
     titleKey: "users",
     url: "/admin/users",
     icon: Users,
   },
   {
+    title: "Messages",
+    url: "/admin/messages",
+    icon: Inbox,
+  },
+  {
+    title: "Manage Product",
     titleKey: "manageProduct",
     url: "/admin/product",
     icon: Package,
@@ -175,6 +192,10 @@ function AppSidebar() {
                 sideOffset={4}
               >
                 <DropdownMenuItem>
+                  <Link href="/admin/profile" className="flex items-center w-full">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
                   <User className="mr-2 h-4 w-4" />
                   <span>{pagesConfig.adminSidebar.profile}</span>
                 </DropdownMenuItem>
@@ -183,6 +204,11 @@ function AppSidebar() {
                   <span>{pagesConfig.adminSidebar.settings}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600">
+                  <Link href="/login" className="flex items-center w-full">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </Link>
                 <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>{pagesConfig.adminSidebar.logout}</span>

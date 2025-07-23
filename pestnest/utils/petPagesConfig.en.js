@@ -169,8 +169,7 @@ const pagesConfig = {
     userManagement: {
       title: "User Management",
       addNewButton: "Add New User",
-      importCSV: "Import with CSV",
-      exportAll: "Export All Users",
+      editTitle: "Edit User",
       search: {
         placeholder: "Search users...",
         rolePlaceholder: "Filter by role"
@@ -232,13 +231,7 @@ const pagesConfig = {
         next: "Next"
       },
       loading: "Loading...",
-      error: "Error:",
-      alert: {
-        importSuccess: "Import successful!",
-        importFail: "Import failed:",
-        exportFail: "Export failed:"
-      },
-      notAvailable: "N/A"
+      error: "Error:"
     },
     changepass: {
       title: "Change Password",
@@ -580,7 +573,7 @@ const pagesConfig = {
         orders: "Orders",
         totalSpent: "Total Spent",
         avgOrder: "Avg/Order",
-        totalOrders: "Total Orders Value",
+        totalOrders: "Total Orders",
         cancelledOrders: "Cancelled Orders",
         cancelRate: "Cancel Rate",
         mainReason: "Main Reason"

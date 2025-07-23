@@ -60,7 +60,6 @@ const cardStyles = [
   { bg: "#e8f5e9", color: "#388e3c", icon: <FaHeadset size={32} /> },
   { bg: "#fce4ec", color: "#d81b60", icon: <FaGift size={32} /> },
 ];
-
 const DashboardPage = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,6 +112,55 @@ const DashboardPage = () => {
   const { summary, monthlyStats, latest, topBlogs } = data;
 
   return (
+    <div style={{ padding: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 24, gap: 16 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>Marketing Dashboard</h1>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+          <label htmlFor="year-select" style={{ marginRight: 8, fontWeight: 500 }}>Year:</label>
+          <select
+            id="year-select"
+            value={year}
+            onChange={e => setYear(Number(e.target.value))}
+            style={{ padding: 6, borderRadius: 6, border: "1px solid #ccc", fontSize: 16 }}
+          >
+            {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button
+            onClick={handleExportExcel}
+            style={{
+              marginLeft: 16,
+              padding: '8px 18px',
+              borderRadius: 6,
+              border: 'none',
+              background: '#1e88e5',
+              color: '#fff',
+              fontWeight: 600,
+              fontSize: 16,
+              cursor: exporting ? 'not-allowed' : 'pointer',
+              opacity: exporting ? 0.7 : 1,
+              boxShadow: '0 2px 8px rgba(30,136,229,0.08)',
+              transition: 'background 0.2s',
+              display: 'flex', alignItems: 'center', gap: 8
+            }}
+            disabled={exporting}
+          >
+            {exporting ? 'Exporting...' : 'Export Excel'}
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path fill="#fff" d="M16 2v2H8V2H2v20h20V2h-6zm4 18H4V4h4v2h8V4h4v16zm-7-7.59V8h2v4.59l1.3-1.3 1.4 1.42-4 4-4-4 1.4-1.42 1.3 1.3z"/></svg>
+          </button>
+          <a ref={exportRef} style={{ display: 'none' }}>Download Excel</a>
+        </div>
+      </div>
+      {/* Overview cards */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 32 }}>
+        <Card style={{ flex: 1 }}><CardContent><b>Blogs</b><div>{summary.totalBlogs}</div></CardContent></Card>
+        <Card style={{ flex: 1 }}><CardContent><b>Banners</b><div>{summary.totalBanners}</div></CardContent></Card>
+        <Card style={{ flex: 1 }}><CardContent><b>Reviews</b><div>{summary.totalReviews}</div></CardContent></Card>
+        <Card style={{ flex: 1 }}><CardContent><b>Support Requests</b><div>{summary.totalSupportRequests}</div></CardContent></Card>
+      </div>
+      {/* Charts */}
+      <div style={{ display: "flex", gap: 24, marginBottom: 32 }}>
+        <div style={{ flex: 2, background: "#fff", borderRadius: 8, padding: 16 }}>
+          <h3>Monthly Marketing Activities ({year})</h3>
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto', fontFamily: 'Inter, Arial, sans-serif', background: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' }}>
@@ -205,17 +253,18 @@ const DashboardPage = () => {
           <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8, color: '#1976d2' }}>Monthly Marketing Activities ({year})</h3>
           <div style={{ color: '#888', fontSize: 15, marginBottom: 12 }}>Bar chart: Compare the number of blogs, banners, reviews, and support requests by month.</div>
           <ChartMarketing type="bar" data={monthlyStats} />
-          <div style={{ marginTop: 36 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: '#1976d2' }}>Marketing Activity Trends by Month ({year})</h3>
-            <div style={{ color: '#888', fontSize: 15, marginBottom: 12 }}>Line chart: Track the increase/decrease trend of each activity type.</div>
+          <div style={{ marginTop: 32 }}>
+            <h3>Marketing Activity Trends by Month ({year})</h3>
             <ChartMarketing type="line" data={monthlyStats} />
           </div>
-          <div style={{ marginTop: 36 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8, color: '#1976d2' }}>Top 5 Most Viewed Blogs ({year})</h3>
-            <div style={{ color: '#888', fontSize: 15, marginBottom: 12 }}>Bar chart: The most attractive content to guide future content strategy.</div>
+          <div style={{ marginTop: 32 }}>
+            <h3>Top 5 Most Viewed Blogs ({year})</h3>
             <ChartMarketing type="bar" data={topBlogs.map(b => ({ ...b, month: b.title, blogs: b.views }))} />
           </div>
         </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 8, padding: 16 }}>
+            <h4>Positive/Negative Review Ratio ({year})</h4>
         {/* Pie charts for review/support */}
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 40, justifyContent: 'space-between' }}>
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', flex: 1, minWidth: 280 }}>
@@ -226,6 +275,8 @@ const DashboardPage = () => {
               { label: "Negative", value: summary.negativeReviews },
             ]} />
           </div>
+          <div style={{ background: "#fff", borderRadius: 8, padding: 16 }}>
+            <h4>Resolved/Unresolved Support Requests ({year})</h4>
           <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', flex: 1, minWidth: 280 }}>
             <h4 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8, color: '#388e3c' }}>Resolved/Unresolved Support Requests ({year})</h4>
             <div style={{ color: '#888', fontSize: 14, marginBottom: 10 }}>Pie chart: Hiệu quả chăm sóc khách hàng.</div>
@@ -235,6 +286,20 @@ const DashboardPage = () => {
             ]} />
           </div>
         </div>
+      </div>
+      {/* Latest tables */}
+      <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ flex: 1 }}>
+          <h4>Latest Blogs ({year})</h4>
+          <TableMarketing data={latest.blogs} columns={["title", "createdAt"]} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <h4>Latest Reviews ({year})</h4>
+          <TableMarketing data={latest.reviews} columns={["user", "rating", "comment", "createdAt"]} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <h4>Latest Support Requests ({year})</h4>
+          <TableMarketing data={latest.supports} columns={["user", "status", "createdAt"]} />
         {/* Latest tables */}
         <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', marginBottom: 32 }}>
           <div style={{ flex: 1, minWidth: 320 }}>

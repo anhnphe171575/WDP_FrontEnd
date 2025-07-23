@@ -13,9 +13,6 @@ import { Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { useApi } from "../../../../utils/axios";
 import { api } from "../../../../utils/axios";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useLanguage } from '@/context/LanguageContext';
-import viConfig from '../../../../utils/petPagesConfig.vi';
-import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface Attribute {
   _id: string;
@@ -40,7 +37,7 @@ interface AttributeModalProps {
   parentOptions: Attribute[];
 }
 
-function AttributeModal({ isOpen, onClose, onSave, attribute, categories, parentOptions, config }: AttributeModalProps & { config: any }) {
+function AttributeModal({ isOpen, onClose, onSave, attribute, categories, parentOptions }: AttributeModalProps) {
   const [formData, setFormData] = useState({
     value: attribute?.value || "",
     description: attribute?.description || "",
@@ -104,26 +101,26 @@ function AttributeModal({ isOpen, onClose, onSave, attribute, categories, parent
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{attribute ? config.editTitle : config.form.add}</DialogTitle>
+          <DialogTitle>{attribute ? "Edit Attribute" : "Add Attribute"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">{error}</div>}
           <div className="space-y-2">
-            <Label htmlFor="value">{config.form.value} <span className="text-red-500">*</span></Label>
+            <Label htmlFor="value">Value <span className="text-red-500">*</span></Label>
             <Input id="value" value={formData.value} onChange={e => setFormData(f => ({ ...f, value: e.target.value }))} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">{config.form.description}</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea id="description" value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="parentId">{config.form.parent}</Label>
+            <Label htmlFor="parentId">Parent Attribute</Label>
             <Select value={formData.parentId || "none"} onValueChange={val => setFormData(f => ({ ...f, parentId: val === "none" ? "" : val }))}>
               <SelectTrigger>
-                <SelectValue placeholder={config.form.noParent} />
+                <SelectValue placeholder="No parent" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">{config.form.noParent}</SelectItem>
+                <SelectItem value="none">No parent</SelectItem>
                 {parentOptions.filter(opt => !attribute || opt._id !== attribute._id).map(opt => (
                   <SelectItem key={opt._id} value={opt._id}>{opt.value}</SelectItem>
                 ))}
@@ -131,7 +128,7 @@ function AttributeModal({ isOpen, onClose, onSave, attribute, categories, parent
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>{config.form.categories}</Label>
+            <Label>Categories</Label>
             <div className="flex flex-wrap gap-2">
               {categories.map(cat => (
                 <label key={cat._id} className="flex items-center gap-2">
@@ -154,8 +151,8 @@ function AttributeModal({ isOpen, onClose, onSave, attribute, categories, parent
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>{config.form.cancel}</Button>
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? config.form.saving : config.form.save}</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save"}</Button>
           </div>
         </form>
       </DialogContent>
@@ -172,7 +169,7 @@ interface AddAttributeModalProps {
   parentOptions: Attribute[];
 }
 
-function AddAttributeModal({ isOpen, onClose, onSave, parentId, categories, parentOptions, config }: AddAttributeModalProps & { config: any }) {
+function AddAttributeModal({ isOpen, onClose, onSave, parentId, categories, parentOptions }: AddAttributeModalProps) {
   const [formData, setFormData] = useState({
     value: '',
     description: '',
@@ -226,26 +223,26 @@ function AddAttributeModal({ isOpen, onClose, onSave, parentId, categories, pare
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{config.form.add}</DialogTitle>
+          <DialogTitle>Add Attribute</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">{error}</div>}
           <div className="space-y-2">
-            <Label htmlFor="value">{config.form.value} <span className="text-red-500">*</span></Label>
+            <Label htmlFor="value">Value <span className="text-red-500">*</span></Label>
             <Input id="value" value={formData.value} onChange={e => setFormData(f => ({ ...f, value: e.target.value }))} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">{config.form.description}</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea id="description" value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="parentId">{config.form.parent}</Label>
+            <Label htmlFor="parentId">Parent Attribute</Label>
             <Select value={formData.parentId || 'none'} onValueChange={val => setFormData(f => ({ ...f, parentId: val === 'none' ? '' : val }))}>
               <SelectTrigger>
-                <SelectValue placeholder={config.form.noParent} />
+                <SelectValue placeholder="No parent" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">{config.form.noParent}</SelectItem>
+                <SelectItem value="none">No parent</SelectItem>
                 {parentOptions.map(opt => (
                   <SelectItem key={opt._id} value={opt._id}>{opt.value}</SelectItem>
                 ))}
@@ -253,7 +250,7 @@ function AddAttributeModal({ isOpen, onClose, onSave, parentId, categories, pare
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>{config.form.categories}</Label>
+            <Label>Categories</Label>
             <div className="flex flex-wrap gap-2">
               {categories.map(cat => (
                 <label key={cat._id} className="flex items-center gap-2">
@@ -276,8 +273,8 @@ function AddAttributeModal({ isOpen, onClose, onSave, parentId, categories, pare
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>{config.form.cancel}</Button>
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? config.form.saving : config.form.add}</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save'}</Button>
           </div>
         </form>
       </DialogContent>
@@ -294,7 +291,7 @@ interface EditAttributeModalProps {
   parentOptions: Attribute[];
 }
 
-function EditAttributeModal({ isOpen, onClose, onSave, attribute, categories, parentOptions, config }: EditAttributeModalProps & { config: any }) {
+function EditAttributeModal({ isOpen, onClose, onSave, attribute, categories, parentOptions }: EditAttributeModalProps) {
   const [formData, setFormData] = useState({
     value: attribute?.value || '',
     description: attribute?.description || '',
@@ -353,26 +350,26 @@ function EditAttributeModal({ isOpen, onClose, onSave, attribute, categories, pa
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{config.editTitle}</DialogTitle>
+          <DialogTitle>Edit Attribute</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">{error}</div>}
           <div className="space-y-2">
-            <Label htmlFor="value">{config.form.value} <span className="text-red-500">*</span></Label>
+            <Label htmlFor="value">Value <span className="text-red-500">*</span></Label>
             <Input id="value" value={formData.value} onChange={e => setFormData(f => ({ ...f, value: e.target.value }))} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">{config.form.description}</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea id="description" value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="parentId">{config.form.parent}</Label>
+            <Label htmlFor="parentId">Parent Attribute</Label>
             <Select value={formData.parentId || 'none'} onValueChange={val => setFormData(f => ({ ...f, parentId: val === 'none' ? '' : val }))}>
               <SelectTrigger>
-                <SelectValue placeholder={config.form.noParent} />
+                <SelectValue placeholder="No parent" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">{config.form.noParent}</SelectItem>
+                <SelectItem value="none">No parent</SelectItem>
                 {parentOptions.filter(opt => opt._id !== attribute._id).map(opt => (
                   <SelectItem key={opt._id} value={opt._id}>{opt.value}</SelectItem>
                 ))}
@@ -380,7 +377,7 @@ function EditAttributeModal({ isOpen, onClose, onSave, attribute, categories, pa
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>{config.form.categories}</Label>
+            <Label>Categories</Label>
             <div className="flex flex-wrap gap-2">
               {categories.map(cat => (
                 <label key={cat._id} className="flex items-center gap-2">
@@ -403,8 +400,8 @@ function EditAttributeModal({ isOpen, onClose, onSave, attribute, categories, pa
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>{config.form.cancel}</Button>
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? config.form.saving : config.form.save}</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save'}</Button>
           </div>
         </form>
       </DialogContent>
@@ -418,10 +415,9 @@ interface ChildAttributeModalProps {
   onClose: () => void;
   categories: Category[];
   parentOptions: Attribute[];
-  config: any;
 }
 
-function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOptions, config }: ChildAttributeModalProps) {
+function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOptions }: ChildAttributeModalProps) {
   const [children, setChildren] = useState<Attribute[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -496,21 +492,21 @@ function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOption
         </DialogHeader>
         <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
           <div className="flex justify-between items-center">
-            <Button type="button" onClick={handleAdd} className="mb-4">{config.child.addChildButton}</Button>
+            <Button type="button" onClick={handleAdd} className="mb-4">Add Child Attribute</Button>
           </div>
           {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md">{error}</div>}
           {loading ? (
-            <div>{config.child.loading}</div>
+            <div>Loading child attributes...</div>
           ) : children.length === 0 ? (
-            <div className="text-center py-4">{config.child.noChild}</div>
+            <div className="text-center py-4">No child attributes found</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{config.table.headers.value}</TableHead>
-                  <TableHead>{config.table.headers.description}</TableHead>
-                  <TableHead>{config.table.headers.categories}</TableHead>
-                  <TableHead className="text-right">{config.table.headers.actions}</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Categories</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -521,8 +517,8 @@ function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOption
                     <TableCell>{attr.categories?.map(cid => categories.find(c => c._id === cid)?.name).filter(Boolean).join(', ')}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title={config.child.add} onClick={() => handleEdit(attr)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" title={config.deleteTitle} onClick={() => handleDelete(attr._id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Edit" onClick={() => handleEdit(attr)}><Edit className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" title="Delete" onClick={() => handleDelete(attr._id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -531,7 +527,7 @@ function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOption
             </Table>
           )}
           <div className="flex justify-end gap-2 sticky bottom-0 bg-white pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>{config.close}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>Close</Button>
           </div>
         </div>
         <AddAttributeModal
@@ -541,7 +537,6 @@ function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOption
           parentId={parent._id}
           categories={categories}
           parentOptions={parentOptions}
-          config={config}
         />
         {selectedAttribute && (
           <EditAttributeModal
@@ -551,21 +546,20 @@ function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOption
             attribute={selectedAttribute}
             categories={categories}
             parentOptions={parentOptions}
-            config={config}
           />
         )}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>{config.deleteTitle}</DialogTitle>
+              <DialogTitle>Delete Attribute</DialogTitle>
             </DialogHeader>
             <div className="py-4">
-              <p>{config.deleteConfirm}</p>
+              <p>Are you sure you want to delete this attribute? This action cannot be undone.</p>
               {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => { setIsDeleteDialogOpen(false); setAttributeToDelete(null); setError(null); }} disabled={isDeleting}>{config.form.cancel}</Button>
-              <Button type="button" variant="destructive" onClick={confirmDelete} disabled={isDeleting}>{isDeleting ? config.deleting : config.delete}</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsDeleteDialogOpen(false); setAttributeToDelete(null); setError(null); }} disabled={isDeleting}>Cancel</Button>
+              <Button type="button" variant="destructive" onClick={confirmDelete} disabled={isDeleting}>{isDeleting ? 'Deleting...' : 'Delete'}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -575,8 +569,6 @@ function ChildAttributeModal({ parent, isOpen, onClose, categories, parentOption
 }
 
 export default function AttributePage() {
-  const { lang } = useLanguage();
-  const config = lang === 'vi' ? viConfig.manageAttribute : enConfig.manageAttribute;
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -591,9 +583,6 @@ export default function AttributePage() {
   const [isChildModalOpen, setIsChildModalOpen] = useState(false);
   const [parentForChildModal, setParentForChildModal] = useState<Attribute | null>(null);
   const { request } = useApi();
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -667,12 +656,6 @@ export default function AttributePage() {
     (attr.description || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Pagination logic
-  const paginatedAttributes = filteredAttributes.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   // Flatten all attributes for parent select
   const flattenAttributes = (attrs: Attribute[], arr: Attribute[] = []) => {
     for (const attr of attrs) {
@@ -686,13 +669,13 @@ export default function AttributePage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>{config.title}</CardTitle>
-            <Button onClick={handleAdd}>{config.addNewButton}</Button>
+            <CardTitle>Attribute Management</CardTitle>
+            <Button onClick={handleAdd}>Add Attribute</Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
-            <Input placeholder={config.search.placeholder} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="max-w-sm" />
+            <Input placeholder="Search attributes..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="max-w-sm" />
           </div>
           {loading ? (
             <div>Loading...</div>
@@ -702,25 +685,23 @@ export default function AttributePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                <TableHead>{config.table.headers.no}</TableHead>
-                  <TableHead>{config.table.headers.value}</TableHead>
-                  <TableHead>{config.table.headers.description}</TableHead>
-                  <TableHead>{config.table.headers.categories}</TableHead>
-                  <TableHead className="text-right">{config.table.headers.actions}</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Categories</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedAttributes.map((attr, index) => (
+                {filteredAttributes.map(attr => (
                   <TableRow key={attr._id}>
-                    <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                     <TableCell>{attr.value}</TableCell>
                     <TableCell>{attr.description}</TableCell>
                     <TableCell>{attr.categories?.map(cid => categories.find(c => c._id === cid)?.name).filter(Boolean).join(", ")}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title={config.child.add} onClick={() => handleShowChildren(attr)}><ChevronRight className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title={config.editTitle} onClick={() => handleEdit(attr)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" title={config.deleteTitle} onClick={() => handleDelete(attr._id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Xem attribute con" onClick={() => handleShowChildren(attr)}><ChevronRight className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Edit" onClick={() => handleEdit(attr)}><Edit className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" title="Delete" onClick={() => handleDelete(attr._id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -730,59 +711,12 @@ export default function AttributePage() {
           )}
         </CardContent>
       </Card>
-      {/* Pagination controls */}
-      <div className="flex items-center justify-between px-2 py-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <div className="flex items-center gap-1">
-            {[...Array(Math.ceil(filteredAttributes.length / itemsPerPage))].map((_, index) => (
-              <Button
-                key={index + 1}
-                variant={currentPage === index + 1 ? "default" : "outline"}
-                size="sm"
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </Button>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredAttributes.length / itemsPerPage)))}
-            disabled={currentPage === Math.ceil(filteredAttributes.length / itemsPerPage)}
-          >
-            Next
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>Rows per page:</span>
-          <Select value={String(itemsPerPage)} onValueChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}>
-            <SelectTrigger className="w-20">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[5, 8, 10, 20, 50].map(num => (
-                <SelectItem key={num} value={String(num)}>{num}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
       <AddAttributeModal
         isOpen={isAddModalOpen}
         onClose={() => { setIsAddModalOpen(false); setError(null); }}
         onSave={handleSave}
         categories={categories}
         parentOptions={flattenAttributes(attributes)}
-        config={config}
       />
       {selectedAttribute && (
         <EditAttributeModal
@@ -792,21 +726,20 @@ export default function AttributePage() {
           attribute={selectedAttribute}
           categories={categories}
           parentOptions={flattenAttributes(attributes)}
-          config={config}
         />
       )}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{config.deleteTitle}</DialogTitle>
+            <DialogTitle>Delete Attribute</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>{config.deleteConfirm}</p>
+            <p>Are you sure you want to delete this attribute? This action cannot be undone.</p>
             {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => { setIsDeleteDialogOpen(false); setAttributeToDelete(null); setError(null); }} disabled={isDeleting}>{config.form.cancel}</Button>
-            <Button type="button" variant="destructive" onClick={confirmDelete} disabled={isDeleting}>{isDeleting ? config.deleting : config.delete}</Button>
+            <Button type="button" variant="outline" onClick={() => { setIsDeleteDialogOpen(false); setAttributeToDelete(null); setError(null); }} disabled={isDeleting}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={confirmDelete} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Delete"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -817,7 +750,6 @@ export default function AttributePage() {
           onClose={() => { setIsChildModalOpen(false); setParentForChildModal(null); }}
           categories={categories}
           parentOptions={flattenAttributes(attributes)}
-          config={config}
         />
       )}
     </div>

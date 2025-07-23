@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Edit, Eye, Trash2, ArrowDown, ArrowUp } from "lucide-react";
+import { Edit, Eye, Trash2 } from "lucide-react";
 import NextImage from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
 import { se } from "date-fns/locale";
@@ -76,7 +76,6 @@ const ORDER_STATUS = {
   PENDING: 'pending',
   PROCESSING: 'processing',
   COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
 } as const;
 
 const ORDER_STATUS_COLORS = {
@@ -341,14 +340,7 @@ export default function OrderPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Sort filteredOrders by createAt
-  const sortedOrders = [...filteredOrders].sort((a, b) => {
-    const dateA = a.createAt ? new Date(a.createAt).getTime() : 0;
-    const dateB = b.createAt ? new Date(b.createAt).getTime() : 0;
-    return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
-  });
-
-  const paginatedOrders = sortedOrders.slice(
+  const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -418,15 +410,6 @@ export default function OrderPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-              title={sortDirection === 'asc' ? 'Sắp xếp tăng dần theo ngày tạo' : 'Sắp xếp giảm dần theo ngày tạo'}
-            >
-              {sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-              <span>Ngày tạo</span>
-            </Button>
             {selectedOrders.length > 0 && (
               <div className="flex items-center gap-2">
                 <Select value={bulkStatus} onValueChange={setBulkStatus}>
