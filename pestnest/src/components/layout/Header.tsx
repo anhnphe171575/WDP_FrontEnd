@@ -566,9 +566,11 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
     setSearchQuery(initialSearchTerm);
   }, [initialSearchTerm]);
 
-  const handleSearch = () => {
-    // Nếu muốn chuyển trang tìm kiếm, hãy sử dụng router.push ở đây
-    // Ví dụ: router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products/search/${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   // Lắng nghe socket để nhận tin nhắn mới
@@ -670,9 +672,9 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
               {lang === 'vi' ? pagesConfigVi.header.language.vi : pagesConfigEn.header.language.en}
             </Button>
             {/* Nút Chatbot, Notification, Cart chỉ hiển thị nếu đã đăng nhập */}
-            {isLoggedIn && userRole === 1 && (
+            {isLoggedIn && (userRole === 1 || userRole === 4) && (
               <Button
-                onClick={() => router.push('/messages')}
+                onClick={() => router.push(userRole === 4 ? '/marketing/messages' : '/messages')}
                 variant="ghost"
                 size="sm"
                 className="rounded-full p-0 w-10 h-10 flex items-center justify-center transition-all duration-200 relative"

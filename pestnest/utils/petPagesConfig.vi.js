@@ -171,7 +171,8 @@ reviewManagement: {
 userManagement: {
   title: "Quản lý Người dùng",
   addNewButton: "Thêm Người dùng Mới",
-  editTitle: "Chỉnh sửa Người dùng",
+  importCSV: "Nhập bằng CSV",
+  exportAll: "Xuất tất cả người dùng",
   search: {
     placeholder: "Tìm kiếm người dùng...",
     rolePlaceholder: "Lọc theo vai trò"
@@ -233,7 +234,13 @@ userManagement: {
     next: "Tiếp"
   },
   loading: "Đang tải...",
-  error: "Lỗi:"
+  error: "Lỗi:",
+  alert: {
+    importSuccess: "Nhập thành công!",
+    importFail: "Nhập thất bại:",
+    exportFail: "Xuất thất bại:"
+  },
+  notAvailable: "Không có"
 },
 changepass: {
   title: "Đổi Mật Khẩu",
@@ -576,7 +583,7 @@ userstatistics: {
     orders: "Số đơn hàng",
     totalSpent: "Tổng chi tiêu",
     avgOrder: "Trung bình/đơn",
-    totalOrders: "Tổng đơn",
+    totalOrders: "Tổng tiền đơn",
     cancelledOrders: "Đơn hủy",
     cancelRate: "Tỷ lệ hủy",
     mainReason: "Lý do chính"
@@ -881,7 +888,258 @@ orderDashboard: {
     price: "Giá",
     sold: "Đã bán"
   }
-}
+},
+manageProduct: {
+  title: "Quản lý Sản phẩm",
+  addNewButton: "Thêm Sản phẩm Mới",
+  editTitle: "Chỉnh sửa Sản phẩm",
+  search: {
+    placeholder: "Tìm kiếm sản phẩm..."
+  },
+  table: {
+    headers: {
+      no: "STT",
+      name: "Tên",
+      brand: "Thương hiệu",
+      description: "Mô tả",
+      categories: "Danh mục",
+      actions: "Thao tác"
+    }
+  },
+  form: {
+    addTitle: "Thêm Sản phẩm Mới",
+    editTitle: "Chỉnh sửa Sản phẩm",
+    fields: {
+      name: "Tên",
+      brand: "Thương hiệu",
+      description: "Mô tả",
+      categories: "Danh mục"
+    },
+    buttons: {
+      cancel: "Hủy",
+      save: "Lưu thay đổi",
+      add: "Thêm Sản phẩm"
+    },
+    error: {
+      requiredName: "Tên và mô tả là bắt buộc",
+      requiredCategory: "Vui lòng chọn ít nhất một danh mục cha",
+      failedUpdate: "Cập nhật sản phẩm thất bại",
+      failedCreate: "Tạo sản phẩm thất bại"
+    }
+  },
+  variant: {
+    title: "Quản lý Biến thể",
+    addNewButton: "Thêm Biến thể Mới",
+    editTitle: "Chỉnh sửa Biến thể",
+    table: {
+      headers: {
+        no: "STT",
+        attributes: "Thuộc tính",
+        sellPrice: "Giá bán",
+        totalQuantity: "Tổng số lượng",
+        images: "Hình ảnh",
+        actions: "Thao tác"
+      }
+    },
+    form: {
+      addTitle: "Thêm Biến thể Mới",
+      editTitle: "Chỉnh sửa Biến thể",
+      fields: {
+        images: "Hình ảnh",
+        attributes: "Thuộc tính",
+        parentAttributes: "Thuộc tính cha",
+        childAttributes: "Thuộc tính con",
+        sellPrice: "Giá bán"
+      },
+      buttons: {
+        cancel: "Hủy",
+        save: "Cập nhật Biến thể",
+        add: "Thêm Biến thể"
+      },
+      error: {
+        requiredImage: "Vui lòng thêm ít nhất một hình ảnh",
+        requiredParentAttr: "Vui lòng chọn thuộc tính cha",
+        requiredChildAttr: "Vui lòng chọn thuộc tính con",
+        requiredPrice: "Vui lòng nhập giá hợp lệ",
+        failedAdd: "Thêm biến thể thất bại",
+        failedUpdate: "Cập nhật biến thể thất bại"
+      }
+    },
+    deleteDialog: {
+      title: "Xóa Biến thể",
+      content: "Bạn có chắc chắn muốn xóa biến thể này? Hành động này không thể hoàn tác.",
+      cancel: "Hủy",
+      delete: "Xóa"
+    },
+    empty: "Không tìm thấy biến thể nào cho sản phẩm này",
+    loading: "Đang tải biến thể..."
+  },
+  import: {
+    title: "Quản lý Lô nhập hàng",
+    addNewButton: "Thêm Lô nhập hàng Mới",
+    editTitle: "Chỉnh sửa Lô nhập hàng",
+    table: {
+      headers: {
+        no: "STT",
+        importDate: "Ngày nhập",
+        quantity: "Số lượng",
+        costPrice: "Giá vốn",
+        totalValue: "Tổng giá trị",
+        actions: "Thao tác"
+      }
+    },
+    form: {
+      addTitle: "Thêm Lô nhập hàng Mới",
+      editTitle: "Chỉnh sửa Lô nhập hàng",
+      fields: {
+        importDate: "Ngày nhập",
+        quantity: "Số lượng",
+        costPrice: "Giá vốn"
+      },
+      buttons: {
+        cancel: "Hủy",
+        add: "Thêm Lô",
+        save: "Cập nhật Lô"
+      },
+      error: {
+        requiredQuantity: "Số lượng phải lớn hơn 0",
+        requiredCostPrice: "Giá vốn phải lớn hơn 0",
+        failedAdd: "Thêm lô nhập hàng thất bại",
+        failedUpdate: "Cập nhật lô nhập hàng thất bại"
+      }
+    },
+    deleteDialog: {
+      title: "Xóa Lô nhập hàng",
+      content: "Bạn có chắc chắn muốn xóa lô nhập hàng này? Hành động này không thể hoàn tác.",
+      cancel: "Hủy",
+      delete: "Xóa"
+    },
+    empty: "Không tìm thấy lô nhập hàng nào cho biến thể này",
+    loading: "Đang tải lô nhập hàng...",
+    summary: {
+      totalQuantity: "Tổng số lượng",
+      averageCostPrice: "Giá vốn trung bình",
+      totalInventoryValue: "Tổng giá trị tồn kho",
+      profitMargin: "Tỷ lệ lãi"
+    },
+    sellPrice: {
+      label: "Giá bán:",
+      saving: "Đang lưu..."
+    }
+  },
+  deleteDialog: {
+    title: "Xóa Sản phẩm",
+    content: "Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này cũng sẽ xóa tất cả biến thể và không thể hoàn tác.",
+    cancel: "Hủy",
+    delete: "Xóa",
+    deleting: "Đang xóa..."
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Tiếp"
+  },
+  loading: "Đang tải...",
+  error: "Lỗi:"
+},
+manaCategory:{
+  title: "Quản lý Danh mục",
+  addNewButton: "Thêm Danh mục Mới",
+  editTitle: "Chỉnh sửa Danh mục",
+  childCategoriesTitle: "Danh mục con - {name}",
+  table: {
+    headers: {
+      no: "STT",
+      name: "Tên",
+      description: "Mô tả",
+      image: "Hình ảnh",
+      actions: "Thao tác"
+    }
+  },
+  form: {
+    name: "Tên",
+    description: "Mô tả",
+    image: "Ảnh danh mục",
+    cancel: "Hủy",
+    save: "Lưu thay đổi",
+    saving: "Đang lưu...",
+    add: "Thêm Danh mục",
+    adding: "Đang thêm..."
+  },
+  dialog: {
+    deleteTitle: "Xóa Danh mục",
+    deleteContent: "Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác.",
+    delete: "Xóa",
+    deleting: "Đang xóa...",
+    close: "Đóng"
+  },
+  button: {
+    manageChildren: "Quản lý Danh mục con",
+    edit: "Chỉnh sửa Danh mục",
+    delete: "Xóa Danh mục"
+  },
+  search: {
+    placeholder: "Tìm kiếm danh mục..."
+  },
+  loading: "Đang tải...",
+  loadingChildren: "Đang tải danh mục con...",
+  noChildren: "Không có danh mục con",
+  uploading: "Đang tải lên: {progress}%",
+  error: "Lỗi: {error}",
+  errors: {
+    nameRequired: "Tên là bắt buộc",
+    updateFailed: "Cập nhật danh mục thất bại",
+    createFailed: "Tạo danh mục thất bại",
+    fetchChildrenFailed: "Lấy danh mục con thất bại",
+    deleteFailed: "Xóa danh mục thất bại",
+    fetchFailed: "Lấy danh mục thất bại",
+    saveFailed: "Lưu danh mục thất bại"
+  }
+},
+manageAttribute: {
+  title: "Quản lý Thuộc tính",
+  addNewButton: "Thêm Thuộc tính",
+  editTitle: "Chỉnh sửa Thuộc tính",
+  deleteTitle: "Xóa Thuộc tính",
+  deleteConfirm: "Bạn có chắc chắn muốn xóa thuộc tính này? Hành động này không thể hoàn tác.",
+  delete: "Xóa",
+  deleting: "Đang xóa...",
+  close: "Đóng",
+  table: {
+    headers: {
+      no: "STT",
+      value: "Giá trị",
+      description: "Mô tả",
+      categories: "Danh mục",
+      actions: "Thao tác"
+    }
+  },
+  search: {
+    placeholder: "Tìm kiếm thuộc tính..."
+  },
+  form: {
+    value: "Giá trị",
+    description: "Mô tả",
+    parent: "Thuộc tính cha",
+    categories: "Danh mục",
+    noParent: "Không có cha",
+    cancel: "Hủy",
+    save: "Lưu",
+    add: "Thêm Thuộc tính",
+    error: {
+      requiredValue: "Giá trị là bắt buộc",
+      failedSave: "Lưu thuộc tính thất bại",
+      failedDelete: "Xóa thuộc tính thất bại"
+    }
+  },
+  child: {
+    title: "Thuộc tính con của: {parent}",
+    add: "Thêm Thuộc tính con",
+    noChild: "Không có thuộc tính con",
+    loading: "Đang tải thuộc tính con..."
+  },
+  loading: "Đang tải...",
+  error: "Lỗi: {error}"
+},
 };
 
 export default pagesConfig;

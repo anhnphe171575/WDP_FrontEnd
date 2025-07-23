@@ -141,6 +141,12 @@ export default function ProductsPage() {
   const config = lang === 'vi' ? viConfig.bestSellingPage : enConfig.bestSellingPage;
   const [wishlistItems, setWishlistItems] = useState<string[]>([]);
   const [wishlistLoading, setWishlistLoading] = useState<Record<string, boolean>>({});
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+    setIsLoggedIn(!!token);
+  }, []);
 
   const brands = Array.from(new Set(allProducts.map(p => p.brand))).map(name => ({ name, count: allProducts.filter(p => p.brand === name).length }));
   const filteredBrands = brands.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
@@ -309,8 +315,9 @@ export default function ProductsPage() {
     });
   };
 
-  // Fetch wishlist items
+  // Fetch wishlist items chỉ khi đã đăng nhập
   useEffect(() => {
+    if (!isLoggedIn) return;
     const fetchWishlist = async () => {
       try {
         const res = await api.get('/wishlist')
@@ -322,7 +329,7 @@ export default function ProductsPage() {
       }
     }
     fetchWishlist()
-  }, [])
+  }, [isLoggedIn])
 
   const handleToggleWishlist = async (e: React.MouseEvent, productId: string) => {
     e.preventDefault()
@@ -561,21 +568,21 @@ export default function ProductsPage() {
                     >
                       <CardContent className="p-4">
                         <div className="relative mb-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`absolute top-2 right-2 z-10 bg-white/80 hover:bg-white transition-all duration-200 ${
-                              wishlistItems.includes(product._id) ? 'text-red-500' : 'text-gray-600'
-                            }`}
-                            onClick={(e) => handleToggleWishlist(e, product._id)}
-                            disabled={wishlistLoading[product._id]}
-                          >
-                            {wishlistLoading[product._id] ? (
-                              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <Heart className={`w-4 h-4 ${wishlistItems.includes(product._id) ? 'fill-red-500' : ''}`} />
-                            )}
-                          </Button>
+                          {isLoggedIn && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`absolute top-2 right-2 z-10 bg-white/80 hover:bg-white transition-all duration-200 ${wishlistItems.includes(product._id) ? 'text-red-500' : 'text-gray-600'}`}
+                              onClick={(e) => handleToggleWishlist(e, product._id)}
+                              disabled={wishlistLoading[product._id]}
+                            >
+                              {wishlistLoading[product._id] ? (
+                                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Heart className={`w-4 h-4 ${wishlistItems.includes(product._id) ? 'fill-red-500' : ''}`} />
+                              )}
+                            </Button>
+                          )}
                           <Image
                             src={product.variants?.[0]?.images?.[0]?.url || "/placeholder.svg"}
                             alt={product.name}

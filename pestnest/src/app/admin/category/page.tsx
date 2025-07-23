@@ -16,6 +16,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import NextImage from "next/image";
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface Category {
   _id: string;
@@ -48,6 +51,8 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
   const [error, setError] = useState<string | null>(null);
   const submitRef = useRef(false);
   const { request } = useApi();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig.manaCategory : enConfig.manaCategory;
 
   // Reset states when modal closes
   useEffect(() => {
@@ -120,7 +125,7 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
+          <DialogTitle>{config.editTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -129,7 +134,7 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+            <Label htmlFor="name">{config.form.name} <span className="text-red-500">*</span></Label>
             <Input
               id="name"
               value={formData.name}
@@ -138,7 +143,7 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{config.form.description}</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -146,7 +151,7 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Category Image</Label>
+            <Label htmlFor="image">{config.form.image}</Label>
             <Input
               id="image"
               type="file"
@@ -162,7 +167,7 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
+                <p className="text-sm text-gray-500">{config.uploading.replace('{progress}', String(uploadProgress))}</p>
               </div>
             )}
             {imagePreview && (
@@ -178,10 +183,10 @@ function EditCategoryModal({ category, onSave, onClose, isOpen }: EditCategoryMo
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancel
+              {config.form.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? config.form.saving : config.form.save}
             </Button>
           </div>
         </form>
@@ -212,6 +217,8 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
   const [error, setError] = useState<string | null>(null);
   const submitRef = useRef(false);
   const { request } = useApi();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig.manaCategory : enConfig.manaCategory;
 
   // Reset states when modal closes
   useEffect(() => {
@@ -301,7 +308,7 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
+          <DialogTitle>{config.form.add}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -310,7 +317,7 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
+            <Label htmlFor="name">{config.form.name} <span className="text-red-500">*</span></Label>
             <Input
               id="name"
               value={formData.name}
@@ -319,7 +326,7 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{config.form.description}</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -327,7 +334,7 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Category Image</Label>
+            <Label htmlFor="image">{config.form.image}</Label>
             <Input
               id="image"
               type="file"
@@ -343,7 +350,7 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-500">Uploading: {uploadProgress}%</p>
+                <p className="text-sm text-gray-500">{config.uploading.replace('{progress}', String(uploadProgress))}</p>
               </div>
             )}
             {imagePreview && (
@@ -359,10 +366,10 @@ function AddCategoryModal({ onSave, onClose, isOpen, parentId }: AddCategoryModa
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancel
+              {config.form.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Category'}
+              {isSubmitting ? config.form.adding : config.form.add}
             </Button>
           </div>
         </form>
@@ -400,6 +407,8 @@ function ChildCategoryModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { request } = useApi();
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig.manaCategory : enConfig.manaCategory;
 
   const fetchChildCategories = async () => {
     try {
@@ -474,7 +483,7 @@ function ChildCategoryModal({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Child Categories - {category.name}</DialogTitle>
+            <DialogTitle>{config.childCategoriesTitle.replace('{name}', category.name)}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
             <div className="flex justify-between items-center">
@@ -483,7 +492,7 @@ function ChildCategoryModal({
                 onClick={() => handleAddCategory(category._id)}
                 className="mb-4"
               >
-                Add New Category
+                {config.addNewButton}
               </Button>
             </div>
 
@@ -494,18 +503,18 @@ function ChildCategoryModal({
             )}
 
             {loading ? (
-              <div>Loading child categories...</div>
+              <div>{config.loadingChildren}</div>
             ) : childCategories.length === 0 ? (
-              <div className="text-center py-4">No child categories found</div>
+              <div className="text-center py-4">{config.noChildren}</div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Image</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{config.table.headers.name}</TableHead>
+                      <TableHead>{config.table.headers.description}</TableHead>
+                      <TableHead>{config.table.headers.image}</TableHead>
+                      <TableHead className="text-right">{config.table.headers.actions}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -530,7 +539,7 @@ function ChildCategoryModal({
                                   variant="ghost" 
                                   size="sm" 
                                   className="h-8 w-8 p-0" 
-                                  title="Manage Child Categories"
+                                  title={config.button.manageChildren}
                                   onClick={() => onManageChildren(childCategory)}
                                 >
                                   <ListTree className="h-4 w-4" />
@@ -540,7 +549,7 @@ function ChildCategoryModal({
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-8 w-8 p-0" 
-                                title="Edit Category" 
+                                title={config.button.edit} 
                                 onClick={() => handleEditCategory(childCategory)}
                               >
                                 <Edit className="h-4 w-4" />
@@ -549,7 +558,7 @@ function ChildCategoryModal({
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                title="Delete Category"
+                                title={config.button.delete}
                                 onClick={() => handleDeleteClick(childCategory._id)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -565,7 +574,7 @@ function ChildCategoryModal({
             )}
             <div className="flex justify-end gap-2 sticky bottom-0 bg-white pt-2">
               <Button type="button" variant="outline" onClick={onClose}>
-                Close
+                {config.dialog.close}
               </Button>
             </div>
           </div>
@@ -576,10 +585,10 @@ function ChildCategoryModal({
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>{config.dialog.deleteTitle}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete this category? This action cannot be undone.</p>
+            <p>{config.dialog.deleteContent}</p>
             {error && (
               <div className="mt-2 text-sm text-red-600">
                 {error}
@@ -597,7 +606,7 @@ function ChildCategoryModal({
               }}
               disabled={isDeleting}
             >
-              Cancel
+              {config.form.cancel}
             </Button>
             <Button
               type="button"
@@ -605,7 +614,7 @@ function ChildCategoryModal({
               onClick={handleDeleteCategory}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? config.dialog.deleting : config.dialog.delete}
             </Button>
           </div>
         </DialogContent>
@@ -626,6 +635,8 @@ function ChildCategoryModal({
 }
 
 export default function CategoryPage() {
+  const { lang } = useLanguage();
+  const config = lang === 'vi' ? viConfig.manaCategory : enConfig.manaCategory;
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -642,6 +653,9 @@ export default function CategoryPage() {
   const [isGrandChildCategoryModalOpen, setIsGrandChildCategoryModalOpen] = useState(false);
   const [selectedCategoryForGrandChildren, setSelectedCategoryForGrandChildren] = useState<Category | null>(null);
   const { request } = useApi();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -677,6 +691,12 @@ export default function CategoryPage() {
   const filteredCategories = categories.filter(category =>
     category.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     category.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Pagination logic for main table
+  const paginatedCategories = filteredCategories.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleEditCategory = async (updatedCategory: Category) => {
@@ -790,7 +810,7 @@ export default function CategoryPage() {
                 variant="ghost" 
                 size="sm" 
                 className="h-8 w-8 p-0" 
-                title="Manage Child Categories"
+                title={config.button.manageChildren}
                 onClick={() => {
                   setSelectedCategoryForChildren(category);
                   setIsChildCategoryModalOpen(true);
@@ -802,7 +822,7 @@ export default function CategoryPage() {
                 variant="ghost" 
                 size="sm" 
                 className="h-8 w-8 p-0" 
-                title="Edit Category" 
+                title={config.button.edit} 
                 onClick={() => {
                   setSelectedCategory(category);
                   setIsEditModalOpen(true);
@@ -814,7 +834,7 @@ export default function CategoryPage() {
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                title="Delete Category"
+                title={config.button.delete}
                 onClick={() => handleDeleteCategory(category._id)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -834,14 +854,14 @@ export default function CategoryPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Category Management</CardTitle>
-            <Button onClick={() => handleAddCategory('')}>Add New Category</Button>
+            <CardTitle>{config.title}</CardTitle>
+            <Button onClick={() => handleAddCategory('')}>{config.addNewButton}</Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search categories..."
+              placeholder={config.search.placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -849,23 +869,78 @@ export default function CategoryPage() {
           </div>
 
           {loading ? (
-            <div>Loading...</div>
+            <div>{config.loading}</div>
           ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <div className="text-red-500">{config.error}: {error}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Image</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{config.table.headers.no}</TableHead>
+                  <TableHead>{config.table.headers.name}</TableHead>
+                  <TableHead>{config.table.headers.description}</TableHead>
+                  <TableHead>{config.table.headers.image}</TableHead>
+                  <TableHead className="text-right">{config.table.headers.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCategories.map(category => (
+                {paginatedCategories.map((category, index) => (
                   <React.Fragment key={category._id}>
-                    {renderCategoryRow(category)}
+                    <TableRow>
+                      <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {category.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{category.description}</TableCell>
+                      <TableCell>
+                        {category.image && (
+                          <img
+                            src={category.image}
+                            alt={category.name}
+                            className="w-10 h-10 object-cover rounded"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Manage Child Categories"
+                            onClick={() => {
+                              setSelectedCategoryForChildren(category);
+                              setIsChildCategoryModalOpen(true);
+                            }}
+                          >
+                            <ListTree className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Edit Category" 
+                            onClick={() => {
+                              setSelectedCategory(category);
+                              setIsEditModalOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Delete Category"
+                            onClick={() => handleDeleteCategory(category._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   </React.Fragment>
                 ))}
               </TableBody>
@@ -873,6 +948,53 @@ export default function CategoryPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-1">
+            {[...Array(Math.ceil(filteredCategories.length / itemsPerPage))].map((_, index) => (
+              <Button
+                key={index + 1}
+                variant={currentPage === index + 1 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(index + 1)}
+              >
+                {index + 1}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(currentPage + 1, Math.ceil(filteredCategories.length / itemsPerPage)))}
+            disabled={currentPage === Math.ceil(filteredCategories.length / itemsPerPage)}
+          >
+            Next
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Rows per page:</span>
+          <Select value={String(itemsPerPage)} onValueChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[5, 8, 10, 20, 50].map(num => (
+                <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {selectedCategory && (
         <EditCategoryModal
@@ -899,10 +1021,10 @@ export default function CategoryPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
+            <DialogTitle>{config.dialog.deleteTitle}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete this category? This action cannot be undone.</p>
+            <p>{config.dialog.deleteContent}</p>
             {error && (
               <div className="mt-2 text-sm text-red-600">
                 {error}
@@ -920,7 +1042,7 @@ export default function CategoryPage() {
               }}
               disabled={isDeleting}
             >
-              Cancel
+              {config.form.cancel}
             </Button>
             <Button
               type="button"
@@ -928,7 +1050,7 @@ export default function CategoryPage() {
               onClick={confirmDeleteCategory}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? config.dialog.deleting : config.dialog.delete}
             </Button>
           </div>
         </DialogContent>
