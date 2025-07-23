@@ -58,10 +58,10 @@ export default function LoginPage() {
               router.push('/adminbusiness/statistics');
               break;
             case 2: // ORDER_MANAGER
-              router.push('/ordermanager');
+              router.push('/ordermanager/dashboard');
               break;
             case 4: // MARKETING_MANAGER
-              router.push('/marketing');
+              router.push('/marketing/dashboard');
               break;
             case 1: // CUSTOMER
             default:

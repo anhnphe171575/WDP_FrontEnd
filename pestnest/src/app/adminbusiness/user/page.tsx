@@ -209,6 +209,8 @@ const Pagination = ({
   onPageChange: (page: number) => void
   onItemsPerPageChange: (items: number) => void
 }) => {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.userstatistics : pagesConfigVi.userstatistics;
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const startItem = (currentPage - 1) * itemsPerPage + 1
   const endItem = Math.min(currentPage * itemsPerPage, totalItems)
@@ -216,7 +218,7 @@ const Pagination = ({
   return (
     <div className="flex items-center justify-between px-2">
       <div className="flex items-center space-x-2">
-        <p className="text-sm font-medium">Hiển thị</p>
+        <p className="text-sm font-medium">{config.pagination.show}</p>
         <Select
           value={itemsPerPage.toString()}
           onValueChange={(value) => {
@@ -236,7 +238,7 @@ const Pagination = ({
           </SelectContent>
         </Select>
         <p className="text-sm font-medium">
-          {startItem}-{endItem} của {totalItems} kết quả
+          {startItem}-{endItem} {config.pagination.of} {totalItems} {config.pagination.results}
         </p>
       </div>
       <div className="flex items-center space-x-2">
@@ -258,7 +260,7 @@ const Pagination = ({
         </Button>
         <div className="flex items-center space-x-1">
           <p className="text-sm font-medium">
-            Trang {currentPage} / {totalPages}
+            {config.pagination.page} {currentPage} / {totalPages}
           </p>
         </div>
         <Button

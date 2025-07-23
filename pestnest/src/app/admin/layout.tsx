@@ -49,6 +49,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useLanguage } from "@/context/LanguageContext";
+import pagesConfigEnRaw from "../../../utils/petPagesConfig.en";
+import pagesConfigViRaw from "../../../utils/petPagesConfig.vi";
 
 // Menu items for the sidebar
 const menuItems = [
@@ -64,6 +66,7 @@ const menuItems = [
   },
   {
     title: "Users",
+    titleKey: "users",
     url: "/admin/users",
     icon: Users,
   },
@@ -74,36 +77,27 @@ const menuItems = [
   },
   {
     title: "Manage Product",
+    titleKey: "manageProduct",
     url: "/admin/product",
     icon: Package,
   },
   {
-    title: "Manage Category",
+    titleKey: "manageCategory",
     url: "/admin/category",
     icon: ListTree,
   },
   {
-    title: "Manage Attribute",
+    titleKey: "manageAttribute",
     url: "/admin/attribute",
     icon: ListChecks,
   },
 ]
 
-const settingsItems = [
-  {
-    title: "Settings",
-    url: "/admin/settings",
-    icon: Settings,
-  },
-  {
-    title: "Search",
-    url: "/admin/search",
-    icon: Search,
-  },
-]
+
 
 function AppSidebar() {
   const { lang, setLang } = useLanguage();
+  const pagesConfig = lang === "vi" ? pagesConfigViRaw : pagesConfigEnRaw;
 
   const toggleLanguage = () => {
     setLang(lang === 'vi' ? 'en' : 'vi');
@@ -131,8 +125,8 @@ function AppSidebar() {
                   <TrendingUp className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Dashboard</span>
-                  <span className="text-xs">v1.0.0</span>
+                  <span className="font-semibold">{pagesConfig.adminSidebar.dashboard}</span>
+                  <span className="text-xs">{pagesConfig.adminSidebar.version}</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -141,15 +135,15 @@ function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>{pagesConfig.adminSidebar.application}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.titleKey}>
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span>{pagesConfig.adminSidebar[item.titleKey as keyof typeof pagesConfig.adminSidebar]}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -158,23 +152,14 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Other</SidebarGroupLabel>
+          <SidebarGroupLabel>{pagesConfig.adminSidebar.other}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={toggleLanguage}>
                   <Languages />
-                  <span>{lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}</span>
+                  <span>{lang === 'vi' ? pagesConfig.adminSidebar.switchToEnglish : pagesConfig.adminSidebar.switchToVietnamese}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -194,8 +179,8 @@ function AppSidebar() {
                     <User className="size-4" />
                   </div>
                   <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">John Doe</span>
-                    <span className="text-xs text-sidebar-foreground/70">john@example.com</span>
+                    <span className="font-semibold">{pagesConfig.adminSidebar.userName}</span>
+                    <span className="text-xs text-sidebar-foreground/70">{pagesConfig.adminSidebar.userEmail}</span>
                   </div>
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
@@ -211,10 +196,12 @@ function AppSidebar() {
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>{pagesConfig.adminSidebar.profile}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>{pagesConfig.adminSidebar.settings}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600">
@@ -222,6 +209,9 @@ function AppSidebar() {
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </Link>
+                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>{pagesConfig.adminSidebar.logout}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

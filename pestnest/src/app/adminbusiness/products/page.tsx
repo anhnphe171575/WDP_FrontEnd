@@ -11,6 +11,9 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/context/LanguageContext';
+import pagesConfigEn from '../../../../utils/petPagesConfig.en';
+import pagesConfigVi from '../../../../utils/petPagesConfig.vi';
 
 // --- Interfaces ---
 interface CategoryData {
@@ -51,6 +54,8 @@ const ProductsByBrandBarChart = dynamic(() => import('@/components/charts/Produc
 
 // --- Main Component ---
 export default function ProductDashboardPage() {
+  const { lang } = useLanguage();
+  const config = lang === 'en' ? pagesConfigEn.productOverview : pagesConfigVi.productOverview;
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -118,8 +123,8 @@ export default function ProductDashboardPage() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold">Tổng Quan Sản Phẩm</h1>
-        <p className="text-muted-foreground">Thống kê chi tiết về sản phẩm trong cửa hàng.</p>
+        <h1 className="text-3xl font-bold">{config.pageTitle}</h1>
+        <p className="text-muted-foreground">{config.pageDescription}</p>
       </div>
 
       {/* Active Filter Display */}
@@ -127,10 +132,10 @@ export default function ProductDashboardPage() {
         <Card>
           <CardContent className="p-3 flex items-center justify-between">
             <p className="text-sm">
-              Đang lọc theo danh mục: <span className="font-semibold">{selectedCategory}</span>
+              {config.filter.activeCategory} <span className="font-semibold">{selectedCategory}</span>
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSelectedCategory(null)}>
-              Xóa bộ lọc
+              {config.filter.clear}
             </Button>
           </CardContent>
         </Card>
@@ -139,16 +144,16 @@ export default function ProductDashboardPage() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2">
         <StatCard 
-          title="Tổng Sản Phẩm" 
+          title={config.stats.totalProducts.title}
           value={data?.totalProducts || 0} 
           icon={<Package className="h-4 w-4 text-muted-foreground" />} 
-          description="Tổng số sản phẩm đang có"
+          description={config.stats.totalProducts.description}
         />
         <StatCard 
-          title="Sản Phẩm Sắp Hết Hàng" 
+          title={config.stats.lowStock.title}
           value={data?.totalLowStock || 0} 
           icon={<AlertTriangle className="h-4 w-4 text-orange-500" />} 
-          description="Số lượng biến thể có tồn kho <= 10"
+          description={config.stats.lowStock.description}
         />
       </div>
 
@@ -156,16 +161,16 @@ export default function ProductDashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Sản Phẩm Theo Danh Mục</CardTitle>
-            <p className="text-sm text-muted-foreground">Nhấp vào một danh mục để lọc toàn bộ trang.</p>
+            <CardTitle>{config.charts.byCategory.title}</CardTitle>
+            <p className="text-sm text-muted-foreground">{config.charts.byCategory.description}</p>
           </CardHeader>
           <CardContent>
-            <ProductsByCategoryPieChart data={data?.productsByCategory || []} onCategorySelect={handleCategorySelect} />
+            <ProductsByCategoryPieChart data={data?.productsByCategory || []} />
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Sản Phẩm Theo Thương Hiệu</CardTitle>
+            <CardTitle>{config.charts.byBrand.title}</CardTitle>
           </CardHeader>
           <CardContent>
             <ProductsByBrandBarChart data={data?.productsByBrand || []} />
@@ -176,10 +181,10 @@ export default function ProductDashboardPage() {
       {/* Low Stock Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Sản Phẩm Tồn Kho Thấp</CardTitle>
+          <CardTitle>{config.lowStockTable.title}</CardTitle>
           <div className="mt-2">
             <Input 
-              placeholder="Tìm kiếm sản phẩm tồn kho thấp..."
+              placeholder={config.lowStockTable.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -189,9 +194,9 @@ export default function ProductDashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">Hình Ảnh</TableHead>
-                <TableHead>Tên Sản Phẩm</TableHead>
-                <TableHead className="text-right">Số Lượng Còn Lại</TableHead>
+                <TableHead className="w-20">{config.lowStockTable.columns.image}</TableHead>
+                <TableHead>{config.lowStockTable.columns.name}</TableHead>
+                <TableHead className="text-right">{config.lowStockTable.columns.quantity}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

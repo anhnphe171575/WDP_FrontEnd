@@ -47,11 +47,6 @@ import { useLanguage } from "@/context/LanguageContext"
 
 // Menu items for the sidebar
 const menuItems = [
-  {
-    title: "Bảng điều khiển",
-    url: "/adminbusiness/dashboard",
-    icon: Home,
-  },
 
   {
     title: "Thống kê doanh thu",
@@ -65,9 +60,15 @@ const menuItems = [
     icon: Users,
   },
   {
-    title: "Báo cáo & Phân tích",
-    url: "/adminbusiness/analytics",
-    icon: BarChart3,
+    title: "Thống kê đơn hàng",
+    url: "/adminbusiness/order",
+    icon: ShoppingCart,
+  },
+
+  {
+    title: "Thống kê Marketing",
+    url: "/adminbusiness/marketing",
+    icon: TrendingUp,
   },
   {
     title: "Thống kê Sản phẩm",
@@ -76,24 +77,29 @@ const menuItems = [
   },
 ]
 
-const settingsItems = [
-  {
-    title: "Cài đặt",
-    url: "/adminbusiness/settings",
-    icon: Settings,
-  },
-  {
-    title: "Tìm kiếm",
-    url: "/adminbusiness/search",
-    icon: Search,
-  },
-]
 
 function AdminBusinessSidebar() {
   const { lang, setLang } = useLanguage();
 
   const toggleLanguage = () => {
     setLang(lang === 'vi' ? 'en' : 'vi');
+  };
+
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem('token');
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (error) {
+          console.error('Error disabling Google auto select:', error);
+        }
+      }
+      window.location.reload();
+    } catch (error) {
+      console.error('Error during logout:', error);
+      window.location.reload();
+    }
   };
 
   return (
@@ -137,16 +143,7 @@ function AdminBusinessSidebar() {
           <SidebarGroupLabel>Khác</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+           
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={toggleLanguage}>
                   <Languages />
@@ -196,6 +193,9 @@ function AdminBusinessSidebar() {
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </Link>
+                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Đăng xuất</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
