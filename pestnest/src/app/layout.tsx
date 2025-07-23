@@ -8,6 +8,7 @@ import { CartProvider } from '@/context/CartContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { OrderProvider } from '@/context/OrderContext';
 import Footer from '@/components/layout/Footer';
+import FooterWrapper from "./FooterWrapper";
 
 
 const geistSans = Geist({
@@ -47,7 +48,7 @@ export default function RootLayout({
             <OrderProvider>
               <GoogleOAuthProvider clientId={clientId || ''}>
                 {children}
-                <Footer />
+                <FooterWrapper />
                 <Toaster />
               </GoogleOAuthProvider>
             </OrderProvider>

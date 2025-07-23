@@ -20,28 +20,24 @@ const Footer = () => {
         <div>
           <h4 className="font-semibold mb-3">Liên kết nhanh</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/products" className="hover:underline">Sản phẩm</Link></li>
+            <li><Link href="/homepage" className="hover:underline">Sản phẩm</Link></li>
             <li><Link href="/blog" className="hover:underline">Blog</Link></li>
-            <li><Link href="/about" className="hover:underline">Về chúng tôi</Link></li>
-            <li><Link href="/contact" className="hover:underline">Liên hệ</Link></li>
           </ul>
         </div>
         {/* Contact Info */}
         <div>
           <h4 className="font-semibold mb-3">Liên hệ</h4>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2"><Mail size={16} /> support@pestnest.vn</li>
-            <li className="flex items-center gap-2"><Phone size={16} /> 0123 456 789</li>
-            <li className="flex items-center gap-2"><MapPin size={16} /> 123 Đường Phú Quân, Quận Thanh Xuân, TP.HCM</li>
+            <li className="flex items-center gap-2"><Mail size={16} /> anhnphe171575@fpt.edu.vn</li>
+            <li className="flex items-center gap-2"><Phone size={16} /> 086 2126326</li>
+            <li className="flex items-center gap-2"><MapPin size={16} /> Thông 4, Thạch Hòa, Thạch Thất, Hà Nội</li>
           </ul>
         </div>
         {/* Social Media */}
         <div>
           <h4 className="font-semibold mb-3">Kết nối với chúng tôi</h4>
           <div className="flex gap-4">
-            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook" className="hover:text-primary"><Facebook /></a>
-            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram" className="hover:text-primary"><Instagram /></a>
-            <a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" className="hover:text-primary"><Twitter /></a>
+            <a href="https://facebook.com/devnguyen23" target="_blank" rel="noopener" aria-label="Facebook" className="hover:text-primary"><Facebook /></a>
           </div>
         </div>
       </div>
