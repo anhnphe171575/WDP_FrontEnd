@@ -37,6 +37,7 @@ const ChartMarketing: React.FC<ChartMarketingProps> = ({ type, data }) => {
             cy="50%"
             outerRadius={80}
             label
+            labelLine={false} // Thêm dòng này để tắt đường nối
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

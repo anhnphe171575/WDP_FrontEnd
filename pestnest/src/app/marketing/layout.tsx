@@ -105,10 +105,10 @@ function MarketingSidebar() {
           console.error('Error disabling Google auto select:', error);
         }
       }
-      window.location.reload();
+      window.location.href = '/login';
     } catch (error) {
       console.error('Error during logout:', error);
-      window.location.reload();
+      window.location.href = '/login'; 
     }
   };
 
@@ -188,7 +188,7 @@ function MarketingSidebar() {
                 align="start"
                 sideOffset={4}
               >
-                <DropdownMenuItem onClick={() => window.location.href = '/userProfile'}>
+                <DropdownMenuItem onClick={() => window.location.href = 'profile'}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Hồ sơ</span>
                 </DropdownMenuItem>
