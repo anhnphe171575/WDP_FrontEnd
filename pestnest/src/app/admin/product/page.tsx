@@ -16,6 +16,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox";
 import ChatBot from "@/components/chatbot/ChatBot";
+import { useLanguage } from '@/context/LanguageContext';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface Product {
   _id: string;
@@ -54,6 +57,12 @@ interface EditProductModalProps {
 }
 
 function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModalProps) {
+  
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.manageProduct.form;
+  const childCategoryLabel = (config.fields as any).childCategory || 'Child Category';
+  const grandchildCategoryLabel = (config.fields as any).grandchildCategory || 'Grandchild Category';
   const [level1Categories, setLevel1Categories] = useState<Array<{ _id: string; name: string; description: string }>>([]);
   const [formData, setFormData] = useState({
     name: product.name,
@@ -239,7 +248,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto p-8">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold mb-2">Edit Product</DialogTitle>
+          <DialogTitle className="text-2xl font-bold mb-2">{config.editTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -250,7 +259,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name" className="font-semibold">Name</Label>
+                <Label htmlFor="name" className="font-semibold">{config.fields.name}</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -260,7 +269,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
                 />
               </div>
               <div>
-                <Label htmlFor="brand" className="font-semibold">Brand</Label>
+                <Label htmlFor="brand" className="font-semibold">{config.fields.brand}</Label>
                 <Input
                   id="brand"
                   value={formData.brand}
@@ -270,7 +279,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
               </div>
             </div>
             <div>
-              <Label htmlFor="description" className="font-semibold">Description</Label>
+              <Label htmlFor="description" className="font-semibold">{config.fields.description}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -280,7 +289,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
             </div>
           </div>
           <div className="bg-gray-50 p-6 rounded-lg border">
-            <Label className="font-semibold mb-2 block">Categories <span className="text-red-500">*</span></Label>
+            <Label className="font-semibold mb-2 block">{config.fields.categories} <span className="text-red-500">*</span></Label>
             <div className="space-y-2 mt-2">
               {level1Categories.map((category) => (
                 <div key={`parent-${category._id}`} className="flex flex-col gap-1">
@@ -296,7 +305,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
                   {selectedParentCategories.includes(category._id) && (
                     <div className="ml-6 mt-2 border-l-2 border-gray-200 pl-4">
                       <div>
-                        <Label className="font-semibold">Child Category</Label>
+                        <Label className="font-semibold">{childCategoryLabel}</Label>
                         <div className="space-y-2 mt-2">
                           {categorySets[category._id]?.level2.map((child) => (
                             <div key={`child-${child._id}`} className="flex items-center space-x-2">
@@ -313,7 +322,7 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
                         </div>
                       </div>
                       <div className="mt-2">
-                        <Label className="font-semibold">Grandchild Category</Label>
+                        <Label className="font-semibold">{grandchildCategoryLabel}</Label>
                         <div className="space-y-2 mt-2">
                           {selectedChildCategories[category._id] && categorySets[category._id]?.level3.map((grand) => (
                             <div key={`grandchild-${grand._id}`} className="flex items-center space-x-2">
@@ -337,10 +346,10 @@ function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModal
           </div>
           <div className="flex justify-end gap-4 mt-6">
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="px-6 py-2">
-              Cancel
+              {config.buttons.cancel}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="px-6 py-2 font-semibold">
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? config.buttons.save : config.buttons.save}
             </Button>
           </div>
         </form>
@@ -383,6 +392,9 @@ interface VariantManagementModalProps {
 }
 
 function VariantManagementModal({ product, isOpen, onClose }: VariantManagementModalProps) {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.manageProduct.variant;
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -649,7 +661,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Manage Variants - {product.name}</DialogTitle>
+          <DialogTitle>{config.title} - {product.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
           <div className="flex justify-between items-center">
@@ -658,7 +670,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
               onClick={() => setIsAddFormOpen(true)}
               className="mb-4"
             >
-              Add New Variant
+              {config.addNewButton}
             </Button>
           </div>
 
@@ -672,7 +684,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
             <div className="border rounded-lg p-4 mb-4">
               <form onSubmit={handleAddVariant} className="space-y-4">
                 <div>
-                  <Label>Images <span className="text-red-500">*</span></Label>
+                  <Label>{config.form.fields.images} <span className="text-red-500">*</span></Label>
                   <div className="space-y-2">
                     {newVariant.images.map((image, index) => (
                       <div key={`image-${index}`} className="flex gap-2 items-center">
@@ -684,7 +696,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                           disabled={isAddingVariant}
                         />
                         {image.url && (
-                          <img src={image.url} alt="Preview" className="w-12 h-12 object-cover rounded" />
+                          <img src={image.url} alt="Preview" className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
                         )}
                         <Button
                           type="button"
@@ -710,10 +722,10 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                 </div>
 
                 <div>
-                  <Label>Attributes <span className="text-red-500">*</span></Label>
+                  <Label>{config.form.fields.attributes} <span className="text-red-500">*</span></Label>
                   <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
                     <div>
-                      <Label className="font-semibold">Parent Attributes</Label>
+                      <Label className="font-semibold">{config.form.fields.parentAttributes}</Label>
                       <div className="space-y-2 mt-2">
                         {attributes.parentAttributes.map((attr) => (
                           <div key={`parent-attr-${attr._id}`} className="flex items-center space-x-2">
@@ -732,7 +744,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       </div>
                     </div>
                     <div>
-                      <Label className="font-semibold">Child Attributes</Label>
+                      <Label className="font-semibold">{config.form.fields.childAttributes}</Label>
                       <div className="space-y-2 mt-2">
                         {selectedParentAttribute && attributes.childAttributes
                           .filter(attr => attr.parentId && attr.parentId._id === selectedParentAttribute)
@@ -755,8 +767,8 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                   </div>
                 </div>
 
-                {/* <div>
-                  <Label htmlFor="price">Sell Price <span className="text-red-500">*</span></Label>
+                <div>
+                  <Label htmlFor="price">{config.form.fields.sellPrice} <span className="text-red-500">*</span></Label>
                   <Input
                     id="price"
                     type="number"
@@ -765,7 +777,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                     min={0}
                     required
                   />
-                </div> */}
+                </div>
 
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => {
@@ -775,10 +787,10 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                     setSelectedChildAttribute(null);
                     setError(null);
                   }} disabled={isAddingVariant}>
-                    Cancel
+                    {config.form.buttons.cancel}
                   </Button>
                   <Button type="submit" disabled={isAddingVariant}>
-                    {isAddingVariant ? 'Adding...' : 'Add Variant'}
+                    {isAddingVariant ? config.form.buttons.add : config.form.buttons.add}
                   </Button>
                 </div>
               </form>
@@ -795,7 +807,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <Label className="font-semibold">Images <span className="text-red-500">*</span></Label>
+                    <Label className="font-semibold">{config.form.fields.images} <span className="text-red-500">*</span></Label>
                     <div className="space-y-2">
                       {newVariant.images.map((image, index) => (
                         <div key={`edit-image-${index}`} className="flex gap-2 items-center">
@@ -832,10 +844,10 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <Label className="font-semibold">Attributes <span className="text-red-500">*</span></Label>
+                    <Label className="font-semibold">{config.form.fields.attributes} <span className="text-red-500">*</span></Label>
                     <div className="grid grid-cols-2 gap-4 max-h-60 overflow-y-auto pr-2">
                       <div>
-                        <Label className="font-semibold">Parent Attributes</Label>
+                        <Label className="font-semibold">{config.form.fields.parentAttributes}</Label>
                         <div className="space-y-2 mt-2">
                           {attributes.parentAttributes.map((attr) => (
                             <div key={`edit-parent-attr-${attr._id}`} className="flex items-center space-x-2">
@@ -854,7 +866,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                         </div>
                       </div>
                       <div>
-                        <Label className="font-semibold">Child Attributes</Label>
+                        <Label className="font-semibold">{config.form.fields.childAttributes}</Label>
                         <div className="space-y-2 mt-2">
                           {selectedParentAttribute && attributes.childAttributes
                             .filter(attr => attr.parentId && attr.parentId._id === selectedParentAttribute)
@@ -876,7 +888,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="edit-price" className="font-semibold">Sell Price <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="edit-price" className="font-semibold">{config.form.fields.sellPrice} <span className="text-red-500">*</span></Label>
                       <Input id="edit-price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required className="mt-1" />
                     </div>
                     <div className="flex justify-end gap-2 mt-4">
@@ -892,10 +904,10 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
                         setSelectedChildAttribute(null);
                         setError(null);
                       }} disabled={isAddingVariant}>
-                        Cancel
+                        {config.form.buttons.cancel}
                       </Button>
                       <Button type="submit" disabled={isAddingVariant}>
-                        {isAddingVariant ? 'Updating...' : 'Update Variant'}
+                        {isAddingVariant ? config.form.buttons.save : config.form.buttons.save}
                       </Button>
                     </div>
                   </div>
@@ -905,22 +917,22 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
           )}
 
           {loading ? (
-            <div>Loading variants...</div>
+            <div>{config.loading}</div>
           ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <div className="text-red-500">{error}</div>
           ) : variants.length === 0 ? (
-            <div className="text-center py-4">No variants found for this product</div>
+            <div className="text-center py-4">{config.empty}</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]">No.</TableHead>
-                    <TableHead className="min-w-[200px]">Attributes</TableHead>
-                    <TableHead className="w-[120px]">Sell Price</TableHead>
-                    <TableHead className="w-[120px]">Total Quantity</TableHead>
-                    <TableHead className="min-w-[150px]">Images</TableHead>
-                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                    <TableHead className="w-[50px]">{config.table.headers.no}</TableHead>
+                    <TableHead className="min-w-[200px]">{config.table.headers.attributes}</TableHead>
+                    <TableHead className="w-[120px]">{config.table.headers.sellPrice}</TableHead>
+                    <TableHead className="w-[120px]">{config.table.headers.totalQuantity}</TableHead>
+                    <TableHead className="min-w-[150px]">{config.table.headers.images}</TableHead>
+                    <TableHead className="w-[100px] text-right">{config.table.headers.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -996,7 +1008,7 @@ function VariantManagementModal({ product, isOpen, onClose }: VariantManagementM
           )}
           <div className="flex justify-end gap-2 sticky bottom-0 bg-white pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Close
+              {config.form.buttons.cancel}
             </Button>
           </div>
         </div>
@@ -1091,6 +1103,13 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAddingVariantAddProduct, setIsAddingVariantAddProduct] = useState(false); // Thêm state riêng cho modal này
+
+  // Lấy config ngôn ngữ và label cho child/grandchild category
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.manageProduct?.form || {};
+  const childCategoryLabel = (config.fields as any)?.childCategory || 'Child Category';
+  const grandchildCategoryLabel = (config.fields as any)?.grandchildCategory || 'Grandchild Category';
 
   // Reset states when modal closes
   useEffect(() => {
@@ -1374,7 +1393,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                   {selectedParentCategories.includes(category._id) && (
                     <div className="ml-6 mt-2 border-l-2 border-gray-200 pl-4">
                       <div>
-                        <Label className="font-semibold">Child Category</Label>
+                        <Label className="font-semibold">{childCategoryLabel}</Label>
                         <div className="space-y-2 mt-2">
                           {categorySets[category._id]?.level2.map((child) => (
                             <div key={`child-${child._id}`} className="flex items-center space-x-2">
@@ -1391,7 +1410,7 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                         </div>
                       </div>
                       <div className="mt-2">
-                        <Label className="font-semibold">Grandchild Category</Label>
+                        <Label className="font-semibold">{grandchildCategoryLabel}</Label>
                         <div className="space-y-2 mt-2">
                           {selectedChildCategories[category._id] && categorySets[category._id]?.level3.map((grand) => (
                             <div key={`grandchild-${grand._id}`} className="flex items-center space-x-2">
@@ -1521,10 +1540,6 @@ function AddProductModal({ onSave, onClose, isOpen }: AddProductModalProps) {
                         </div>
                       </div>
                     </div>
-                    {/* <div>
-                      <Label htmlFor="price" className="font-semibold">Price <span className="text-red-500">*</span></Label>
-                      <Input id="price" type="number" value={newVariant.sellPrice} onChange={(e) => setNewVariant(prev => ({ ...prev, sellPrice: Number(e.target.value) }))} min={0} required className="mt-1" />
-                    </div> */}
                     <div>
                       <Label htmlFor="price">{pagesConfig.manageProduct.variant.form.fields.sellPrice} <span className="text-red-500">*</span></Label>
                       <Input
@@ -1586,6 +1601,9 @@ interface ImportManagementModalProps {
 }
 
 function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpdate }: ImportManagementModalProps) {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.manageProduct.import;
   const [importBatches, setImportBatches] = useState<ImportBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1780,7 +1798,7 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
       <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>
-            Manage Import Batches - {product.name} ({variantAttributes})
+            {config.title} - {product.name} ({variantAttributes})
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
@@ -1808,7 +1826,7 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
 
           {/* Sell Price Update */}
           <div className="bg-white p-4 rounded-lg border flex items-center gap-4 mb-2">
-            <Label htmlFor="variant-sell-price" className="font-semibold">Sell Price:</Label>
+            <Label htmlFor="variant-sell-price" className="font-semibold">{config.sellPrice?.label || 'Sell Price:'}</Label>
             <Input
               id="variant-sell-price"
               type="number"
@@ -1823,7 +1841,7 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
                 await handleSellPriceUpdate(sellPrice);
               }}
             />
-            {isUpdatingSellPrice && <span className="text-sm text-gray-500">Saving...</span>}
+            {isUpdatingSellPrice && <span className="text-sm text-gray-500">{config.sellPrice?.saving || 'Saving...'}</span>}
             {sellPriceError && <span className="text-sm text-red-500">{sellPriceError}</span>}
           </div>
 
@@ -1833,7 +1851,7 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
               onClick={() => setIsAddFormOpen(true)}
               className="mb-4"
             >
-              Add New Import Batch
+              {config.addNewButton}
             </Button>
           </div>
 
@@ -1841,25 +1859,25 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
           <div className="grid grid-cols-4 gap-4 mb-4">
             <Card>
               <CardContent className="p-4">
-                <div className="text-sm font-medium text-gray-500">Total Quantity</div>
+                <div className="text-sm font-medium text-gray-500">{config.summary?.totalQuantity || 'Total Quantity'}</div>
                 <div className="text-2xl font-bold">{totalQuantity}</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-sm font-medium text-gray-500">Average Cost Price</div>
+                <div className="text-sm font-medium text-gray-500">{config.summary?.averageCostPrice || 'Average Cost Price'}</div>
                 <div className="text-2xl font-bold">${averageCostPrice.toFixed(2)}</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-sm font-medium text-gray-500">Total Inventory Value</div>
+                <div className="text-sm font-medium text-gray-500">{config.summary?.totalInventoryValue || 'Total Inventory Value'}</div>
                 <div className="text-2xl font-bold text-blue-600">${totalInventoryValue.toFixed(2)}</div>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <div className="text-sm font-medium text-gray-500">Profit Margin</div>
+                <div className="text-sm font-medium text-gray-500">{config.summary?.profitMargin || 'Profit Margin'}</div>
                 <div className="text-2xl font-bold text-green-600">
                   {averageCostPrice > 0 ? `${((variant.sellPrice - averageCostPrice) / variant.sellPrice * 100).toFixed(1)}%` : '-'}
                 </div>
@@ -1989,22 +2007,22 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
           )}
 
           {loading ? (
-            <div>Loading import batches...</div>
+            <div>{config.loading}</div>
           ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <div className="text-red-500">{error}</div>
           ) : importBatches.length === 0 ? (
-            <div className="text-center py-4">No import batches found for this variant</div>
+            <div className="text-center py-4">{config.empty}</div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[50px]">No.</TableHead>
-                    <TableHead className="w-[120px]">Import Date</TableHead>
-                    <TableHead className="w-[100px]">Quantity</TableHead>
-                    <TableHead className="w-[120px]">Cost Price</TableHead>
-                    <TableHead className="w-[120px]">Total Value</TableHead>
-                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                    <TableHead className="w-[50px]">{config.table.headers.no}</TableHead>
+                    <TableHead className="w-[120px]">{config.table.headers.importDate}</TableHead>
+                    <TableHead className="w-[100px]">{config.table.headers.quantity}</TableHead>
+                    <TableHead className="w-[120px]">{config.table.headers.costPrice}</TableHead>
+                    <TableHead className="w-[120px]">{config.table.headers.totalValue}</TableHead>
+                    <TableHead className="w-[100px] text-right">{config.table.headers.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2049,7 +2067,7 @@ function ImportManagementModal({ variant, product, isOpen, onClose, onVariantUpd
           )}
           <div className="flex justify-end gap-2 sticky bottom-0 bg-white pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              Close
+              {config.form.buttons.cancel}
             </Button>
           </div>
         </div>
@@ -2098,6 +2116,9 @@ interface PaginationProps {
 }
 
 export default function ProductPage() {
+  const { lang } = useLanguage();
+  const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+  const config = pagesConfig.manageProduct;
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -2244,6 +2265,9 @@ export default function ProductPage() {
   };
 
   function Pagination({ filteredProducts, itemsPerPage, currentPage, setItemsPerPage, setCurrentPage }: PaginationProps) {
+    const { lang } = useLanguage();
+    const pagesConfig = lang === 'vi' ? viConfig : enConfig;
+    const config = pagesConfig.manageProduct.pagination;
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
     return (
       <div className="flex items-center justify-between px-2 py-4">
@@ -2254,7 +2278,7 @@ export default function ProductPage() {
             onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
           >
-            Previous
+            {config.previous}
           </Button>
           <div className="flex items-center gap-1">
             {[...Array(totalPages)].map((_, index) => (
@@ -2274,7 +2298,7 @@ export default function ProductPage() {
             onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
-            Next
+            {config.next}
           </Button>
         </div>
       </div>
@@ -2286,14 +2310,14 @@ export default function ProductPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Product Management</CardTitle>
-            <Button onClick={() => setIsAddModalOpen(true)}>Add New Product</Button>
+            <CardTitle>{config.title}</CardTitle>
+            <Button onClick={() => setIsAddModalOpen(true)}>{config.addNewButton}</Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4 mb-4">
             <Input
-              placeholder="Search products..."
+              placeholder={config.search.placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
@@ -2301,27 +2325,27 @@ export default function ProductPage() {
           </div>
 
           {loading ? (
-            <div>Loading...</div>
+            <div>{config.loading}</div>
           ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
+            <div className="text-red-500">{config.error}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No.</TableHead>
+                  <TableHead>{config.table.headers.no}</TableHead>
                   <TableHead onClick={() => handleSort('name')} className="cursor-pointer select-none">
-                    Name {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    {config.table.headers.name} {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                   </TableHead>
                   <TableHead onClick={() => handleSort('brand')} className="cursor-pointer select-none">
-                    Brand {sortConfig?.key === 'brand' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    {config.table.headers.brand} {sortConfig?.key === 'brand' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                   </TableHead>
                   <TableHead onClick={() => handleSort('description')} className="cursor-pointer select-none">
-                    Description {sortConfig?.key === 'description' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    {config.table.headers.description} {sortConfig?.key === 'description' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                   </TableHead>
                   <TableHead onClick={() => handleSort('category')} className="cursor-pointer select-none">
-                    Categories {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                    {config.table.headers.categories} {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                   </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">{config.table.headers.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -2346,7 +2370,7 @@ export default function ProductPage() {
                           variant="ghost" 
                           size="sm" 
                           className="h-8 w-8 p-0" 
-                          title="Manage Variants"
+                          title={config.variant.title}
                           onClick={() => {
                             setSelectedProductForVariants(product);
                             setIsVariantModalOpen(true);
@@ -2358,7 +2382,7 @@ export default function ProductPage() {
                           variant="ghost" 
                           size="sm" 
                           className="h-8 w-8 p-0" 
-                          title="Edit Product" 
+                          title={config.editTitle} 
                           onClick={() => {
                             setSelectedProduct(product);
                             setIsEditModalOpen(true);
@@ -2370,7 +2394,7 @@ export default function ProductPage() {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Delete Product"
+                          title={config.deleteDialog.title}
                           onClick={() => handleDeleteProduct(product._id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -2420,10 +2444,10 @@ export default function ProductPage() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
+            <DialogTitle>{config.deleteDialog.title}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>Are you sure you want to delete this product? This action will also delete all its variants and cannot be undone.</p>
+            <p>{config.deleteDialog.content}</p>
             {error && (
               <div className="mt-2 text-sm text-red-600">
                 {error}
@@ -2441,7 +2465,7 @@ export default function ProductPage() {
               }}
               disabled={isDeleting}
             >
-              Cancel
+              {config.deleteDialog.cancel}
             </Button>
             <Button
               type="button"
@@ -2449,7 +2473,7 @@ export default function ProductPage() {
               onClick={confirmDeleteProduct}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? config.deleteDialog.deleting : config.deleteDialog.delete}
             </Button>
           </div>
         </DialogContent>

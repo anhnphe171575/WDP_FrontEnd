@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react'
-import Header from '@/components/layout/Header'
 import { api } from '../../../../utils/axios'
 import { AxiosError } from 'axios'
 import { useLanguage } from '@/context/LanguageContext'
@@ -171,7 +170,6 @@ export default function ChangePasswordPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-            <Header/>
             <div className="flex items-center justify-center p-4 pt-20">
                 <Card className="w-full max-w-md">
                     <CardHeader className="text-center">

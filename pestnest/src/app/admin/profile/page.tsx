@@ -90,13 +90,30 @@ const UserProfilePage = () => {
 
     const handleUpdate = async () => {
         if (!editData) return;
+        // Kiểm tra các trường bắt buộc
+        if (
+            !editData.name || !editData.name.trim() ||
+            !editData.email || !editData.email.trim() ||
+            !editData.phone || !editData.phone.trim()
+        ) {
+            setError('Vui lòng nhập đầy đủ họ tên, email và số điện thoại!');
+            return;
+        }
+
+        // Kiểm tra ngày sinh hợp lệ
+        let dob: string | undefined = undefined;
+        if (editData.birthday && !isNaN(new Date(editData.birthday).getTime())) {
+            dob = new Date(editData.birthday).toISOString();
+        }
+
         try {
             setLoading(true);
             setError(null);
             const payload: Record<string, unknown> = {
                 name: editData.name,
+                email: editData.email,
                 phone: editData.phone,
-                dob: editData.birthday ? new Date(editData.birthday).toISOString() : undefined,
+                dob: dob,
                 address: editData.address
             };
             Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
