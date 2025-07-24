@@ -2,18 +2,12 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
 
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-      },
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: '**' },
     ],
     unoptimized: true,
   },
@@ -29,10 +23,25 @@ const nextConfig = {
       ...(config.resolve.alias || {}),
       '@': path.resolve(__dirname),
     };
+
+    // 👇 Disable overlay if using Webpack
+    if (options.dev && !options.isServer) {
+      config.devServer = {
+        ...(config.devServer || {}),
+        client: {
+          overlay: false,
+        },
+      };
+    }
+
     return config;
   },
 
-  // basePath: '/myapp',
+  // 👇 Tắt Turbopack
+  experimental: {
+    turbo: false,
+  },
+  devIndicators: false
 };
 
 module.exports = nextConfig;

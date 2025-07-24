@@ -50,7 +50,6 @@ interface ProductVariant {
   importedQuantity: number;
   orderedQuantity: number;
   availableQuantity: number;
-  // ... các trường khác nếu cần
 }
 
 interface ReviewUser {
@@ -400,7 +399,7 @@ export default function HomePage() {
                   <Link href={`/category/${category._id}`} className="block">
                     <div className="relative aspect-square rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-300">
                       <Image
-                        src={category.image}
+                        src={getValidImageUrl(category.image)}
                         alt={category.name}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -450,12 +449,11 @@ export default function HomePage() {
                     >
                       <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
                         <Image
-                          src={category.image || '/images/category-placeholder.jpg'}
+                          src={getValidImageUrl(category.image)}
                           alt={category.name}
                           fill
                           className="object-cover"
                         />
-                       
                       </div>
                       <div className="text-center">
                         <h3 className="font-semibold text-lg text-gray-900 group-hover:text-pink-600 transition-colors">
@@ -533,7 +531,7 @@ export default function HomePage() {
                     let firstImage = '/images/placeholder.jpg';
                     if (Array.isArray(product.variants)) {
                       for (const v of product.variants) {
-                        if (Array.isArray(v.images) && v.images.length > 0 && v.images[0].url) {
+                        if (Array.isArray(v.images) && v.images.length > 0 && v.images[0].url && v.images[0].url.trim() !== "") {
                           firstImage = v.images[0].url;
                           break;
                         }
@@ -559,7 +557,7 @@ export default function HomePage() {
                             </span>
                           )}
                           <Image
-                            src={firstImage}
+                            src={getValidImageUrl(firstImage, '/images/placeholder.jpg')}
                             alt={product.name}
                             fill
                             className="object-contain p-6 drop-shadow-lg group-hover:scale-105 transition-transform duration-500"
@@ -659,4 +657,9 @@ const benefits = [
     description: "Hỗ trợ 24/7 với đội ngũ tư vấn chuyên nghiệp"
   }
 ];
+
+// Helper to ensure valid image URL
+function getValidImageUrl(url?: string, fallback = '/images/category-placeholder.jpg') {
+  return url && url.trim() ? url : fallback;
+}
 

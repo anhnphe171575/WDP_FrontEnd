@@ -13,7 +13,6 @@ import { Edit, Eye, Trash2, Package, Warehouse } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox";
 import ChatBot from "@/components/chatbot/ChatBot";
 import { useLanguage } from '@/context/LanguageContext';
@@ -56,8 +55,7 @@ interface EditProductModalProps {
   isOpen: boolean;
 }
 
-const { lang } = useLanguage();
-const config = lang === 'en' ? enConfig.manageProduct : viConfig.manageProduct;
+
 function EditProductModal({ product, onSave, onClose, isOpen }: EditProductModalProps) {
   
   const { lang } = useLanguage();

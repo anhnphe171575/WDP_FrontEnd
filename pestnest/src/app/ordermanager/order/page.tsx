@@ -49,7 +49,7 @@ interface Order {
     status:string
 }[];
   total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
   paymentMethod: string;
   voucher?: string[];
   createAt?: Date;
@@ -81,7 +81,7 @@ const ORDER_STATUS = {
 const ORDER_STATUS_COLORS = {
   pending: "bg-yellow-100 text-yellow-800",
   processing: "bg-blue-100 text-blue-800",
-  shipped: "bg-purple-100 text-purple-800",
+  shipping: "bg-purple-100 text-purple-800",
   completed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
 } as const;
@@ -150,12 +150,15 @@ function OrderForm({ order, onSubmit, isOpen, onClose, config }: OrderFormProps 
                 )}
                 {formData.status === 'processing' && (
                   <>
-                    <SelectItem value="processing">{config.processing}</SelectItem>
+                    <SelectItem value="processing">processing</SelectItem>
+                    <SelectItem value="shipping">shipping</SelectItem>
                   </>
                 )}
-                {formData.status === 'shipped' && (
+                {formData.status === 'shipping' && (
                   <>
-                    <SelectItem value="shipped">{config.shipped}</SelectItem>
+                    <SelectItem value="shipping">shipping</SelectItem>
+
+                    <SelectItem value="completed">completed</SelectItem>
                   </>
                 )}
                 {formData.status === 'completed' && (
