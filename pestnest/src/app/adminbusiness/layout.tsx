@@ -50,7 +50,7 @@ const menuItems = [
   {
     title: "Thống kê doanh thu",
     url: "/adminbusiness/statistics",
-    icon: BarChart3,
+    icon: DollarSign,
   },
 
   {
@@ -61,8 +61,13 @@ const menuItems = [
   {
     title: "Thống kê Sản phẩm",
     url: "/adminbusiness/products",
-    icon: BarChart3,
+    icon: Package,
   },
+  {
+    title: "Thống Kê Marketing",
+    url: "/adminbusiness/marketing",
+    icon: TrendingUp,
+  }
 ]
 
 
@@ -79,7 +84,7 @@ function AdminBusinessSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/adminbusiness/dashboard">
+              <Link href="/adminbusiness/statistics">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Building className="size-4" />
                 </div>
@@ -158,8 +163,6 @@ function AdminBusinessSidebar() {
                   <span>Cài đặt</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                
-                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                 <DropdownMenuItem className="text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Đăng xuất</span>
