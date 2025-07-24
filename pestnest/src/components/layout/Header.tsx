@@ -464,7 +464,7 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
           const decoded = jwtDecode<{ id?: string; _id?: string }>(token);
           id = decoded.id || decoded._id || "";
           if (id) sessionStorage.setItem("userId", id);
-        } catch {}
+        } catch { }
       }
       return id && id !== "" ? id : null;
     };
@@ -652,13 +652,20 @@ export default function Header({ initialSearchTerm = "" }: { initialSearchTerm?:
             <Button variant="ghost" size="sm" className="md:hidden">
               <Search className="h-5 w-5" />
             </Button>
-
+            {/* Blog */}
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/blog" aria-label="Blog">
+                Blog
+              </Link>
+            </Button>
             {/* Wishlist */}
             <Button variant="ghost" size="sm" className="hidden sm:flex" asChild>
               <Link href="/wishlist" aria-label="Yêu thích">
                 <Heart className="h-5 w-5" />
               </Link>
             </Button>
+
+
 
             {/* Language Switcher */}
             <Button variant="outline" size="sm" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>

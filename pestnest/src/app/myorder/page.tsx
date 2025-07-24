@@ -5,6 +5,7 @@ import axios from 'axios';
 import Header from '@/components/layout/Header';
 import { Package, Eye, Search, Filter, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Order {
     _id: string;
@@ -487,12 +488,13 @@ const MyOrderPage = () => {
                                             <tr key={order._id} className="hover:bg-blue-50 transition-colors duration-200">
                                                 <td className="px-6 py-4 text-center text-sm font-medium text-gray-900">{index + 1}</td>
                                                 <td className="px-6 py-4 text-center text-sm text-gray-500">#{order._id.slice(-6)}</td>
+                                                
                                                 <td className="px-6 py-4 text-sm text-gray-700 w-64">
                                                     <div className="flex flex-col gap-1">
                                                         {order.items.map((item, idx) => (
-                                                            <span key={idx} className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                                                            <Link key={idx} href="/product/665c8fab8f1e1e0df88abc21" className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium hover:underline">
                                                                 {item.productName}
-                                                            </span>
+                                                            </Link>
                                                         ))}
                                                     </div>
                                                 </td>
