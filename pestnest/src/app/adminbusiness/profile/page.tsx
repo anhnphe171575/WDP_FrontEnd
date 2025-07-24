@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../utils/axios';
-import Header from '@/components/layout/Header';
+import { api } from '../../../../utils/axios';
 import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
-import viConfig from '../../../utils/petPagesConfig.vi';
-import enConfig from '../../../utils/petPagesConfig.en';
+import viConfig from '../../../../utils/petPagesConfig.vi';
+import enConfig from '../../../../utils/petPagesConfig.en';
 
 interface Address {
     _id?: string; // Added _id for potential backend compatibility
@@ -135,18 +134,16 @@ const UserProfilePage = () => {
             console.error('Error updating profile:', err);
         } finally {
             setLoading(false);
-            setFieldErrors({}); // Clear errors on successful update
         }
     };
 
     const handleCancel = () => {
         setIsEditing(false);
         setEditData(null);
-        setFieldErrors({}); // Clear errors on cancel
     };
 
     const handleChangePassword = () => {
-        router.push('/changepass');
+        router.push('/adminbusiness/changepass');
     };
 
     const getValidDateString = (dateStr?: string) => {
@@ -218,7 +215,6 @@ const UserProfilePage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header />
             {successMsg && (
                 <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded shadow-lg animate-fade-in">
                     {successMsg}
