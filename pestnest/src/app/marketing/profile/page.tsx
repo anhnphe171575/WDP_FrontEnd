@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../../utils/axios';
-import Header from '@/components/layout/Header';
 import { User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import viConfig from '../../../../utils/petPagesConfig.vi';
@@ -45,6 +44,7 @@ const UserProfilePage = () => {
         birthday: ''
     });
     const [editData, setEditData] = useState<UserProfile | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -91,14 +91,19 @@ const UserProfilePage = () => {
 
     const handleUpdate = async () => {
         if (!editData) return;
-
         // Kiểm tra các trường bắt buộc
-        if (
-            !editData.name || !editData.name.trim() ||
-            !editData.email || !editData.email.trim() ||
-            !editData.phone || !editData.phone.trim()
-        ) {
-            setError('Vui lòng nhập đầy đủ họ tên, email và số điện thoại!');
+        const errors: { name?: string; email?: string; phone?: string } = {};
+        if (!editData.name || !editData.name.trim()) {
+            errors.name = 'Vui lòng nhập họ tên!';
+        }
+        if (!editData.email || !editData.email.trim()) {
+            errors.email = 'Vui lòng nhập email!';
+        }
+        if (!editData.phone || !editData.phone.trim()) {
+            errors.phone = 'Vui lòng nhập số điện thoại!';
+        }
+        setFieldErrors(errors);
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
@@ -129,6 +134,7 @@ const UserProfilePage = () => {
             console.error('Error updating profile:', err);
         } finally {
             setLoading(false);
+            setFieldErrors({}); // Clear errors on successful update
         }
     };
 
@@ -263,12 +269,18 @@ const UserProfilePage = () => {
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.name}</label>
                                     {isEditing ? (
-                                        <input
-                                            type="text"
-                                            value={editData?.name ?? ''}
-                                            onChange={e => setEditData(editData => editData ? { ...editData, name: e.target.value } : null)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        />
+                                        <>
+                                            <input
+                                                type="text"
+                                                value={editData?.name ?? ''}
+                                                onChange={e => {
+                                                    setEditData(editData => editData ? { ...editData, name: e.target.value } : null);
+                                                    setFieldErrors(errors => ({ ...errors, name: undefined }));
+                                                }}
+                                                className={`w-full px-4 py-2 border ${fieldErrors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                                            />
+                                            {fieldErrors.name && <p className="text-red-500 text-sm mt-1">{fieldErrors.name}</p>}
+                                        </>
                                     ) : (
                                         <p className="text-gray-900 text-lg">{userData.name}</p>
                                     )}
@@ -283,6 +295,7 @@ const UserProfilePage = () => {
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.email}</label>
                                     <p className="text-gray-900 text-lg">{userData.email}</p>
+                                    {isEditing && fieldErrors.email && <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>}
                                 </div>
                             </div>
 
@@ -294,12 +307,18 @@ const UserProfilePage = () => {
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">{config.phone}</label>
                                     {isEditing ? (
-                                        <input
-                                            type="tel"
-                                            value={editData?.phone ?? ''}
-                                            onChange={e => setEditData(editData => editData ? { ...editData, phone: e.target.value } : null)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                        />
+                                        <>
+                                            <input
+                                                type="tel"
+                                                value={editData?.phone ?? ''}
+                                                onChange={e => {
+                                                    setEditData(editData => editData ? { ...editData, phone: e.target.value } : null);
+                                                    setFieldErrors(errors => ({ ...errors, phone: undefined }));
+                                                }}
+                                                className={`w-full px-4 py-2 border ${fieldErrors.phone ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500`}
+                                            />
+                                            {fieldErrors.phone && <p className="text-red-500 text-sm mt-1">{fieldErrors.phone}</p>}
+                                        </>
                                     ) : (
                                         <p className="text-gray-900 text-lg">{userData.phone}</p>
                                     )}

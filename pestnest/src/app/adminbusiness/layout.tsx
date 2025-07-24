@@ -78,6 +78,24 @@ function AdminBusinessSidebar() {
     setLang(lang === 'vi' ? 'en' : 'vi');
   };
 
+  // Thêm hàm xử lý đăng xuất
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem('token');
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (error) {
+          console.error('Error disabling Google auto select:', error);
+        }
+      }
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Error during logout:', error);
+      window.location.href = '/login';
+    }
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -154,16 +172,18 @@ function AdminBusinessSidebar() {
                 align="start"
                 sideOffset={4}
               >
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Hồ sơ</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/adminbusiness/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Hồ sơ</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Cài đặt</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Đăng xuất</span>
                 </DropdownMenuItem>
